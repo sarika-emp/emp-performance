@@ -18,6 +18,8 @@ interface PeerNomination {
   status: string;
   nominated_by: number;
   approved_by: number | null;
+  declined_by: number | null;
+  declined_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -166,9 +168,12 @@ export async function declineNomination(
     throw new ValidationError(`Cannot decline nomination with status '${nomination.status}'`);
   }
 
+  // Record the decline in dedicated columns; approved_by stays null so a
+  // declined nomination never masquerades as approved (#R4).
   const updated = await db.update<PeerNomination>("peer_review_nominations", nominationId, {
     status: "declined",
-    approved_by: declinedBy,
+    declined_by: declinedBy,
+    declined_at: new Date(),
   });
 
   logger.info(`Peer nomination declined: ${nominationId} by user ${declinedBy}`);

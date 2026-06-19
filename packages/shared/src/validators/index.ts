@@ -92,6 +92,10 @@ export const rateCompetencySchema = z.object({
   comments: z.string().optional(),
 });
 
+export const reassignReviewerSchema = z.object({
+  reviewer_id: z.number().int(),
+});
+
 // ---------------------------------------------------------------------------
 // Competency Frameworks
 // ---------------------------------------------------------------------------

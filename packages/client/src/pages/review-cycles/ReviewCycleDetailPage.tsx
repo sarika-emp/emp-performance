@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -10,13 +10,16 @@ import {
   Settings,
   UserPlus,
   Trash2,
-  Calendar,
+  Search,
+  X,
+  Save,
 } from "lucide-react";
-import { apiGet, apiPost, apiDelete } from "@/api/client";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import type {
   ReviewCycle,
   ReviewCycleParticipant,
   RatingDistribution,
+  PaginatedResponse,
 } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 
@@ -34,6 +37,19 @@ type CycleDetail = ReviewCycle & {
   stats: { pending: number; submitted: number; draft: number };
 };
 
+type ParticipantWithNames = ReviewCycleParticipant & {
+  employee_name: string | null;
+  manager_name: string | null;
+};
+
+type OrgUser = {
+  id: number;
+  full_name: string;
+  email: string;
+  emp_code: string | null;
+  designation: string | null;
+};
+
 const TABS = ["participants", "ratings", "settings"] as const;
 type Tab = (typeof TABS)[number];
 
@@ -41,9 +57,19 @@ export function ReviewCycleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>("participants");
-  const [addEmployeeId, setAddEmployeeId] = useState("");
-  const [addManagerId, setAddManagerId] = useState("");
+
+  const editMode = searchParams.get("edit") === "1";
+
+  // ---- Participant picker state ----
+  const [pickerQuery, setPickerQuery] = useState("");
+  const [selected, setSelected] = useState<OrgUser[]>([]);
+  const [managerId, setManagerId] = useState("");
+
+  // ---- Participant list paging/search ----
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [participantPage, setParticipantPage] = useState(1);
 
   const { data: cycleData, isLoading } = useQuery({
     queryKey: ["review-cycle", id],
@@ -52,8 +78,13 @@ export function ReviewCycleDetailPage() {
   });
 
   const { data: participantsData } = useQuery({
-    queryKey: ["review-cycle-participants", id],
-    queryFn: () => apiGet<ReviewCycleParticipant[]>(`/review-cycles/${id}/participants`),
+    queryKey: ["review-cycle-participants", id, participantPage, participantSearch],
+    queryFn: () =>
+      apiGet<PaginatedResponse<ParticipantWithNames>>(`/review-cycles/${id}/participants`, {
+        page: participantPage,
+        perPage: 20,
+        search: participantSearch || undefined,
+      }),
     enabled: Boolean(id) && activeTab === "participants",
   });
 
@@ -63,9 +94,18 @@ export function ReviewCycleDetailPage() {
     enabled: Boolean(id) && activeTab === "ratings",
   });
 
+  // Employee picker search against the org user directory.
+  const { data: userSearchData, isFetching: searchingUsers } = useQuery({
+    queryKey: ["org-users", pickerQuery],
+    queryFn: () => apiGet<OrgUser[]>("/users", { q: pickerQuery || undefined, limit: 25 }),
+    enabled: pickerQuery.trim().length >= 2,
+  });
+
   const cycle = cycleData?.data;
-  const participants = participantsData?.data ?? [];
+  const participants = participantsData?.data?.data ?? [];
+  const participantTotalPages = participantsData?.data?.totalPages ?? 1;
   const distribution = distributionData?.data ?? [];
+  const userResults = userSearchData?.data ?? [];
 
   const launchMutation = useMutation({
     mutationFn: () => apiPost(`/review-cycles/${id}/launch`),
@@ -83,8 +123,9 @@ export function ReviewCycleDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["review-cycle-participants", id] });
       queryClient.invalidateQueries({ queryKey: ["review-cycle", id] });
-      setAddEmployeeId("");
-      setAddManagerId("");
+      setSelected([]);
+      setManagerId("");
+      setPickerQuery("");
     },
   });
 
@@ -115,17 +156,27 @@ export function ReviewCycleDetailPage() {
 
   const maxCount = Math.max(...distribution.map((d) => d.count), 1);
 
-  function handleAddParticipant(e: React.FormEvent) {
+  function toggleSelect(user: OrgUser) {
+    setSelected((prev) =>
+      prev.some((u) => u.id === user.id)
+        ? prev.filter((u) => u.id !== user.id)
+        : [...prev, user],
+    );
+  }
+
+  function handleBulkAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!addEmployeeId) return;
+    if (selected.length === 0) return;
+    const mgr = managerId ? Number(managerId) : undefined;
     addParticipantMutation.mutate({
-      participants: [
-        {
-          employee_id: Number(addEmployeeId),
-          manager_id: addManagerId ? Number(addManagerId) : undefined,
-        },
-      ],
+      participants: selected.map((u) => ({ employee_id: u.id, manager_id: mgr })),
     });
+  }
+
+  function closeEdit() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
   }
 
   return (
@@ -187,6 +238,9 @@ export function ReviewCycleDetailPage() {
         </div>
       )}
 
+      {/* Edit form (behind ?edit=1) */}
+      {editMode && <EditCycleForm cycle={cycle} onClose={closeEdit} />}
+
       {/* Info cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4">
@@ -234,49 +288,123 @@ export function ReviewCycleDetailPage() {
       {/* Tab content */}
       {activeTab === "participants" && (
         <div className="space-y-4">
-          {/* Add participant form */}
+          {/* Add participant — searchable employee picker + bulk add */}
           {(cycle.status === "draft" || cycle.status === "active") && (
-            <form onSubmit={handleAddParticipant} className="flex gap-3 items-end">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Employee ID
-                </label>
+            <form onSubmit={handleBulkAdd} className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
-                  type="number"
-                  value={addEmployeeId}
-                  onChange={(e) => setAddEmployeeId(e.target.value)}
-                  placeholder="Employee ID"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  type="text"
+                  value={pickerQuery}
+                  onChange={(e) => setPickerQuery(e.target.value)}
+                  placeholder="Search employees by name, email, or code..."
+                  className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Manager ID (optional)
-                </label>
-                <input
-                  type="number"
-                  value={addManagerId}
-                  onChange={(e) => setAddManagerId(e.target.value)}
-                  placeholder="Manager ID"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
+
+              {/* Search results */}
+              {pickerQuery.trim().length >= 2 && (
+                <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
+                  {searchingUsers ? (
+                    <p className="px-3 py-3 text-sm text-gray-400">Searching...</p>
+                  ) : userResults.length === 0 ? (
+                    <p className="px-3 py-3 text-sm text-gray-400">No matching employees.</p>
+                  ) : (
+                    userResults.map((u) => {
+                      const isSelected = selected.some((s) => s.id === u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => toggleSelect(u)}
+                          className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 ${
+                            isSelected ? "bg-brand-50" : ""
+                          }`}
+                        >
+                          <span>
+                            <span className="font-medium text-gray-900">{u.full_name}</span>
+                            <span className="ml-2 text-xs text-gray-400">
+                              {u.emp_code ?? u.email}
+                            </span>
+                          </span>
+                          {isSelected && <CheckCircle className="h-4 w-4 text-brand-600" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {/* Selected chips */}
+              {selected.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selected.map((u) => (
+                    <span
+                      key={u.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-700"
+                    >
+                      {u.full_name}
+                      <button type="button" onClick={() => toggleSelect(u)}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-end gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Manager ID (applied to all, optional)
+                  </label>
+                  <input
+                    type="number"
+                    value={managerId}
+                    onChange={(e) => setManagerId(e.target.value)}
+                    placeholder="Manager ID"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={addParticipantMutation.isPending || selected.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {addParticipantMutation.isPending
+                    ? "Adding..."
+                    : `Add ${selected.length > 0 ? selected.length : ""} participant${selected.length === 1 ? "" : "s"}`}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={addParticipantMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-              >
-                <UserPlus className="h-4 w-4" />
-                Add
-              </button>
+              {addParticipantMutation.isError && (
+                <p className="text-sm text-red-600">
+                  {(addParticipantMutation.error as any)?.response?.data?.error?.message ??
+                    "Failed to add participants."}
+                </p>
+              )}
             </form>
           )}
+
+          {/* Participant search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={participantSearch}
+              onChange={(e) => {
+                setParticipantSearch(e.target.value);
+                setParticipantPage(1);
+              }}
+              placeholder="Filter participants..."
+              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
 
           {/* Participants table */}
           {participants.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center">
               <Users className="mx-auto h-8 w-8 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">No participants added yet.</p>
+              <p className="mt-2 text-sm text-gray-500">No participants found.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white -mx-4 lg:mx-0">
@@ -284,10 +412,10 @@ export function ReviewCycleDetailPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Employee ID
+                      Employee
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Manager ID
+                      Manager
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Status
@@ -302,10 +430,10 @@ export function ReviewCycleDetailPage() {
                   {participants.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {p.employee_id}
+                        {p.employee_name ?? `Employee #${p.employee_id}`}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {p.manager_id ?? "--"}
+                        {p.manager_name ?? (p.manager_id ? `Manager #${p.manager_id}` : "--")}
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 capitalize">
@@ -318,7 +446,15 @@ export function ReviewCycleDetailPage() {
                       {cycle.status === "draft" && (
                         <td className="px-6 py-4 text-right">
                           <button
-                            onClick={() => removeParticipantMutation.mutate(p.id)}
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  `Remove ${p.employee_name ?? `employee #${p.employee_id}`} from this cycle?`,
+                                )
+                              ) {
+                                removeParticipantMutation.mutate(p.id);
+                              }
+                            }}
                             className="text-red-400 hover:text-red-600"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -329,6 +465,31 @@ export function ReviewCycleDetailPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Participant pagination */}
+          {participantTotalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                Page {participantPage} of {participantTotalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={participantPage <= 1}
+                  onClick={() => setParticipantPage((p) => p - 1)}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={participantPage >= participantTotalPages}
+                  onClick={() => setParticipantPage((p) => p + 1)}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -374,7 +535,22 @@ export function ReviewCycleDetailPage() {
 
       {activeTab === "settings" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Cycle Settings</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Cycle Settings</h3>
+            {cycle.status !== "completed" && cycle.status !== "cancelled" && (
+              <button
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.set("edit", "1");
+                  setSearchParams(next);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <Settings className="h-4 w-4" />
+                Edit
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase">Type</p>
@@ -423,5 +599,154 @@ export function ReviewCycleDetailPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Edit cycle form (rendered when ?edit=1). PUTs the editable fields (#R5).
+// ---------------------------------------------------------------------------
+function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(cycle.name);
+  const [description, setDescription] = useState(cycle.description ?? "");
+  const [startDate, setStartDate] = useState(cycle.start_date?.slice(0, 10) ?? "");
+  const [endDate, setEndDate] = useState(cycle.end_date?.slice(0, 10) ?? "");
+  const [reviewDeadline, setReviewDeadline] = useState(
+    cycle.review_deadline?.slice(0, 10) ?? "",
+  );
+
+  // Keep the form in sync if the underlying cycle changes (e.g. refetch).
+  useEffect(() => {
+    setName(cycle.name);
+    setDescription(cycle.description ?? "");
+    setStartDate(cycle.start_date?.slice(0, 10) ?? "");
+    setEndDate(cycle.end_date?.slice(0, 10) ?? "");
+    setReviewDeadline(cycle.review_deadline?.slice(0, 10) ?? "");
+  }, [cycle]);
+
+  const updateMutation = useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      apiPut(`/review-cycles/${cycle.id}`, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["review-cycle", cycle.id] });
+      onClose();
+    },
+  });
+
+  const dateError = useMemo(
+    () => Boolean(startDate && endDate && endDate < startDate),
+    [startDate, endDate],
+  );
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (dateError) return;
+    updateMutation.mutate({
+      name,
+      description: description || undefined,
+      start_date: startDate,
+      end_date: endDate,
+      review_deadline: reviewDeadline || undefined,
+    });
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-lg border border-brand-200 bg-brand-50/40 p-6 space-y-4"
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Edit Cycle</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          minLength={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            required
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            required
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Review Deadline</label>
+          <input
+            type="date"
+            value={reviewDeadline}
+            onChange={(e) => setReviewDeadline(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+      </div>
+
+      {dateError && (
+        <p className="text-sm text-red-600">End date cannot be before start date.</p>
+      )}
+      {updateMutation.isError && (
+        <p className="text-sm text-red-600">
+          {(updateMutation.error as any)?.response?.data?.error?.message ??
+            "Failed to update cycle."}
+        </p>
+      )}
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={updateMutation.isPending || dateError}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          <Save className="h-4 w-4" />
+          {updateMutation.isPending ? "Saving..." : "Save Changes"}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

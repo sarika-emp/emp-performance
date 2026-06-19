@@ -26,6 +26,9 @@ const ReviewPage = lazy(() =>
 const MyReviewsPage = lazy(() =>
   import("@/pages/review-cycles/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
 );
+const MyReviewFormPage = lazy(() =>
+  import("@/pages/self-service/MyReviewFormPage").then((m) => ({ default: m.MyReviewFormPage })),
+);
 
 // Goals
 const GoalListPage = lazy(() =>
@@ -176,6 +179,7 @@ export function AppRoutes() {
         <Route path="/review-cycles/new" element={<ReviewCycleCreatePage />} />
         <Route path="/review-cycles/:id" element={<ReviewCycleDetailPage />} />
         <Route path="/reviews/my" element={<MyReviewsPage />} />
+        <Route path="/reviews/:id/edit" element={<MyReviewFormPage />} />
         <Route path="/reviews/:id" element={<ReviewPage />} />
 
         {/* Goals */}

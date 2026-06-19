@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { getDB } from "../../db/adapters";
 import { NotFoundError, ValidationError, AppError } from "../../utils/errors";
+import { findUserById } from "../../db/empcloud";
 import type {
   ReviewCycle,
   ReviewCycleParticipant,
@@ -8,6 +9,20 @@ import type {
   RatingDistribution,
   Review,
 } from "@emp-performance/shared";
+
+// Columns that may be used in an ORDER BY for the cycle list. Anything not in
+// this set falls back to created_at, preventing SQL injection through the
+// client-supplied `sort` query param (#R3).
+const CYCLE_SORTABLE_COLUMNS = new Set([
+  "created_at",
+  "updated_at",
+  "name",
+  "type",
+  "status",
+  "start_date",
+  "end_date",
+  "review_deadline",
+]);
 
 // ---------------------------------------------------------------------------
 // Cycle CRUD
@@ -95,7 +110,11 @@ export async function listCycles(
     const term = `%${search}%`;
     args.push(term, term);
 
-    const orderField = params.sort ?? "created_at";
+    // Whitelist the sort column and bind the direction so neither can be used
+    // to inject SQL through the ORDER BY clause (#R3).
+    const orderField = CYCLE_SORTABLE_COLUMNS.has(params.sort ?? "")
+      ? (params.sort as string)
+      : "created_at";
     const orderDir = (params.order ?? "desc").toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     const rowsRes = await db.raw<any>(
@@ -223,7 +242,78 @@ export async function launchCycle(orgId: number, id: string): Promise<ReviewCycl
     throw new ValidationError("Cannot launch a cycle with no participants");
   }
 
-  return db.update<ReviewCycle>("review_cycles", id, { status: "active" } as any);
+  // Generate the review rows for every participant so reviewers actually have
+  // something to fill in once the cycle is live (#R2). Previously launch only
+  // flipped the status and no reviews were ever created.
+  const launched = await db.update<ReviewCycle>("review_cycles", id, { status: "active" } as any);
+  await generateReviewsForCycle(orgId, id);
+  return launched;
+}
+
+// Creates the self + manager (+ approved peer) review rows for each cycle
+// participant. Idempotent: skips any (employee, reviewer, type) tuple that
+// already exists, so re-running after adding participants is safe.
+export async function generateReviewsForCycle(orgId: number, cycleId: string): Promise<number> {
+  const db = getDB();
+
+  const participants = await db.findMany<ReviewCycleParticipant>("review_cycle_participants", {
+    filters: { cycle_id: cycleId },
+    limit: 100000,
+  });
+
+  // Approved peer nominations grouped by employee.
+  const approvedPeers = await db.findMany<{ employee_id: number; nominee_id: number }>(
+    "peer_review_nominations",
+    { filters: { cycle_id: cycleId, status: "approved" }, limit: 100000 },
+  );
+  const peersByEmployee = new Map<number, number[]>();
+  for (const nom of approvedPeers.data) {
+    const list = peersByEmployee.get(nom.employee_id) ?? [];
+    list.push(nom.nominee_id);
+    peersByEmployee.set(nom.employee_id, list);
+  }
+
+  let created = 0;
+  for (const participant of participants.data) {
+    const targets: { reviewer_id: number; type: string }[] = [
+      { reviewer_id: participant.employee_id, type: "self" },
+    ];
+    if (participant.manager_id) {
+      targets.push({ reviewer_id: participant.manager_id, type: "manager" });
+    }
+    for (const peerId of peersByEmployee.get(participant.employee_id) ?? []) {
+      targets.push({ reviewer_id: peerId, type: "peer" });
+    }
+
+    for (const t of targets) {
+      const existing = await db.findOne<Review>("reviews", {
+        cycle_id: cycleId,
+        employee_id: participant.employee_id,
+        reviewer_id: t.reviewer_id,
+        type: t.type,
+        organization_id: orgId,
+      });
+      if (existing) continue;
+
+      await db.create<Review>("reviews", {
+        id: uuidv4(),
+        organization_id: orgId,
+        cycle_id: cycleId,
+        employee_id: participant.employee_id,
+        reviewer_id: t.reviewer_id,
+        type: t.type,
+        status: "pending",
+        overall_rating: null,
+        summary: null,
+        strengths: null,
+        improvements: null,
+        submitted_at: null,
+      } as any);
+      created++;
+    }
+  }
+
+  return created;
 }
 
 export async function closeCycle(orgId: number, id: string): Promise<ReviewCycle> {
@@ -262,6 +352,10 @@ export async function closeCycle(orgId: number, id: string): Promise<ReviewCycle
     }
   }
 
+  // Persist the rating distribution snapshot so analytics/exports can read it
+  // back without recomputing over thousands of reviews on every request (#R11).
+  await persistRatingDistribution(orgId, id);
+
   const closedCycle = await db.update<ReviewCycle>("review_cycles", id, { status: "completed" } as any);
 
   // Notify EMP Cloud about the cycle completion (non-blocking)
@@ -284,6 +378,65 @@ export async function closeCycle(orgId: number, id: string): Promise<ReviewCycle
   }
 
   return closedCycle;
+}
+
+// Move a cycle into an explicit intermediate workflow state. Allowed forward
+// transitions: active -> in_review -> calibration (#R8).
+const FORWARD_TRANSITIONS: Record<string, string[]> = {
+  active: ["in_review"],
+  in_review: ["calibration", "active"],
+  calibration: ["in_review"],
+};
+
+export async function transitionCycle(
+  orgId: number,
+  id: string,
+  toStatus: "in_review" | "calibration" | "active",
+): Promise<ReviewCycle> {
+  const db = getDB();
+  const cycle = await db.findOne<ReviewCycle>("review_cycles", {
+    id,
+    organization_id: orgId,
+  });
+  if (!cycle) throw new NotFoundError("ReviewCycle", id);
+
+  const allowed = FORWARD_TRANSITIONS[cycle.status] ?? [];
+  if (!allowed.includes(toStatus)) {
+    throw new ValidationError(
+      `Cannot move a '${cycle.status}' cycle to '${toStatus}'`,
+    );
+  }
+
+  return db.update<ReviewCycle>("review_cycles", id, { status: toStatus } as any);
+}
+
+// Reopen a completed cycle back to active so reviews can be corrected or added.
+// Clears the participants' completed status/final rating so closing recomputes
+// them cleanly (#R8).
+export async function reopenCycle(orgId: number, id: string): Promise<ReviewCycle> {
+  const db = getDB();
+  const cycle = await db.findOne<ReviewCycle>("review_cycles", {
+    id,
+    organization_id: orgId,
+  });
+  if (!cycle) throw new NotFoundError("ReviewCycle", id);
+  if (cycle.status !== "completed") {
+    throw new ValidationError("Only completed cycles can be reopened");
+  }
+
+  const participants = await db.findMany<ReviewCycleParticipant>("review_cycle_participants", {
+    filters: { cycle_id: id },
+    limit: 100000,
+  });
+  for (const participant of participants.data) {
+    if (participant.status === "completed") {
+      await db.update("review_cycle_participants", participant.id, {
+        status: "pending",
+      } as any);
+    }
+  }
+
+  return db.update<ReviewCycle>("review_cycles", id, { status: "active" } as any);
 }
 
 // ---------------------------------------------------------------------------
@@ -328,10 +481,21 @@ export async function addParticipants(
   return created;
 }
 
+export type ParticipantWithNames = ReviewCycleParticipant & {
+  employee_name: string | null;
+  manager_name: string | null;
+};
+
 export async function listParticipants(
   orgId: number,
   cycleId: string,
-): Promise<ReviewCycleParticipant[]> {
+  params: {
+    page?: number;
+    perPage?: number;
+    status?: string;
+    search?: string;
+  } = {},
+): Promise<{ data: ParticipantWithNames[]; total: number; page: number; perPage: number }> {
   const db = getDB();
   const cycle = await db.findOne<ReviewCycle>("review_cycles", {
     id: cycleId,
@@ -339,10 +503,85 @@ export async function listParticipants(
   });
   if (!cycle) throw new NotFoundError("ReviewCycle", cycleId);
 
+  const page = params.page ?? 1;
+  const perPage = params.perPage ?? 20;
+
+  const filters: Record<string, any> = { cycle_id: cycleId };
+  if (params.status) filters.status = params.status;
+
   const result = await db.findMany<ReviewCycleParticipant>("review_cycle_participants", {
-    filters: { cycle_id: cycleId },
+    page,
+    limit: perPage,
+    filters,
+    sort: { field: "created_at", order: "desc" },
   });
-  return result.data;
+
+  // Resolve EmpCloud names so the UI does not have to render raw ids (#R7/#R6).
+  const ids = new Set<number>();
+  for (const p of result.data) {
+    ids.add(p.employee_id);
+    if (p.manager_id) ids.add(p.manager_id);
+  }
+  const nameMap = await resolveUserNames(orgId, [...ids]);
+
+  let withNames: ParticipantWithNames[] = result.data.map((p) => ({
+    ...p,
+    employee_name: nameMap.get(p.employee_id) ?? null,
+    manager_name: p.manager_id ? nameMap.get(p.manager_id) ?? null : null,
+  }));
+
+  // Free-text search runs over the resolved names + ids for the current page
+  // worth of rows. (Participant counts per cycle are bounded, so an in-memory
+  // filter is acceptable and keeps name resolution in one place.)
+  const search = (params.search ?? "").trim().toLowerCase();
+  let total = result.total;
+  if (search) {
+    const allRows = await db.findMany<ReviewCycleParticipant>("review_cycle_participants", {
+      filters,
+      limit: 100000,
+    });
+    const allIds = new Set<number>();
+    for (const p of allRows.data) {
+      allIds.add(p.employee_id);
+      if (p.manager_id) allIds.add(p.manager_id);
+    }
+    const allNames = await resolveUserNames(orgId, [...allIds]);
+    const matched = allRows.data
+      .map((p) => ({
+        ...p,
+        employee_name: allNames.get(p.employee_id) ?? null,
+        manager_name: p.manager_id ? allNames.get(p.manager_id) ?? null : null,
+      }))
+      .filter((p) => {
+        const hay = `${p.employee_name ?? ""} ${p.manager_name ?? ""} ${p.employee_id} ${p.manager_id ?? ""}`.toLowerCase();
+        return hay.includes(search);
+      });
+    total = matched.length;
+    const start = (page - 1) * perPage;
+    withNames = matched.slice(start, start + perPage);
+  }
+
+  return { data: withNames, total, page, perPage };
+}
+
+// Resolve a set of EmpCloud user ids to "First Last" display names, scoped to
+// the org. Missing/foreign users resolve to null. Lookups are best-effort:
+// if the EmpCloud DB is unavailable we degrade to ids only.
+async function resolveUserNames(orgId: number, ids: number[]): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const user = await findUserById(id);
+        if (user && user.organization_id === orgId) {
+          map.set(id, `${user.first_name} ${user.last_name}`.trim());
+        }
+      } catch {
+        // ignore — leave unresolved
+      }
+    }),
+  );
+  return map;
 }
 
 export async function removeParticipant(
@@ -384,13 +623,42 @@ export async function getRatingsDistribution(
   });
   if (!cycle) throw new NotFoundError("ReviewCycle", cycleId);
 
-  // Get all submitted reviews for this cycle
+  // Completed cycles read the persisted snapshot written at close time, so we
+  // don't recompute over potentially thousands of reviews on each request (#R11).
+  if (cycle.status === "completed") {
+    const persisted = await db.findMany<RatingDistribution & { rating: number }>(
+      "rating_distributions",
+      { filters: { organization_id: orgId, cycle_id: cycleId }, limit: 10 },
+    );
+    if (persisted.data.length > 0) {
+      const byRating = new Map<number, RatingDistribution>();
+      for (const row of persisted.data) {
+        byRating.set(row.rating, {
+          rating: row.rating,
+          count: row.count,
+          percentage: Number(row.percentage),
+        });
+      }
+      return [1, 2, 3, 4, 5].map(
+        (rating) => byRating.get(rating) ?? { rating, count: 0, percentage: 0 },
+      );
+    }
+  }
+
+  return computeRatingDistribution(orgId, cycleId);
+}
+
+// Compute the live 1-5 bell-curve distribution from submitted reviews.
+async function computeRatingDistribution(
+  orgId: number,
+  cycleId: string,
+): Promise<RatingDistribution[]> {
+  const db = getDB();
   const reviews = await db.findMany<Review>("reviews", {
     filters: { cycle_id: cycleId, organization_id: orgId, status: "submitted" },
     limit: 10000,
   });
 
-  // Bucket ratings 1-5
   const buckets: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let total = 0;
 
@@ -408,4 +676,30 @@ export async function getRatingsDistribution(
     count: buckets[rating],
     percentage: total > 0 ? Math.round((buckets[rating] / total) * 10000) / 100 : 0,
   }));
+}
+
+// Recompute and persist the distribution snapshot for a cycle (one row per
+// rating bucket). Replaces any previous snapshot for the cycle (#R11).
+async function persistRatingDistribution(orgId: number, cycleId: string): Promise<void> {
+  const db = getDB();
+  const distribution = await computeRatingDistribution(orgId, cycleId);
+
+  const existing = await db.findMany<{ id: string }>("rating_distributions", {
+    filters: { organization_id: orgId, cycle_id: cycleId },
+    limit: 100,
+  });
+  for (const row of existing.data) {
+    await db.delete("rating_distributions", row.id);
+  }
+
+  for (const bucket of distribution) {
+    await db.create("rating_distributions", {
+      id: uuidv4(),
+      organization_id: orgId,
+      cycle_id: cycleId,
+      rating: bucket.rating,
+      count: bucket.count,
+      percentage: bucket.percentage,
+    } as any);
+  }
 }

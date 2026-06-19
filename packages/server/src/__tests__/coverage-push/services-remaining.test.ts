@@ -295,7 +295,10 @@ describe("Review Service", () => {
   beforeAll(async () => { svc = await import("../../services/review/review.service"); });
 
   it("createReview creates", async () => {
-    mockDB.findOne.mockResolvedValue({ id: "c1", status: "active" });
+    // 1st findOne resolves the cycle; 2nd is the duplicate guard (none exists).
+    mockDB.findOne
+      .mockResolvedValueOnce({ id: "c1", status: "active" })
+      .mockResolvedValueOnce(null);
     const r = await svc.createReview(ORG, {
       cycle_id: "c1", employee_id: 522, reviewer_id: 100, type: "manager" as any,
     } as any);
