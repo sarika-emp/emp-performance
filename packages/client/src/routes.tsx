@@ -6,8 +6,26 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 const LoginPage = lazy(() =>
   import("@/pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+const RegisterPage = lazy(() =>
+  import("@/pages/auth/RegisterPage").then((m) => ({ default: m.RegisterPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/auth/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/pages/auth/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })),
+);
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+);
+const ProfilePage = lazy(() =>
+  import("@/pages/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })),
+);
+const NotificationsPage = lazy(() =>
+  import("@/pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage })),
+);
+const NotificationLogPage = lazy(() =>
+  import("@/pages/settings/NotificationLogPage").then((m) => ({ default: m.NotificationLogPage })),
 );
 
 // Review Cycles
@@ -192,10 +210,15 @@ export function AppRoutes() {
     <>
       {/* Public auth */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected routes inside DashboardLayout */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Review Cycles */}
         <Route path="/review-cycles" element={<ReviewCycleListPage />} />
@@ -276,6 +299,7 @@ export function AppRoutes() {
 
         {/* Settings */}
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/notification-log" element={<NotificationLogPage />} />
       </Route>
 
       {/* 404 */}

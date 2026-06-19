@@ -28,6 +28,7 @@ import {
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
 import { BackToDashboard } from "@/components/BackToDashboard";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type Role = "org_admin" | "hr_admin" | "hr_manager" | "employee";
 
@@ -183,10 +184,17 @@ export function DashboardLayout() {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
-              {getInitials(displayName)}
-            </div>
-            <span className="hidden md:block text-sm font-medium text-gray-700">{displayName}</span>
+            <NotificationBell />
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-gray-50"
+              title="My profile"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
+                {getInitials(displayName)}
+              </div>
+              <span className="hidden md:block text-sm font-medium text-gray-700">{displayName}</span>
+            </NavLink>
           </div>
         </header>
 

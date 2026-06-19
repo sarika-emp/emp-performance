@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Settings, Save, Bell, Star, Award, Send, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Settings, Save, Bell, Star, Award, Send, Loader2, ScrollText } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPut, apiPost } from "@/api/client";
 
@@ -345,6 +346,24 @@ function NotificationSettingsPanel() {
             Applies to review deadlines and goal due dates. Range: 1-14 days.
           </p>
         </div>
+      </div>
+
+      {/* Delivery Log */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <ScrollText className="h-5 w-5 text-gray-400" />
+          <h2 className="text-lg font-semibold text-gray-900">Delivery Log</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Review which reminders and emails were sent (and which failed) across your organization.
+        </p>
+        <Link
+          to="/settings/notification-log"
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          <ScrollText className="h-4 w-4" />
+          View Notification Log
+        </Link>
       </div>
 
       {/* Test Email */}

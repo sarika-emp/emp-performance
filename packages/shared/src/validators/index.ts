@@ -533,3 +533,86 @@ export const previewLetterTemplateSchema = z.object({
   employee_id: z.coerce.number().int().positive().optional(),
   cycle_id: z.string().uuid().nullable().optional(),
 });
+
+// ---------------------------------------------------------------------------
+// Auth & account management (Batch 9 — platform)
+// ---------------------------------------------------------------------------
+
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(128);
+
+export const loginSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(1).max(128),
+});
+
+export const registerSchema = z.object({
+  orgName: z.string().min(1).max(255),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  password: passwordSchema,
+  country: z.string().min(2).max(64).optional(),
+});
+
+export const ssoSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email().max(255),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: passwordSchema,
+});
+
+// ---------------------------------------------------------------------------
+// Notifications (Batch 9 — platform)
+// ---------------------------------------------------------------------------
+
+export const notificationListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  perPage: z.coerce.number().int().min(1).max(100).optional(),
+  per_page: z.coerce.number().int().min(1).max(100).optional(),
+  unreadOnly: z
+    .union([z.boolean(), z.enum(["true", "false"])])
+    .optional()
+    .transform((v) => v === true || v === "true"),
+});
+
+export const notificationLogQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  perPage: z.coerce.number().int().min(1).max(100).optional(),
+  per_page: z.coerce.number().int().min(1).max(100).optional(),
+  status: z.enum(["sent", "failed"]).optional(),
+  category: z.string().max(64).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Notification / general settings (Batch 9 — PL7)
+// ---------------------------------------------------------------------------
+
+export const updateNotificationSettingsSchema = z
+  .object({
+    review_reminders_enabled: z.boolean().optional(),
+    pip_reminders_enabled: z.boolean().optional(),
+    meeting_reminders_enabled: z.boolean().optional(),
+    goal_reminders_enabled: z.boolean().optional(),
+    reminder_days_before_deadline: z.coerce.number().int().min(1).max(60).optional(),
+    rating_scale: z.coerce.number().int().min(2).max(10).optional(),
+    default_framework: z.string().max(255).optional(),
+  })
+  .strict();

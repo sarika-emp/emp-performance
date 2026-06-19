@@ -41,6 +41,20 @@ export const config = {
     refreshExpiry: process.env.JWT_REFRESH_EXPIRY || "7d",
   },
 
+  // SSO — EMP Cloud signs its SSO tokens with RS256. Provide the matching
+  // public key (PEM, with literal \n escaped in the env var) to enable
+  // cryptographic signature verification of inbound SSO tokens.
+  sso: {
+    // EMP Cloud RS256 public key for verifying SSO token signatures.
+    publicKey: (process.env.EMPCLOUD_SSO_PUBLIC_KEY || "").replace(/\\n/g, "\n"),
+    // Issuer/audience claims to enforce when present (optional).
+    issuer: process.env.EMPCLOUD_SSO_ISSUER || undefined,
+    audience: process.env.EMPCLOUD_SSO_AUDIENCE || undefined,
+  },
+
+  // Public base URL of the client app (used to build password-reset links).
+  appUrl: process.env.APP_URL || process.env.CORS_ORIGIN?.split(",")[0] || "http://localhost:5177",
+
   // Email (review reminders, PIP notifications)
   email: {
     host: process.env.SMTP_HOST || "localhost",

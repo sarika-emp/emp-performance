@@ -2,6 +2,13 @@
 // REMINDER JOB PROCESSORS
 // BullMQ job handlers that query the database for upcoming deadlines and
 // send the appropriate email reminders.
+//
+// Every processor accepts an optional `orgId`:
+//   - undefined  -> process all organizations (scheduled global cron)
+//   - <number>   -> process only that org (manual admin trigger; PL5)
+//
+// Queries are date-range scoped at the DB level rather than loading whole
+// tables into memory (PL10).
 // ============================================================================
 
 import dayjs from "dayjs";
@@ -14,6 +21,7 @@ import {
   sendGoalDeadlineReminder,
 } from "../services/email/email.service";
 import { getNotificationSettings } from "../services/notification/notification-settings.service";
+import { logDelivery } from "../services/notification/notification.service";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -34,21 +42,43 @@ async function lookupUser(userId: number): Promise<EmpCloudUser | null> {
   }
 }
 
+/** Build a filter object scoped to a single org when an id is supplied. */
+function orgFilter(orgId?: number): Record<string, any> {
+  return orgId ? { organization_id: orgId } : {};
+}
+
+// Settings are looked up once per org per run.
+function makeSettingsCache() {
+  const cache = new Map<number, Awaited<ReturnType<typeof getNotificationSettings>>>();
+  return async (org: number) => {
+    if (!cache.has(org)) cache.set(org, await getNotificationSettings(org));
+    return cache.get(org)!;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Review Deadline Reminder
-// Finds active review cycles where the review_deadline is within N days
-// (configurable via org notification settings, default 3).
-// Sends reminders to participants with pending/draft reviews.
+// Finds active review cycles whose review_deadline falls within the configured
+// window and reminds participants with pending reviews.
 // ---------------------------------------------------------------------------
 
-export async function processReviewDeadlineReminders(): Promise<void> {
-  logger.info("Processing review deadline reminders...");
+export async function processReviewDeadlineReminders(orgId?: number): Promise<void> {
+  logger.info(`Processing review deadline reminders${orgId ? ` (org ${orgId})` : ""}...`);
   const db = getDB();
+  const getSettings = makeSettingsCache();
 
   try {
-    // Get all active cycles
+    const today = dayjs();
+    // Upper bound: longest plausible reminder window. We still re-check per-org
+    // settings below, but bounding the query keeps it from scanning history.
+    const horizon = today.add(60, "day").endOf("day").toDate();
+
     const cycles = await db.findMany<any>("review_cycles", {
-      filters: { status: "active" },
+      filters: {
+        ...orgFilter(orgId),
+        status: "active",
+        review_deadline: { op: "<=", value: horizon },
+      },
       limit: 10000,
     });
 
@@ -57,16 +87,13 @@ export async function processReviewDeadlineReminders(): Promise<void> {
     for (const cycle of cycles.data) {
       if (!cycle.review_deadline) continue;
 
-      // Load org notification settings
-      const settings = await getNotificationSettings(cycle.organization_id);
+      const settings = await getSettings(cycle.organization_id);
       if (!settings.review_reminders_enabled) continue;
 
       const deadline = dayjs(cycle.review_deadline);
-      const daysUntil = deadline.diff(dayjs(), "day");
-
+      const daysUntil = deadline.diff(today, "day");
       if (daysUntil < 0 || daysUntil > settings.reminder_days_before_deadline) continue;
 
-      // Find participants with pending reviews
       const participants = await db.findMany<any>("review_cycle_participants", {
         filters: { cycle_id: cycle.id, status: "pending" },
         limit: 10000,
@@ -85,8 +112,23 @@ export async function processReviewDeadlineReminders(): Promise<void> {
             cycle.type ?? "performance",
           );
           sentCount++;
+          await logDelivery({
+            organizationId: cycle.organization_id,
+            category: "review_reminder",
+            recipient: user.email,
+            subject: `Review reminder: ${cycle.name}`,
+            status: "sent",
+          });
         } catch (err) {
           logger.error(`Failed to send review reminder to ${user.email}:`, err);
+          await logDelivery({
+            organizationId: cycle.organization_id,
+            category: "review_reminder",
+            recipient: user.email,
+            subject: `Review reminder: ${cycle.name}`,
+            status: "failed",
+            error: (err as Error).message,
+          });
         }
       }
     }
@@ -99,19 +141,17 @@ export async function processReviewDeadlineReminders(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// PIP Check-In Reminder
-// Finds active PIPs and sends weekly check-in reminders to both the employee
-// and the manager. Runs daily but only sends on the same weekday the PIP
-// was created (or every Monday as fallback).
+// PIP Check-In Reminder — weekly reminders to employee + manager.
 // ---------------------------------------------------------------------------
 
-export async function processPIPCheckInReminders(): Promise<void> {
-  logger.info("Processing PIP check-in reminders...");
+export async function processPIPCheckInReminders(orgId?: number): Promise<void> {
+  logger.info(`Processing PIP check-in reminders${orgId ? ` (org ${orgId})` : ""}...`);
   const db = getDB();
+  const getSettings = makeSettingsCache();
 
   try {
     const pips = await db.findMany<any>("performance_improvement_plans", {
-      filters: { status: "active" },
+      filters: { ...orgFilter(orgId), status: "active" },
       limit: 10000,
     });
 
@@ -119,48 +159,47 @@ export async function processPIPCheckInReminders(): Promise<void> {
     const today = dayjs();
 
     for (const pip of pips.data) {
-      const settings = await getNotificationSettings(pip.organization_id);
+      const settings = await getSettings(pip.organization_id);
       if (!settings.pip_reminders_enabled) continue;
 
-      // Send weekly — check if today is the same day of week as PIP creation, or Monday
       const createdDay = dayjs(pip.created_at).day();
-      const sendDay = createdDay || 1; // default to Monday (1) if Sunday (0)
+      const sendDay = createdDay || 1;
       if (today.day() !== sendDay) continue;
 
       const pipTitle = pip.title || pip.reason?.substring(0, 50) || "Performance Improvement Plan";
       const nextCheckIn = today.format("YYYY-MM-DD");
 
-      // Notify employee
-      const employee = await lookupUser(pip.employee_id);
-      if (employee) {
+      const recipients: number[] = [pip.employee_id];
+      if (pip.manager_id) recipients.push(pip.manager_id);
+
+      for (const recipientId of recipients) {
+        const person = await lookupUser(recipientId);
+        if (!person) continue;
         try {
           await sendPIPCheckInReminder(
-            employee.email,
-            `${employee.first_name} ${employee.last_name}`,
+            person.email,
+            `${person.first_name} ${person.last_name}`,
             pipTitle,
             nextCheckIn,
           );
           sentCount++;
+          await logDelivery({
+            organizationId: pip.organization_id,
+            category: "pip_reminder",
+            recipient: person.email,
+            subject: `PIP check-in: ${pipTitle}`,
+            status: "sent",
+          });
         } catch (err) {
-          logger.error(`Failed to send PIP reminder to employee ${employee.email}:`, err);
-        }
-      }
-
-      // Notify manager
-      if (pip.manager_id) {
-        const manager = await lookupUser(pip.manager_id);
-        if (manager) {
-          try {
-            await sendPIPCheckInReminder(
-              manager.email,
-              `${manager.first_name} ${manager.last_name}`,
-              pipTitle,
-              nextCheckIn,
-            );
-            sentCount++;
-          } catch (err) {
-            logger.error(`Failed to send PIP reminder to manager ${manager.email}:`, err);
-          }
+          logger.error(`Failed to send PIP reminder to ${person.email}:`, err);
+          await logDelivery({
+            organizationId: pip.organization_id,
+            category: "pip_reminder",
+            recipient: person.email,
+            subject: `PIP check-in: ${pipTitle}`,
+            status: "failed",
+            error: (err as Error).message,
+          });
         }
       }
     }
@@ -173,24 +212,26 @@ export async function processPIPCheckInReminders(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// One-on-One Meeting Reminder
-// Finds meetings scheduled for tomorrow and sends reminders to both parties.
+// One-on-One Meeting Reminder — meetings scheduled for tomorrow.
 // ---------------------------------------------------------------------------
 
-export async function processOneOnOneReminders(): Promise<void> {
-  logger.info("Processing 1-on-1 meeting reminders...");
+export async function processOneOnOneReminders(orgId?: number): Promise<void> {
+  logger.info(`Processing 1-on-1 meeting reminders${orgId ? ` (org ${orgId})` : ""}...`);
   const db = getDB();
+  const getSettings = makeSettingsCache();
 
   try {
     const tomorrow = dayjs().add(1, "day");
-    const tomorrowStart = tomorrow.startOf("day").toISOString();
-    const tomorrowEnd = tomorrow.endOf("day").toISOString();
+    const tomorrowStart = tomorrow.startOf("day").toDate();
+    const tomorrowEnd = tomorrow.endOf("day").toDate();
 
-    // Find meetings scheduled for tomorrow
-    // We query all scheduled meetings and filter by date range in-memory
-    // since the DB adapter uses simple equality filters
+    // DB-side date range rather than loading all scheduled meetings (PL10).
     const meetings = await db.findMany<any>("one_on_one_meetings", {
-      filters: { status: "scheduled" },
+      filters: {
+        ...orgFilter(orgId),
+        status: "scheduled",
+        scheduled_at: { op: ">=", value: tomorrowStart },
+      },
       limit: 10000,
     });
 
@@ -198,15 +239,13 @@ export async function processOneOnOneReminders(): Promise<void> {
 
     for (const meeting of meetings.data) {
       const scheduledAt = dayjs(meeting.scheduled_at);
-      if (!scheduledAt.isAfter(tomorrowStart) || !scheduledAt.isBefore(tomorrowEnd)) continue;
+      if (scheduledAt.toDate() > tomorrowEnd) continue;
 
-      // Check org notification settings
-      const settings = await getNotificationSettings(meeting.organization_id);
+      const settings = await getSettings(meeting.organization_id);
       if (!settings.meeting_reminders_enabled) continue;
 
       const manager = await lookupUser(meeting.manager_id);
       const employee = await lookupUser(meeting.employee_id);
-
       if (!manager || !employee) continue;
 
       try {
@@ -217,8 +256,23 @@ export async function processOneOnOneReminders(): Promise<void> {
           scheduledAt.format("YYYY-MM-DD HH:mm"),
         );
         sentCount++;
+        await logDelivery({
+          organizationId: meeting.organization_id,
+          category: "meeting_reminder",
+          recipient: `${manager.email}, ${employee.email}`,
+          subject: `1-on-1 reminder: ${meeting.title}`,
+          status: "sent",
+        });
       } catch (err) {
         logger.error(`Failed to send meeting reminder for ${meeting.id}:`, err);
+        await logDelivery({
+          organizationId: meeting.organization_id,
+          category: "meeting_reminder",
+          recipient: `${manager.email}, ${employee.email}`,
+          subject: `1-on-1 reminder: ${meeting.title}`,
+          status: "failed",
+          error: (err as Error).message,
+        });
       }
     }
 
@@ -230,34 +284,40 @@ export async function processOneOnOneReminders(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Goal Deadline Reminder
-// Finds goals with due dates within N days (default 3) that are not completed.
+// Goal Deadline Reminder — goals due within the configured window.
 // ---------------------------------------------------------------------------
 
-export async function processGoalDeadlineReminders(): Promise<void> {
-  logger.info("Processing goal deadline reminders...");
+export async function processGoalDeadlineReminders(orgId?: number): Promise<void> {
+  logger.info(`Processing goal deadline reminders${orgId ? ` (org ${orgId})` : ""}...`);
   const db = getDB();
+  const getSettings = makeSettingsCache();
 
   try {
-    // Get all non-completed, non-cancelled goals
+    const today = dayjs();
+    const horizon = today.add(60, "day").endOf("day").toDate();
+
+    // DB-side filter: only goals due on/before the horizon. The completed /
+    // cancelled statuses are skipped in the loop below (the adapter has no
+    // "not in" operator, so this stays a cheap post-filter on a bounded set).
     const goals = await db.findMany<any>("goals", {
-      filters: {},
+      filters: {
+        ...orgFilter(orgId),
+        due_date: { op: "<=", value: horizon },
+      },
       limit: 100000,
     });
 
     let sentCount = 0;
-    const today = dayjs();
 
     for (const goal of goals.data) {
       if (!goal.due_date) continue;
       if (goal.status === "completed" || goal.status === "cancelled") continue;
 
-      const settings = await getNotificationSettings(goal.organization_id);
+      const settings = await getSettings(goal.organization_id);
       if (!settings.goal_reminders_enabled) continue;
 
       const dueDate = dayjs(goal.due_date);
       const daysUntil = dueDate.diff(today, "day");
-
       if (daysUntil < 0 || daysUntil > settings.reminder_days_before_deadline) continue;
 
       const user = await lookupUser(goal.employee_id);
@@ -271,8 +331,23 @@ export async function processGoalDeadlineReminders(): Promise<void> {
           dueDate.format("YYYY-MM-DD"),
         );
         sentCount++;
+        await logDelivery({
+          organizationId: goal.organization_id,
+          category: "goal_reminder",
+          recipient: user.email,
+          subject: `Goal deadline: ${goal.title}`,
+          status: "sent",
+        });
       } catch (err) {
         logger.error(`Failed to send goal reminder to ${user.email}:`, err);
+        await logDelivery({
+          organizationId: goal.organization_id,
+          category: "goal_reminder",
+          recipient: user.email,
+          subject: `Goal deadline: ${goal.title}`,
+          status: "failed",
+          error: (err as Error).message,
+        });
       }
     }
 

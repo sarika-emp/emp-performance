@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Target, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Target, Eye, EyeOff, Loader2, Building2 } from "lucide-react";
 import { useLogin } from "@/api/hooks";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
+
+// EMP Cloud SSO entry point — redirects to the dashboard which signs the user
+// in and bounces back with `?sso_token=...` (handled by SSOGate in App.tsx).
+const SSO_LOGIN_URL = (import.meta as any).env?.VITE_SSO_LOGIN_URL as string | undefined;
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -12,6 +16,14 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  function handleSSO() {
+    if (SSO_LOGIN_URL) {
+      window.location.href = SSO_LOGIN_URL;
+    } else {
+      toast.error("Single sign-on is not configured. Please sign in with email and password.");
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,6 +118,11 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+              <div className="flex items-center justify-end">
+                <Link to="/forgot-password" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+                  Forgot password?
+                </Link>
+              </div>
               <button
                 type="submit"
                 disabled={loginMutation.isPending}
@@ -121,6 +138,28 @@ export function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* SSO */}
+            <div className="my-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+            <button
+              type="button"
+              onClick={handleSSO}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <Building2 className="h-4 w-4" />
+              Sign in with EMP Cloud
+            </button>
+
+            <p className="mt-6 text-center text-sm text-gray-500">
+              New organization?{" "}
+              <Link to="/register" className="font-medium text-brand-600 hover:text-brand-700">
+                Create an account
+              </Link>
+            </p>
           </div>
 
           <p className="mt-6 text-center text-xs text-gray-400">Part of the EMP HRMS ecosystem</p>
