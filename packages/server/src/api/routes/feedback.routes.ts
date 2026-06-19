@@ -1,13 +1,18 @@
 // ============================================================================
 // FEEDBACK ROUTES
-// POST give, GET received/given/wall, DELETE feedback.
+// POST give, GET received/given/wall/:id, PUT edit, DELETE feedback.
 // ============================================================================
 
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate } from "../middleware/auth.middleware";
 import * as feedbackService from "../../services/feedback/feedback.service";
-import { sendSuccess } from "../../utils/response";
-import { ValidationError } from "../../utils/errors";
+import { sendSuccess, sendPaginated } from "../../utils/response";
+import {
+  paginationSchema,
+  giveFeedbackSchema,
+  updateFeedbackSchema,
+  idParamSchema,
+} from "@emp-performance/shared";
 
 const router = Router();
 router.use(authenticate);
@@ -16,12 +21,14 @@ router.use(authenticate);
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
+    const pagination = paginationSchema.parse(req.query);
     const result = await feedbackService.listAll(orgId, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
+      page: pagination.page,
+      limit: pagination.perPage,
       type: req.query.type as string | undefined,
+      search: pagination.search,
     });
-    sendSuccess(res, result);
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
   } catch (err) {
     next(err);
   }
@@ -32,18 +39,8 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const fromUserId = req.user!.empcloudUserId;
-    const { to_user_id, type, message, visibility, tags, is_anonymous } = req.body;
-    if (!to_user_id || !type || !message) {
-      throw new ValidationError("to_user_id, type, and message are required");
-    }
-    const result = await feedbackService.giveFeedback(orgId, fromUserId, {
-      to_user_id,
-      type,
-      message,
-      visibility,
-      tags,
-      is_anonymous,
-    });
+    const data = giveFeedbackSchema.parse(req.body);
+    const result = await feedbackService.giveFeedback(orgId, fromUserId, data);
     sendSuccess(res, result, 201);
   } catch (err) {
     next(err);
@@ -55,12 +52,14 @@ router.get("/received", async (req: Request, res: Response, next: NextFunction) 
   try {
     const orgId = req.user!.empcloudOrgId;
     const userId = req.user!.empcloudUserId;
+    const pagination = paginationSchema.parse(req.query);
     const result = await feedbackService.listReceived(orgId, userId, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
+      page: pagination.page,
+      limit: pagination.perPage,
       type: req.query.type as string | undefined,
+      search: pagination.search,
     });
-    sendSuccess(res, result);
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
   } catch (err) {
     next(err);
   }
@@ -71,12 +70,14 @@ router.get("/given", async (req: Request, res: Response, next: NextFunction) => 
   try {
     const orgId = req.user!.empcloudOrgId;
     const userId = req.user!.empcloudUserId;
+    const pagination = paginationSchema.parse(req.query);
     const result = await feedbackService.listGiven(orgId, userId, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
+      page: pagination.page,
+      limit: pagination.perPage,
       type: req.query.type as string | undefined,
+      search: pagination.search,
     });
-    sendSuccess(res, result);
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
   } catch (err) {
     next(err);
   }
@@ -86,21 +87,60 @@ router.get("/given", async (req: Request, res: Response, next: NextFunction) => 
 router.get("/wall", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
+    const pagination = paginationSchema.parse(req.query);
     const result = await feedbackService.getPublicWall(orgId, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
+      page: pagination.page,
+      limit: pagination.perPage,
+      search: pagination.search,
     });
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /feedback/:id — single feedback (anonymity-respecting)
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const result = await feedbackService.getFeedback(orgId, id);
     sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /feedback/:id
+// PUT /feedback/:id — edit feedback (author or admin)
+router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const data = updateFeedbackSchema.parse(req.body);
+    const result = await feedbackService.updateFeedback(
+      orgId,
+      id,
+      req.user!.empcloudUserId,
+      req.user!.role,
+      data,
+    );
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /feedback/:id — author or admin only (#F1)
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    await feedbackService.deleteFeedback(orgId, req.params.id as string);
+    const { id } = idParamSchema.parse(req.params);
+    await feedbackService.deleteFeedback(
+      orgId,
+      id,
+      req.user!.empcloudUserId,
+      req.user!.role,
+    );
     sendSuccess(res, { deleted: true });
   } catch (err) {
     next(err);

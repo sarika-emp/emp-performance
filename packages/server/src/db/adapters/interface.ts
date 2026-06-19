@@ -9,6 +9,14 @@ export interface QueryOptions {
   limit?: number;
   sort?: { field: string; order: "asc" | "desc" };
   filters?: Record<string, any>;
+  /**
+   * Free-text search term. When provided together with `searchFields`, the
+   * adapter applies a case-insensitive `LIKE %term%` across each listed column,
+   * OR-ed together and AND-ed with the rest of the filters. Parameterized — the
+   * term is always bound, never interpolated.
+   */
+  search?: string;
+  searchFields?: string[];
 }
 
 export interface QueryResult<T> {

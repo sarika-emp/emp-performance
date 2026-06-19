@@ -20,6 +20,9 @@ import {
   GitBranch,
   FileText,
   Radar,
+  Heart,
+  UserPlus,
+  ShieldCheck,
 } from "lucide-react";
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
@@ -41,6 +44,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/my/reviews", label: "My Reviews", icon: RefreshCw },
   { to: "/my/goals", label: "My Goals", icon: Target },
   { to: "/my/feedback", label: "My Feedback", icon: MessageSquare },
+  { to: "/feedback/wall", label: "Kudos Wall", icon: Heart },
+  { to: "/peer-reviews/nominate", label: "Nominate Peers", icon: UserPlus },
   { to: "/my/one-on-ones", label: "My 1-on-1s", icon: Users },
   { to: "/my/skills", label: "My Skills", icon: Radar },
   { to: "/my/letters", label: "My Letters", icon: FileText },
@@ -53,6 +58,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/career-paths", label: "Career Paths", icon: Route },
   { to: "/one-on-ones", label: "All 1-on-1s", icon: Users, adminOnly: true },
   { to: "/feedback", label: "All Feedback", icon: MessageSquare, adminOnly: true },
+  { to: "/peer-reviews/queue", label: "Peer Approvals", icon: ShieldCheck, adminOnly: true },
   { to: "/letters", label: "Letters", icon: FileText, adminOnly: true },
   { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
   { to: "/analytics/nine-box", label: "9-Box Grid", icon: Grid3X3, adminOnly: true },

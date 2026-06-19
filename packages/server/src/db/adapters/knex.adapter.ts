@@ -120,6 +120,23 @@ export class KnexAdapter implements IDBAdapter {
       }
     }
 
+    // Apply free-text (case-insensitive) search across the requested columns.
+    // Both sides are lowercased so it behaves like ILIKE regardless of the
+    // column collation; the term is always bound (never interpolated).
+    const searchTerm = options?.search?.trim();
+    const searchFields = options?.searchFields ?? [];
+    if (searchTerm && searchFields.length > 0) {
+      const like = `%${searchTerm.toLowerCase()}%`;
+      query = query.where((builder) => {
+        searchFields.forEach((field, idx) => {
+          const clause = (b: typeof builder) =>
+            b.whereRaw("LOWER(??) LIKE ?", [field, like]);
+          if (idx === 0) clause(builder);
+          else builder.orWhere(clause);
+        });
+      });
+    }
+
     // Get total count
     const [{ count: total }] = await query.clone().count("* as count");
 

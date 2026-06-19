@@ -262,13 +262,22 @@ export const addAgendaItemSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const giveFeedbackSchema = z.object({
-  to_user_id: z.number().int(),
+  to_user_id: z.coerce.number().int().positive(),
   type: z.nativeEnum(FeedbackType),
   visibility: z.nativeEnum(FeedbackVisibility).default(FeedbackVisibility.MANAGER_VISIBLE),
-  message: z.string().min(1),
-  tags: z.array(z.string()).optional(),
+  message: z.string().min(1).max(5000),
+  tags: z.array(z.string().max(50)).max(20).optional(),
   is_anonymous: z.boolean().default(false),
 });
+
+export const updateFeedbackSchema = z
+  .object({
+    type: z.nativeEnum(FeedbackType).optional(),
+    visibility: z.nativeEnum(FeedbackVisibility).optional(),
+    message: z.string().min(1).max(5000).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
+  })
+  .strict();
 
 // ---------------------------------------------------------------------------
 // Peer Review Nominations

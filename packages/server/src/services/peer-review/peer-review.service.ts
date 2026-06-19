@@ -6,6 +6,15 @@
 import { getDB } from "../../db/adapters";
 import { NotFoundError, ValidationError, ConflictError } from "../../utils/errors";
 import { logger } from "../../utils/logger";
+import { findUserById } from "../../db/empcloud";
+
+/** Verify a user exists and belongs to the given org. */
+async function assertOrgMember(orgId: number, userId: number, label: string): Promise<void> {
+  const user = await findUserById(userId);
+  if (!user || user.organization_id !== orgId) {
+    throw new ValidationError(`${label} is not a member of your organization`);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,6 +67,10 @@ export async function nominate(
   if (employeeId === peerId) {
     throw new ValidationError("Cannot nominate self as peer reviewer");
   }
+
+  // Verify both the subject employee and the nominated peer are real org users (#F4).
+  await assertOrgMember(orgId, employeeId, "Employee");
+  await assertOrgMember(orgId, peerId, "Nominated peer");
 
   // Check for duplicate nomination
   const existing = await db.findOne<PeerNomination>("peer_review_nominations", {

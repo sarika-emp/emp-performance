@@ -131,6 +131,17 @@ const FeedbackListPage = lazy(() =>
 const GiveFeedbackPage = lazy(() =>
   import("@/pages/feedback/GiveFeedbackPage").then((m) => ({ default: m.GiveFeedbackPage })),
 );
+const KudosWallPage = lazy(() =>
+  import("@/pages/feedback/KudosWallPage").then((m) => ({ default: m.KudosWallPage })),
+);
+
+// Peer Reviews
+const PeerReviewNominatePage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewNominatePage").then((m) => ({ default: m.PeerReviewNominatePage })),
+);
+const PeerReviewQueuePage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewQueuePage").then((m) => ({ default: m.PeerReviewQueuePage })),
+);
 
 // Analytics
 const AnalyticsPage = lazy(() =>
@@ -226,6 +237,11 @@ export function AppRoutes() {
         {/* Feedback */}
         <Route path="/feedback" element={<FeedbackListPage />} />
         <Route path="/feedback/give" element={<GiveFeedbackPage />} />
+        <Route path="/feedback/wall" element={<KudosWallPage />} />
+
+        {/* Peer Reviews */}
+        <Route path="/peer-reviews/nominate" element={<PeerReviewNominatePage />} />
+        <Route path="/peer-reviews/queue" element={<PeerReviewQueuePage />} />
 
         {/* Analytics */}
         <Route path="/analytics" element={<AnalyticsPage />} />

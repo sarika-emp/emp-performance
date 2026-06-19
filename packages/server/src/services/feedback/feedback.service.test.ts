@@ -23,6 +23,11 @@ vi.mock("../../utils/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
+const findUserById = vi.fn();
+vi.mock("../../db/empcloud", () => ({
+  findUserById: (id: number) => findUserById(id),
+}));
+
 import {
   giveFeedback,
   listReceived,
@@ -38,6 +43,7 @@ import {
 const ORG_ID = 1;
 const FROM_USER = 10;
 const TO_USER = 20;
+const ADMIN_ROLE = "org_admin";
 
 function makeFeedback(overrides: Record<string, any> = {}) {
   return {
@@ -62,6 +68,8 @@ function makeFeedback(overrides: Record<string, any> = {}) {
 describe("feedback.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: the recipient is a valid member of the caller's org.
+    findUserById.mockResolvedValue({ id: TO_USER, organization_id: ORG_ID });
   });
 
   // -------------------------------------------------------------------------
@@ -230,15 +238,33 @@ describe("feedback.service", () => {
       mockDB.findOne.mockResolvedValue(makeFeedback());
       mockDB.delete.mockResolvedValue(true);
 
-      await deleteFeedback(ORG_ID, "fb-1");
+      await deleteFeedback(ORG_ID, "fb-1", FROM_USER, "employee");
 
       expect(mockDB.delete).toHaveBeenCalledWith("continuous_feedback", "fb-1");
+    });
+
+    it("should allow an admin to delete any feedback", async () => {
+      mockDB.findOne.mockResolvedValue(makeFeedback({ from_user_id: 999 }));
+      mockDB.delete.mockResolvedValue(true);
+
+      await deleteFeedback(ORG_ID, "fb-1", 555, ADMIN_ROLE);
+
+      expect(mockDB.delete).toHaveBeenCalledWith("continuous_feedback", "fb-1");
+    });
+
+    it("should forbid a non-author non-admin from deleting", async () => {
+      mockDB.findOne.mockResolvedValue(makeFeedback({ from_user_id: 999 }));
+
+      await expect(
+        deleteFeedback(ORG_ID, "fb-1", 555, "employee"),
+      ).rejects.toThrow();
+      expect(mockDB.delete).not.toHaveBeenCalled();
     });
 
     it("should throw NotFoundError for missing feedback", async () => {
       mockDB.findOne.mockResolvedValue(null);
 
-      await expect(deleteFeedback(ORG_ID, "nonexistent")).rejects.toThrow("not found");
+      await expect(deleteFeedback(ORG_ID, "nonexistent", FROM_USER, "employee")).rejects.toThrow("not found");
     });
   });
 
