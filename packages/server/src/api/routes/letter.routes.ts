@@ -6,8 +6,14 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import { sendSuccess, sendPaginated } from "../../utils/response";
-import { ValidationError } from "../../utils/errors";
-import { paginationSchema, idParamSchema } from "@emp-performance/shared";
+import {
+  paginationSchema,
+  idParamSchema,
+  createLetterTemplateSchema,
+  updateLetterTemplateSchema,
+  generateLetterSchema,
+  previewLetterTemplateSchema,
+} from "@emp-performance/shared";
 import * as letterService from "../../services/letter/performance-letter.service";
 
 const router = Router();
@@ -25,7 +31,8 @@ router.get("/my", async (req: Request, res: Response, next: NextFunction) => {
     const pagination = paginationSchema.parse(req.query);
     const result = await letterService.listLetters(orgId, {
       employeeId,
-      type: req.query.type as letterService.LetterType | undefined,
+      type: letterService.isLetterType(req.query.type) ? req.query.type : undefined,
+      search: pagination.search,
       page: pagination.page,
       perPage: pagination.perPage,
     });
@@ -44,13 +51,18 @@ router.use(authorize("hr_admin", "hr_manager", "org_admin"));
 // TEMPLATES
 // ---------------------------------------------------------------------------
 
-// GET /letters/templates — list templates
+// GET /letters/templates — list templates (paginated + search)
 router.get("/templates", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const type = req.query.type as letterService.LetterType | undefined;
-    const result = await letterService.listTemplates(orgId, type);
-    return sendSuccess(res, result);
+    const pagination = paginationSchema.parse(req.query);
+    const result = await letterService.listTemplates(orgId, {
+      type: letterService.isLetterType(req.query.type) ? req.query.type : undefined,
+      search: pagination.search,
+      page: pagination.page,
+      perPage: pagination.perPage,
+    });
+    return sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }
@@ -60,17 +72,26 @@ router.get("/templates", async (req: Request, res: Response, next: NextFunction)
 router.post("/templates", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { type, name, content_template, is_default } = req.body;
-    if (!type || !name || !content_template) {
-      throw new ValidationError("type, name, and content_template are required");
-    }
-    const result = await letterService.createTemplate(orgId, {
-      type,
-      name,
-      content_template,
-      is_default,
-    });
+    const body = createLetterTemplateSchema.parse(req.body);
+    const result = await letterService.createTemplate(orgId, body);
     return sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /letters/templates/preview — render-test a template (L8)
+router.post("/templates/preview", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const body = previewLetterTemplateSchema.parse(req.body);
+    const result = await letterService.previewLetter(orgId, {
+      contentTemplate: body.content_template,
+      templateId: body.template_id,
+      employeeId: body.employee_id,
+      cycleId: body.cycle_id ?? null,
+    });
+    return sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -93,14 +114,15 @@ router.put("/templates/:id", async (req: Request, res: Response, next: NextFunct
   try {
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
-    const result = await letterService.updateTemplate(orgId, id, req.body);
+    const body = updateLetterTemplateSchema.parse(req.body);
+    const result = await letterService.updateTemplate(orgId, id, body);
     return sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
 });
 
-// DELETE /letters/templates/:id — delete template
+// DELETE /letters/templates/:id — soft-delete template
 router.delete("/templates/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
@@ -120,15 +142,12 @@ router.delete("/templates/:id", async (req: Request, res: Response, next: NextFu
 router.post("/generate", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { employee_id, template_id, cycle_id } = req.body;
-    if (!employee_id || !template_id) {
-      throw new ValidationError("employee_id and template_id are required");
-    }
+    const body = generateLetterSchema.parse(req.body);
     const result = await letterService.generateLetter(
       orgId,
-      Number(employee_id),
-      template_id,
-      cycle_id ?? null,
+      body.employee_id,
+      body.template_id,
+      body.cycle_id ?? null,
       req.user!.empcloudUserId,
     );
     return sendSuccess(res, result, 201);
@@ -137,14 +156,18 @@ router.post("/generate", async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-// GET /letters — list generated letters
+// GET /letters — list generated letters (paginated + search + status filter)
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const pagination = paginationSchema.parse(req.query);
+    const status = req.query.status;
     const result = await letterService.listLetters(orgId, {
       employeeId: req.query.employeeId ? Number(req.query.employeeId) : undefined,
-      type: req.query.type as letterService.LetterType | undefined,
+      type: letterService.isLetterType(req.query.type) ? req.query.type : undefined,
+      status:
+        status === "sent" || status === "draft" || status === "voided" ? status : undefined,
+      search: pagination.search,
       page: pagination.page,
       perPage: pagination.perPage,
     });
@@ -154,7 +177,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /letters/:id — get letter detail / download content
+// GET /letters/:id — get letter detail
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
@@ -166,12 +189,50 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// POST /letters/:id/send — mark letter as sent
+// GET /letters/:id/download — download the rendered letter document (L4)
+router.get("/:id/download", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const { filename, html } = await letterService.getLetterDocument(orgId, id);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(html);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /letters/:id/send — deliver the letter (email + audit)
 router.post("/:id/send", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
     const result = await letterService.sendLetter(orgId, id);
+    return sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /letters/:id/regenerate — re-render a draft letter (L8)
+router.post("/:id/regenerate", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const result = await letterService.regenerateLetter(orgId, id);
+    return sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /letters/:id/void — void / revoke a letter (L8)
+router.post("/:id/void", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const result = await letterService.voidLetter(orgId, id, req.user!.empcloudUserId);
     return sendSuccess(res, result);
   } catch (err) {
     next(err);

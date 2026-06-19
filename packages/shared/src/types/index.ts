@@ -482,6 +482,7 @@ export interface PerformanceLetterTemplate {
   name: string;
   content_template: string;
   is_default: boolean;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -491,12 +492,16 @@ export interface GeneratedPerformanceLetter {
   organization_id: number;
   employee_id: number;
   cycle_id: string | null;
-  template_id: string;
+  template_id: string | null;
+  template_name?: string | null;
   type: LetterType;
   content: string;
   file_path: string | null;
   generated_by: number;
   sent_at: string | null;
+  sent_to?: string | null;
+  voided_at?: string | null;
+  voided_by?: number | null;
   created_at: string;
 }
 

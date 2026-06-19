@@ -492,3 +492,44 @@ export const createPotentialAssessmentSchema = z.object({
   potential_rating: z.coerce.number().int().min(1).max(5),
   notes: z.string().max(2000).nullable().optional(),
 });
+
+// ---------------------------------------------------------------------------
+// Performance Letters (Batch 8)
+// ---------------------------------------------------------------------------
+
+export const letterTypeEnum = z.enum([
+  "appraisal",
+  "increment",
+  "promotion",
+  "confirmation",
+  "warning",
+]);
+
+export const createLetterTemplateSchema = z.object({
+  type: letterTypeEnum,
+  name: z.string().min(1).max(255),
+  content_template: z.string().min(1).max(50000),
+  is_default: z.boolean().optional(),
+});
+
+export const updateLetterTemplateSchema = z
+  .object({
+    type: letterTypeEnum.optional(),
+    name: z.string().min(1).max(255).optional(),
+    content_template: z.string().min(1).max(50000).optional(),
+    is_default: z.boolean().optional(),
+  })
+  .strict();
+
+export const generateLetterSchema = z.object({
+  employee_id: z.coerce.number().int().positive(),
+  template_id: z.string().uuid(),
+  cycle_id: z.string().uuid().nullable().optional(),
+});
+
+export const previewLetterTemplateSchema = z.object({
+  content_template: z.string().min(1).max(50000).optional(),
+  template_id: z.string().uuid().optional(),
+  employee_id: z.coerce.number().int().positive().optional(),
+  cycle_id: z.string().uuid().nullable().optional(),
+});

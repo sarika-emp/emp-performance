@@ -1,17 +1,28 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import {
   FileText,
   Plus,
   Pencil,
   Trash2,
   Loader2,
+  Eye,
   X,
   Check,
+  Search,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
-import type { PerformanceLetterTemplate, LetterType } from "@emp-performance/shared";
+import type {
+  PerformanceLetterTemplate,
+  LetterType,
+  PaginatedResponse,
+} from "@emp-performance/shared";
 
 const LETTER_TYPES: { key: LetterType; label: string; color: string }[] = [
   { key: "appraisal", label: "Appraisal", color: "bg-blue-100 text-blue-700" },
@@ -39,11 +50,13 @@ interface TemplateFormData {
 function TemplateForm({
   initial,
   onSave,
+  onPreview,
   onCancel,
   saving,
 }: {
   initial?: Partial<TemplateFormData>;
   onSave: (data: TemplateFormData) => void;
+  onPreview: (content: string) => void;
   onCancel: () => void;
   saving: boolean;
 }) {
@@ -91,7 +104,7 @@ function TemplateForm({
           Template Content (Handlebars)
         </label>
         <p className="text-xs text-gray-400 mb-2">
-          Available variables: {"{{employee_id}}"}, {"{{date}}"}, {"{{overall_rating}}"}, {"{{review_summary}}"}, {"{{strengths}}"}, {"{{improvements}}"}, {"{{letter_type}}"}
+          Available variables: {"{{employee_name}}"}, {"{{designation}}"}, {"{{manager_name}}"}, {"{{organization_name}}"}, {"{{date}}"}, {"{{overall_rating}}"}, {"{{review_summary}}"}, {"{{strengths}}"}, {"{{improvements}}"}
         </p>
         <textarea
           value={content}
@@ -99,7 +112,7 @@ function TemplateForm({
           required
           rows={12}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          placeholder={`Dear Employee {{employee_id}},\n\nWe are pleased to inform you about your performance review...\n\nOverall Rating: {{overall_rating}}\n\nStrengths:\n{{strengths}}\n\nAreas for Improvement:\n{{improvements}}\n\nDate: {{date}}`}
+          placeholder={`Dear {{employee_name}},\n\nWe are pleased to inform you about your performance review...\n\nOverall Rating: {{overall_rating}}\n\nStrengths:\n{{strengths}}\n\nAreas for Improvement:\n{{improvements}}\n\nDate: {{date}}`}
         />
       </div>
 
@@ -125,6 +138,15 @@ function TemplateForm({
           Cancel
         </button>
         <button
+          type="button"
+          onClick={() => onPreview(content)}
+          disabled={!content}
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <Eye className="h-4 w-4" />
+          Preview
+        </button>
+        <button
           type="submit"
           disabled={saving || !name || !content}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
@@ -142,17 +164,33 @@ export function LetterTemplatePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PerformanceLetterTemplate | null>(null);
   const [filterType, setFilterType] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["letter-templates", filterType],
+    queryKey: ["letter-templates", filterType, search, page],
     queryFn: () =>
-      apiGet<PerformanceLetterTemplate[]>(
-        "/letters/templates",
-        filterType ? { type: filterType } : undefined,
-      ),
+      apiGet<PaginatedResponse<PerformanceLetterTemplate>>("/letters/templates", {
+        page,
+        perPage: 20,
+        ...(filterType && { type: filterType }),
+        ...(search && { search }),
+      }),
+    placeholderData: keepPreviousData,
   });
 
-  const templates = data?.data ?? [];
+  const templates = data?.data?.data ?? [];
+  const pagination = data?.data;
+
+  const previewMutation = useMutation({
+    mutationFn: (content_template: string) =>
+      apiPost<{ content: string }>("/letters/templates/preview", { content_template }),
+    onSuccess: (res) => {
+      setPreview(res.data?.content ?? "");
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: (formData: TemplateFormData) => apiPost("/letters/templates", formData),
@@ -199,11 +237,31 @@ export function LetterTemplatePage() {
         </button>
       </div>
 
-      {/* Filter */}
-      <div className="mt-4">
+      {/* Filters */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSearch(searchInput.trim());
+            setPage(1);
+          }}
+          className="relative flex-1"
+        >
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by name or content…"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </form>
         <select
           value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
+          onChange={(e) => {
+            setFilterType(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
           <option value="">All Types</option>
@@ -214,6 +272,30 @@ export function LetterTemplatePage() {
           ))}
         </select>
       </div>
+
+      {/* Preview modal (L8) */}
+      {preview !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="relative max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+            <button
+              onClick={() => setPreview(null)}
+              className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="mb-4 text-lg font-semibold text-gray-900">Template Preview</h2>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
+                {preview || "(empty)"}
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              Variables are shown as placeholders here; real employee values are filled in when a
+              letter is generated.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Create/Edit Form Modal */}
       {(showForm || editingTemplate) && (
@@ -239,6 +321,7 @@ export function LetterTemplatePage() {
                 createMutation.mutate(formData);
               }
             }}
+            onPreview={(content) => previewMutation.mutate(content)}
             onCancel={() => {
               setShowForm(false);
               setEditingTemplate(null);
@@ -300,6 +383,13 @@ export function LetterTemplatePage() {
 
               <div className="flex items-center gap-1 ml-4">
                 <button
+                  onClick={() => previewMutation.mutate(template.content_template)}
+                  className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  title="Preview"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => {
                     setShowForm(false);
                     setEditingTemplate(template);
@@ -311,7 +401,7 @@ export function LetterTemplatePage() {
                 </button>
                 <button
                   onClick={() => {
-                    if (confirm("Delete this template?")) {
+                    if (confirm("Delete this template? Issued letters will be preserved.")) {
                       deleteMutation.mutate(template.id);
                     }
                   }}
@@ -325,6 +415,31 @@ export function LetterTemplatePage() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
