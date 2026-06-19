@@ -245,16 +245,17 @@ export const assignCareerTrackSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export const createMeetingSchema = z.object({
-  employee_id: z.number().int(),
+  employee_id: z.coerce.number().int().positive(),
+  manager_id: z.coerce.number().int().positive(),
   title: z.string().min(2).max(200),
-  scheduled_at: z.string(),
-  duration_minutes: z.number().int().min(15).max(240).default(30),
+  scheduled_at: z.string().min(1),
+  duration_minutes: z.coerce.number().int().min(5).max(480).default(30),
 });
 
 export const addAgendaItemSchema = z.object({
   title: z.string().min(1).max(300),
-  description: z.string().optional(),
-  order: z.number().int().min(0).default(0),
+  description: z.string().max(5000).optional(),
+  order: z.coerce.number().int().min(0).default(0),
 });
 
 // ---------------------------------------------------------------------------
@@ -340,3 +341,52 @@ export const managerDetailParamsSchema = z.object({
 export const managerDetailQuerySchema = z.object({
   period: z.string().regex(/^\d{4}-Q[1-4]$/, "period must be in format YYYY-QN (e.g. 2026-Q1)"),
 });
+
+// ---------------------------------------------------------------------------
+// One-on-One Meetings (Batch 4)
+// ---------------------------------------------------------------------------
+
+export const updateMeetingSchema = z
+  .object({
+    title: z.string().min(2).max(200).optional(),
+    scheduled_at: z.string().min(1).optional(),
+    duration_minutes: z.coerce.number().int().min(5).max(480).optional(),
+    meeting_notes: z.string().max(20000).nullable().optional(),
+    action_items: z.string().max(20000).nullable().optional(),
+    status: z.nativeEnum(MeetingStatus).optional(),
+  })
+  .strict();
+
+export const requestMeetingSchema = z.object({
+  manager_id: z.coerce.number().int().positive(),
+  title: z.string().min(2).max(200),
+  scheduled_at: z.string().min(1),
+  duration_minutes: z.coerce.number().int().min(5).max(480).optional(),
+});
+
+export const updateAgendaItemSchema = z
+  .object({
+    title: z.string().min(1).max(300).optional(),
+    description: z.string().max(5000).nullable().optional(),
+    order: z.coerce.number().int().min(0).optional(),
+    is_discussed: z.boolean().optional(),
+  })
+  .strict();
+
+export const actionItemStatusEnum = z.enum(["open", "in_progress", "done", "cancelled"]);
+
+export const createActionItemSchema = z.object({
+  description: z.string().min(1).max(1000),
+  assignee_id: z.coerce.number().int().positive().nullable().optional(),
+  due_date: z.string().min(1).nullable().optional(),
+  status: actionItemStatusEnum.optional(),
+});
+
+export const updateActionItemSchema = z
+  .object({
+    description: z.string().min(1).max(1000).optional(),
+    assignee_id: z.coerce.number().int().positive().nullable().optional(),
+    due_date: z.string().min(1).nullable().optional(),
+    status: actionItemStatusEnum.optional(),
+  })
+  .strict();

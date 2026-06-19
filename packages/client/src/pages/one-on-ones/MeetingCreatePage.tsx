@@ -14,6 +14,7 @@ interface OrgUser {
 export function MeetingCreatePage() {
   const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState("");
+  const [managerId, setManagerId] = useState("");
   const [title, setTitle] = useState("Weekly 1-on-1");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("10:00");
@@ -30,7 +31,7 @@ export function MeetingCreatePage() {
     onSuccess: (res: any) => {
       toast.success("Meeting scheduled");
       const id = res?.data?.id;
-      navigate(id ? `/meetings/${id}` : "/meetings");
+      navigate(id ? `/one-on-ones/${id}` : "/one-on-ones");
     },
     onError: (err: any) =>
       toast.error(err.response?.data?.error?.message || "Failed to schedule meeting"),
@@ -39,11 +40,15 @@ export function MeetingCreatePage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!employeeId) return toast.error("Select an employee");
+    if (!managerId) return toast.error("Select a manager");
+    if (managerId === employeeId)
+      return toast.error("Employee and manager must be different people");
     if (!scheduledDate) return toast.error("Pick a date");
     const isoLocal = `${scheduledDate}T${scheduledTime || "10:00"}:00`;
     const scheduledAt = new Date(isoLocal).toISOString();
     mutation.mutate({
       employee_id: Number(employeeId),
+      manager_id: Number(managerId),
       title: title.trim() || "1-on-1",
       scheduled_at: scheduledAt,
       duration_minutes: Number(duration) || 30,
@@ -78,6 +83,23 @@ export function MeetingCreatePage() {
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="">— Select an employee —</option>
+            {orgUsers.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.full_name} ({u.email})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Manager <span className="text-red-500">*</span></label>
+          <select
+            value={managerId}
+            onChange={(e) => setManagerId(e.target.value)}
+            required
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          >
+            <option value="">— Select a manager —</option>
             {orgUsers.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.full_name} ({u.email})
