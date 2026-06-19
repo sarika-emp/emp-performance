@@ -14,13 +14,14 @@ import {
   AlertTriangle,
   CalendarPlus,
 } from "lucide-react";
-import { apiGet, apiPost, apiPut } from "@/api/client";
+import { Pencil, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   PerformanceImprovementPlan,
   PIPObjective,
   PIPUpdate,
-  GoalStatus,
 } from "@emp-performance/shared";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -57,6 +58,8 @@ const OBJ_STATUS_OPTIONS = [
 ];
 
 interface PIPFull extends PerformanceImprovementPlan {
+  employee_name?: string | null;
+  manager_name?: string | null;
   objectives: PIPObjective[];
   updates: PIPUpdate[];
 }
@@ -70,6 +73,19 @@ export function PIPDetailPage() {
   const [showAddUpdate, setShowAddUpdate] = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [showExtend, setShowExtend] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
+  // Edit PIP form state (P6)
+  const [editReason, setEditReason] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+
+  // Inline objective edit state (P6)
+  const [editingObjId, setEditingObjId] = useState<string | null>(null);
+  const [editObjTitle, setEditObjTitle] = useState("");
+  const [editObjDescription, setEditObjDescription] = useState("");
+  const [editObjCriteria, setEditObjCriteria] = useState("");
+  const [editObjDueDate, setEditObjDueDate] = useState("");
 
   // Form state
   const [objTitle, setObjTitle] = useState("");
@@ -110,8 +126,56 @@ export function PIPDetailPage() {
   const updateObjectiveMutation = useMutation({
     mutationFn: ({ objId, body }: { objId: string; body: any }) =>
       apiPut(`/pips/${id}/objectives/${objId}`, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pip", id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pip", id] });
+      setEditingObjId(null);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to update objective"),
   });
+
+  const deleteObjectiveMutation = useMutation({
+    mutationFn: (objId: string) => apiDelete(`/pips/${id}/objectives/${objId}`),
+    onSuccess: () => {
+      toast.success("Objective removed");
+      queryClient.invalidateQueries({ queryKey: ["pip", id] });
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to remove objective"),
+  });
+
+  const editPipMutation = useMutation({
+    mutationFn: (body: any) => apiPut(`/pips/${id}`, body),
+    onSuccess: () => {
+      toast.success("PIP updated");
+      queryClient.invalidateQueries({ queryKey: ["pip", id] });
+      setShowEdit(false);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to update PIP"),
+  });
+
+  function openEdit() {
+    if (!pip) return;
+    setEditReason(pip.reason);
+    setEditStartDate(pip.start_date?.slice(0, 10) ?? "");
+    setEditEndDate(pip.end_date?.slice(0, 10) ?? "");
+    setShowEdit(true);
+  }
+
+  function startEditObjective(obj: PIPObjective) {
+    setEditingObjId(obj.id);
+    setEditObjTitle(obj.title);
+    setEditObjDescription(obj.description ?? "");
+    setEditObjCriteria(obj.success_criteria ?? "");
+    setEditObjDueDate(obj.due_date?.slice(0, 10) ?? "");
+  }
+
+  function handleDeleteObjective(obj: PIPObjective) {
+    if (window.confirm(`Remove the objective "${obj.title}"?`)) {
+      deleteObjectiveMutation.mutate(obj.id);
+    }
+  }
 
   const addUpdateMutation = useMutation({
     mutationFn: (body: any) => apiPost(`/pips/${id}/updates`, body),
@@ -171,7 +235,7 @@ export function PIPDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">
-              PIP - Employee #{pip.employee_id}
+              PIP - {pip.employee_name ?? `Employee #${pip.employee_id}`}
             </h1>
             <span
               className={cn(
@@ -186,6 +250,13 @@ export function PIPDetailPage() {
         </div>
         {isActive && (
           <div className="flex gap-2">
+            <button
+              onClick={openEdit}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
             <button
               onClick={() => setShowExtend(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -229,7 +300,9 @@ export function PIPDetailPage() {
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Manager
             </p>
-            <p className="mt-1 text-sm text-gray-900">#{pip.manager_id}</p>
+            <p className="mt-1 text-sm text-gray-900">
+              {pip.manager_name ?? `#${pip.manager_id}`}
+            </p>
           </div>
           <div>
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -276,45 +349,119 @@ export function PIPDetailPage() {
             <div className="divide-y divide-gray-100">
               {pip.objectives.map((obj) => (
                 <div key={obj.id} className="px-5 py-3">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5">
-                      {OBJ_STATUS_ICON[obj.status] ?? OBJ_STATUS_ICON.not_started}
+                  {editingObjId === obj.id ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={editObjTitle}
+                        onChange={(e) => setEditObjTitle(e.target.value)}
+                        placeholder="Objective title"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      />
+                      <textarea
+                        value={editObjDescription}
+                        onChange={(e) => setEditObjDescription(e.target.value)}
+                        placeholder="Description (optional)"
+                        rows={2}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      />
+                      <input
+                        type="text"
+                        value={editObjCriteria}
+                        onChange={(e) => setEditObjCriteria(e.target.value)}
+                        placeholder="Success criteria (optional)"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      />
+                      <input
+                        type="date"
+                        value={editObjDueDate}
+                        onChange={(e) => setEditObjDueDate(e.target.value)}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            updateObjectiveMutation.mutate({
+                              objId: obj.id,
+                              body: {
+                                title: editObjTitle,
+                                description: editObjDescription || null,
+                                success_criteria: editObjCriteria || null,
+                                due_date: editObjDueDate || null,
+                              },
+                            })
+                          }
+                          disabled={!editObjTitle.trim() || updateObjectiveMutation.isPending}
+                          className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingObjId(null)}
+                          className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{obj.title}</p>
-                      {obj.description && (
-                        <p className="mt-0.5 text-xs text-gray-500">{obj.description}</p>
-                      )}
-                      {obj.success_criteria && (
-                        <p className="mt-1 text-xs text-gray-400">
-                          Success: {obj.success_criteria}
-                        </p>
-                      )}
-                      {obj.due_date && (
-                        <p className="mt-1 text-xs text-gray-400">
-                          Due: {formatDate(obj.due_date)}
-                        </p>
+                  ) : (
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        {OBJ_STATUS_ICON[obj.status] ?? OBJ_STATUS_ICON.not_started}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{obj.title}</p>
+                        {obj.description && (
+                          <p className="mt-0.5 text-xs text-gray-500">{obj.description}</p>
+                        )}
+                        {obj.success_criteria && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Success: {obj.success_criteria}
+                          </p>
+                        )}
+                        {obj.due_date && (
+                          <p className="mt-1 text-xs text-gray-400">
+                            Due: {formatDate(obj.due_date)}
+                          </p>
+                        )}
+                      </div>
+                      {isActive && (
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={obj.status}
+                            onChange={(e) =>
+                              updateObjectiveMutation.mutate({
+                                objId: obj.id,
+                                body: { status: e.target.value },
+                              })
+                            }
+                            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:outline-none"
+                          >
+                            {OBJ_STATUS_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => startEditObjective(obj)}
+                            title="Edit objective"
+                            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteObjective(obj)}
+                            disabled={deleteObjectiveMutation.isPending}
+                            title="Delete objective"
+                            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                    {isActive && (
-                      <select
-                        value={obj.status}
-                        onChange={(e) =>
-                          updateObjectiveMutation.mutate({
-                            objId: obj.id,
-                            body: { status: e.target.value },
-                          })
-                        }
-                        className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:outline-none"
-                      >
-                        {OBJ_STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -513,6 +660,78 @@ export function PIPDetailPage() {
                   className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                 >
                   {closeMutation.isPending ? "Closing..." : "Close PIP"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit PIP Modal (P6) */}
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">Edit PIP</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Update the reason and plan dates.
+            </p>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Reason</label>
+                <textarea
+                  value={editReason}
+                  onChange={(e) => setEditReason(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={editEndDate}
+                    min={editStartDate || undefined}
+                    onChange={(e) => setEditEndDate(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+              {editStartDate && editEndDate && editEndDate < editStartDate && (
+                <p className="text-xs text-red-600">End date cannot be before start date.</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowEdit(false)}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() =>
+                    editPipMutation.mutate({
+                      reason: editReason,
+                      start_date: editStartDate,
+                      end_date: editEndDate,
+                    })
+                  }
+                  disabled={
+                    editPipMutation.isPending ||
+                    editReason.trim().length < 10 ||
+                    (!!editStartDate && !!editEndDate && editEndDate < editStartDate)
+                  }
+                  className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  {editPipMutation.isPending ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

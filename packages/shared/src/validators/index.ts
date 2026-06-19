@@ -185,10 +185,22 @@ export const checkInSchema = z
 
 export const createPIPSchema = z.object({
   employee_id: z.number().int(),
+  manager_id: z.number().int().optional(),
+  title: z.string().min(2).max(300).optional(),
   reason: z.string().min(10),
   start_date: z.string(),
   end_date: z.string(),
 });
+
+// P5/P6: validate PUT /pips/:id (was raw, unvalidated body).
+export const updatePIPSchema = z
+  .object({
+    reason: z.string().min(10).optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+    outcome_notes: z.string().nullable().optional(),
+  })
+  .strict();
 
 export const addPIPObjectiveSchema = z.object({
   title: z.string().min(2).max(300),
@@ -197,9 +209,22 @@ export const addPIPObjectiveSchema = z.object({
   due_date: z.string().optional(),
 });
 
+// P5/P6: validate PUT /pips/:id/objectives/:objId (was raw, unvalidated body).
+// `status` is constrained to the GoalStatus enum so arbitrary strings are rejected.
+export const updatePIPObjectiveSchema = z
+  .object({
+    title: z.string().min(2).max(300).optional(),
+    description: z.string().nullable().optional(),
+    success_criteria: z.string().nullable().optional(),
+    due_date: z.string().nullable().optional(),
+    status: z.nativeEnum(GoalStatus).optional(),
+  })
+  .strict();
+
 export const addPIPUpdateSchema = z.object({
   notes: z.string().min(1),
   progress_rating: z.number().int().min(1).max(5).optional(),
+  objective_id: z.string().uuid().optional(),
 });
 
 export const closePIPSchema = z.object({
@@ -211,6 +236,16 @@ export const closePIPSchema = z.object({
   ]),
   outcome_notes: z.string().optional(),
   extended_end_date: z.string().optional(),
+});
+
+// P5: validate POST /pips/:id/extend (was reading raw body, no date ordering).
+export const extendPIPSchema = z.object({
+  end_date: z.string().min(1),
+});
+
+// P7: employee acknowledgement / sign-off on a PIP.
+export const acknowledgePIPSchema = z.object({
+  note: z.string().max(2000).optional(),
 });
 
 // ---------------------------------------------------------------------------

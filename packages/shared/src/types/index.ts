@@ -297,6 +297,10 @@ export interface PerformanceImprovementPlan {
   extended_end_date: string | null;
   outcome_notes: string | null;
   created_by: number;
+  acknowledged_at: string | null;
+  acknowledged_by: number | null;
+  acknowledgement_note: string | null;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
