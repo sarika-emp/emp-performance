@@ -192,6 +192,19 @@ export interface Competency {
   updated_at: string;
 }
 
+export interface CompetencyLevel {
+  id: string;
+  organization_id: number;
+  competency_id: string;
+  level: number;
+  name: string;
+  description: string | null;
+  behavioral_anchors: string[] | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ReviewCycle {
   id: string;
   organization_id: number;

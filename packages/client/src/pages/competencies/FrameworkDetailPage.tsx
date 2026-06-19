@@ -10,9 +10,12 @@ import {
   Save,
   X,
   GripVertical,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import type { CompetencyFramework, Competency } from "@emp-performance/shared";
+import { CompetencyLevelsEditor } from "./CompetencyLevelsEditor";
 
 type FrameworkWithCompetencies = CompetencyFramework & { competencies: Competency[] };
 
@@ -28,6 +31,7 @@ export function FrameworkDetailPage() {
   const [editFramework, setEditFramework] = useState(false);
   const [fwForm, setFwForm] = useState({ name: "", description: "", is_active: true });
   const [dragId, setDragId] = useState<string | null>(null);
+  const [levelsOpenId, setLevelsOpenId] = useState<string | null>(null);
 
   const { data: fwData, isLoading } = useQuery({
     queryKey: ["framework", id],
@@ -400,55 +404,70 @@ export function FrameworkDetailPage() {
         ) : (
           <div className="space-y-2">
             {competencies.map((comp) => (
-              <div
-                key={comp.id}
-                draggable
-                onDragStart={() => setDragId(comp.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDrop(comp.id)}
-                className={`flex items-center gap-3 rounded-lg border bg-white px-4 py-3 transition-colors ${
-                  dragId === comp.id ? "border-brand-300 opacity-60" : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <GripVertical className="h-4 w-4 text-gray-300 flex-shrink-0 cursor-grab" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900 text-sm">{comp.name}</span>
-                    {comp.category && (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                        {comp.category}
-                      </span>
+              <div key={comp.id}>
+                <div
+                  draggable
+                  onDragStart={() => setDragId(comp.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDrop(comp.id)}
+                  className={`flex items-center gap-3 rounded-lg border bg-white px-4 py-3 transition-colors ${
+                    dragId === comp.id ? "border-brand-300 opacity-60" : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <GripVertical className="h-4 w-4 text-gray-300 flex-shrink-0 cursor-grab" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900 text-sm">{comp.name}</span>
+                      {comp.category && (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                          {comp.category}
+                        </span>
+                      )}
+                    </div>
+                    {comp.description && (
+                      <p className="mt-0.5 text-xs text-gray-500 truncate">{comp.description}</p>
                     )}
                   </div>
-                  {comp.description && (
-                    <p className="mt-0.5 text-xs text-gray-500 truncate">{comp.description}</p>
-                  )}
-                </div>
-                <span className="text-xs text-gray-400 flex-shrink-0">
-                  Weight: {comp.weight}
-                </span>
-                <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => startEdit(comp)}
-                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (
-                        confirm(
-                          `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
-                        )
-                      ) {
-                        removeMutation.mutate(comp.id);
+                  <span className="text-xs text-gray-400 flex-shrink-0">
+                    Weight: {comp.weight}
+                  </span>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={() =>
+                        setLevelsOpenId((cur) => (cur === comp.id ? null : comp.id))
                       }
-                    }}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                      className="inline-flex items-center gap-1 rounded p-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                    >
+                      {levelsOpenId === comp.id ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                      Levels
+                    </button>
+                    <button
+                      onClick={() => startEdit(comp)}
+                      className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
+                          )
+                        ) {
+                          removeMutation.mutate(comp.id);
+                        }
+                      }}
+                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
+                {levelsOpenId === comp.id && <CompetencyLevelsEditor competencyId={comp.id} />}
               </div>
             ))}
           </div>

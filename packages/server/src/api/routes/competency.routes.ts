@@ -6,6 +6,9 @@ import {
   createFrameworkSchema,
   addCompetencySchema,
   reorderCompetenciesSchema,
+  createCompetencyLevelSchema,
+  updateCompetencyLevelSchema,
+  reorderCompetencyLevelsSchema,
   paginationSchema,
   idParamSchema,
 } from "@emp-performance/shared";
@@ -180,6 +183,107 @@ router.delete(
       const orgId = req.user!.empcloudOrgId;
       await frameworkService.removeCompetency(orgId, id, compId);
       return sendSuccess(res, { message: "Competency removed" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Competency proficiency levels (C6)
+// Here :id is a COMPETENCY id (a child of a framework), not a framework id.
+// Levels resolve their org via competency -> framework -> organization_id.
+// ---------------------------------------------------------------------------
+
+// GET /:id/levels — list proficiency levels for a competency
+router.get(
+  "/:id/levels",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const orgId = req.user!.empcloudOrgId;
+      const levels = await frameworkService.listLevels(orgId, id);
+      return sendSuccess(res, levels);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /:id/levels — add a proficiency level to a competency (admin only)
+router.post(
+  "/:id/levels",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const data = createCompetencyLevelSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const level = await frameworkService.createLevel(orgId, id, data);
+      return sendSuccess(res, level, 201);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// PUT /:id/levels/reorder — bulk reorder a competency's levels.
+// NOTE: declared before "/:id/levels/:levelId" so "reorder" is not captured
+// as a :levelId param.
+router.put(
+  "/:id/levels/reorder",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const { level_ids } = reorderCompetencyLevelsSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const levels = await frameworkService.reorderLevels(orgId, id, level_ids);
+      return sendSuccess(res, levels);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid reorder data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// PUT /:id/levels/:levelId — update a proficiency level
+router.put(
+  "/:id/levels/:levelId",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const levelId = req.params.levelId as string;
+      const data = updateCompetencyLevelSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const level = await frameworkService.updateLevel(orgId, id, levelId, data);
+      return sendSuccess(res, level);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// DELETE /:id/levels/:levelId — delete a proficiency level
+router.delete(
+  "/:id/levels/:levelId",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const levelId = req.params.levelId as string;
+      const orgId = req.user!.empcloudOrgId;
+      await frameworkService.deleteLevel(orgId, id, levelId);
+      return sendSuccess(res, { message: "Level deleted" });
     } catch (err) {
       next(err);
     }

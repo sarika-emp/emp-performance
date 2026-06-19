@@ -133,6 +133,22 @@ export const reorderCompetenciesSchema = z.object({
   competency_ids: z.array(z.string().uuid()).min(1),
 });
 
+// Competency proficiency levels (e.g. 1=Beginner .. 5=Expert) with behavioral
+// anchors describing what each level looks like in practice.
+export const createCompetencyLevelSchema = z.object({
+  level: z.number().int().min(1).max(10),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  behavioral_anchors: z.array(z.string().min(1).max(1000)).max(50).optional(),
+  sort_order: z.number().int().min(0).optional(),
+});
+
+export const updateCompetencyLevelSchema = createCompetencyLevelSchema.partial();
+
+export const reorderCompetencyLevelsSchema = z.object({
+  level_ids: z.array(z.string().uuid()).min(1),
+});
+
 // ---------------------------------------------------------------------------
 // Goals & OKRs
 // ---------------------------------------------------------------------------
