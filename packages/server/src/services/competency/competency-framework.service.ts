@@ -28,12 +28,51 @@ export async function createFramework(
   return db.create<CompetencyFramework>("competency_frameworks", record as any);
 }
 
-export async function listFrameworks(orgId: number): Promise<CompetencyFramework[]> {
+const FRAMEWORK_SORT_COLUMNS = new Set(["name", "created_at", "updated_at", "is_active"]);
+
+export async function listFrameworks(
+  orgId: number,
+  params: {
+    page?: number;
+    perPage?: number;
+    sort?: string;
+    order?: "asc" | "desc";
+    search?: string;
+    isActive?: boolean;
+  } = {},
+): Promise<{
+  data: CompetencyFramework[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}> {
   const db = getDB();
+  const page = params.page ?? 1;
+  const perPage = params.perPage ?? 20;
+  const sort =
+    params.sort && FRAMEWORK_SORT_COLUMNS.has(params.sort) ? params.sort : "created_at";
+  const order = params.order === "asc" ? "asc" : "desc";
+
+  const filters: Record<string, any> = { organization_id: orgId, deleted_at: null };
+  if (params.isActive !== undefined) filters.is_active = params.isActive;
+
   const result = await db.findMany<CompetencyFramework>("competency_frameworks", {
-    filters: { organization_id: orgId, deleted_at: null },
+    page,
+    limit: perPage,
+    filters,
+    sort: { field: sort, order },
+    search: params.search,
+    searchFields: ["name", "description"],
   });
-  return result.data;
+
+  return {
+    data: result.data,
+    total: result.total,
+    page: result.page,
+    perPage: result.limit,
+    totalPages: result.totalPages,
+  };
 }
 
 export async function getFramework(
@@ -49,8 +88,12 @@ export async function getFramework(
   if (!framework) throw new NotFoundError("CompetencyFramework", id);
 
   const competencies = await db.findMany<Competency>("competencies", {
-    filters: { framework_id: id },
+    filters: { framework_id: id, deleted_at: null },
     sort: { field: "order", order: "asc" },
+    // Frameworks can legitimately have many competencies — the adapter default
+    // limit is 20, which silently dropped the rest. Use a high explicit cap.
+    page: 1,
+    limit: 1000,
   });
 
   return { ...framework, competencies: competencies.data };
@@ -139,6 +182,7 @@ export async function updateCompetency(
   const existing = await db.findOne<Competency>("competencies", {
     id: compId,
     framework_id: frameworkId,
+    deleted_at: null,
   });
   if (!existing) throw new NotFoundError("Competency", compId);
 
@@ -161,8 +205,49 @@ export async function removeCompetency(
   const existing = await db.findOne<Competency>("competencies", {
     id: compId,
     framework_id: frameworkId,
+    deleted_at: null,
   });
   if (!existing) throw new NotFoundError("Competency", compId);
 
-  await db.delete("competencies", compId);
+  // C4: review_competency_ratings.competency_id is ON DELETE CASCADE, so a hard
+  // delete would silently erase historical review scores. Soft-delete instead so
+  // the competency stops appearing in the framework but its ratings are kept.
+  await db.update("competencies", compId, {
+    deleted_at: new Date().toISOString(),
+  } as any);
+}
+
+// C5: bulk reorder competencies within a framework. Accepts an ordered list of
+// competency ids; each competency's `order` is set to its index in the list.
+export async function reorderCompetencies(
+  orgId: number,
+  frameworkId: string,
+  orderedIds: string[],
+): Promise<Competency[]> {
+  const db = getDB();
+  const framework = await db.findOne<CompetencyFramework>("competency_frameworks", {
+    id: frameworkId,
+    organization_id: orgId,
+    deleted_at: null,
+  });
+  if (!framework) throw new NotFoundError("CompetencyFramework", frameworkId);
+
+  for (let i = 0; i < orderedIds.length; i++) {
+    const compId = orderedIds[i]!;
+    const existing = await db.findOne<Competency>("competencies", {
+      id: compId,
+      framework_id: frameworkId,
+      deleted_at: null,
+    });
+    if (!existing) throw new NotFoundError("Competency", compId);
+    await db.update("competencies", compId, { order: i } as any);
+  }
+
+  const competencies = await db.findMany<Competency>("competencies", {
+    filters: { framework_id: frameworkId, deleted_at: null },
+    sort: { field: "order", order: "asc" },
+    page: 1,
+    limit: 1000,
+  });
+  return competencies.data;
 }

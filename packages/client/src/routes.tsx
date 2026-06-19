@@ -112,6 +112,12 @@ const CareerPathDetailPage = lazy(() =>
 const CareerPathCreatePage = lazy(() =>
   import("@/pages/career-paths/CareerPathCreatePage").then((m) => ({ default: m.CareerPathCreatePage })),
 );
+const EmployeeTrackPage = lazy(() =>
+  import("@/pages/career-paths/EmployeeTrackPage").then((m) => ({ default: m.EmployeeTrackPage })),
+);
+const CareerTrackRosterPage = lazy(() =>
+  import("@/pages/career-paths/CareerTrackRosterPage").then((m) => ({ default: m.CareerTrackRosterPage })),
+);
 
 // 1-on-1 Meetings
 const MeetingListPage = lazy(() =>
@@ -227,6 +233,8 @@ export function AppRoutes() {
         {/* Career Paths */}
         <Route path="/career-paths" element={<CareerPathListPage />} />
         <Route path="/career-paths/new" element={<CareerPathCreatePage />} />
+        <Route path="/career-paths/roster" element={<CareerTrackRosterPage />} />
+        <Route path="/career-paths/tracks" element={<EmployeeTrackPage />} />
         <Route path="/career-paths/:id" element={<CareerPathDetailPage />} />
 
         {/* 1-on-1 Meetings */}

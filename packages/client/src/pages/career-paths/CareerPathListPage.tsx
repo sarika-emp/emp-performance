@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Plus, Route, ChevronRight, Loader2 } from "lucide-react";
+import { Plus, Route, ChevronRight, Loader2, Search, Users } from "lucide-react";
 import { apiGet } from "@/api/client";
+import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface CareerPath {
   id: string;
@@ -12,13 +14,36 @@ interface CareerPath {
   created_at: string;
 }
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "name:asc", label: "Name A–Z" },
+  { value: "name:desc", label: "Name Z–A" },
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+];
+
 export function CareerPathListPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [active, setActive] = useState("");
+  const [sortValue, setSortValue] = useState("name:asc");
+
+  const [sort, order] = sortValue.split(":") as [string, "asc" | "desc"];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["career-paths"],
-    queryFn: () => apiGet<{ data: CareerPath[]; total: number }>("/career-paths"),
+    queryKey: ["career-paths", page, search, active, sortValue],
+    queryFn: () =>
+      apiGet<PaginatedResponse<CareerPath>>("/career-paths", {
+        page,
+        perPage: 20,
+        sort,
+        order,
+        ...(search && { search }),
+        ...(active && { is_active: active }),
+      }),
   });
 
-  const paths = data?.data?.data || [];
+  const paths = data?.data?.data ?? [];
+  const pagination = data?.data;
 
   return (
     <div>
@@ -29,13 +54,65 @@ export function CareerPathListPage() {
             Define career progression paths for your organization.
           </p>
         </div>
-        <Link
-          to="/career-paths/new"
-          className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+        <div className="flex items-center gap-2">
+          <Link
+            to="/career-paths/roster"
+            className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Users className="h-4 w-4" />
+            Track Roster
+          </Link>
+          <Link
+            to="/career-paths/new"
+            className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+          >
+            <Plus className="h-4 w-4" />
+            Create Path
+          </Link>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search paths..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <select
+          value={active}
+          onChange={(e) => {
+            setActive(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <Plus className="h-4 w-4" />
-          Create Path
-        </Link>
+          <option value="">All Statuses</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+        <select
+          value={sortValue}
+          onChange={(e) => {
+            setSortValue(e.target.value);
+            setPage(1);
+          }}
+          className="ml-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {isLoading ? (
@@ -45,7 +122,7 @@ export function CareerPathListPage() {
       ) : paths.length === 0 ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
           <Route className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No career paths yet</h3>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No career paths found</h3>
           <p className="mt-1 text-sm text-gray-500">
             Create your first career path to define progression tracks.
           </p>
@@ -93,6 +170,31 @@ export function CareerPathListPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

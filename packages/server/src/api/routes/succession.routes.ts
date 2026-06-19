@@ -6,19 +6,36 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as analyticsService from "../../services/analytics/succession.service";
-import { sendSuccess } from "../../utils/response";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
+import {
+  createSuccessionPlanSchema,
+  updateSuccessionPlanSchema,
+  addSuccessionCandidateSchema,
+  updateSuccessionCandidateSchema,
+  paginationSchema,
+} from "@emp-performance/shared";
 
 const router = Router();
 router.use(authenticate);
 router.use(authorize("hr_admin", "hr_manager", "org_admin"));
 
-// GET /succession-plans
+// GET /succession-plans — paginated + search + criticality/status/department filters
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await analyticsService.listSuccessionPlans(orgId);
-    sendSuccess(res, result);
+    const pagination = paginationSchema.parse(req.query);
+    const result = await analyticsService.listSuccessionPlans(orgId, {
+      page: pagination.page,
+      perPage: pagination.perPage,
+      sort: pagination.sort,
+      order: pagination.order,
+      search: pagination.search,
+      criticality: (req.query.criticality as string) || undefined,
+      status: (req.query.status as string) || undefined,
+      department: (req.query.department as string) || undefined,
+    });
+    sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }
@@ -28,19 +45,13 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { position_title, current_holder_id, department, criticality, status } = req.body;
-    if (!position_title) {
-      throw new ValidationError("position_title is required");
-    }
-    const result = await analyticsService.createSuccessionPlan(orgId, {
-      position_title,
-      current_holder_id: current_holder_id ? Number(current_holder_id) : undefined,
-      department,
-      criticality,
-      status,
-    });
+    const data = createSuccessionPlanSchema.parse(req.body);
+    const result = await analyticsService.createSuccessionPlan(orgId, data);
     sendSuccess(res, result, 201);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      return next(new ValidationError("Invalid succession plan data", err.flatten().fieldErrors));
+    }
     next(err);
   }
 });
@@ -56,22 +67,51 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// PUT /succession-plans/:id — update plan lifecycle (S1)
+router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const data = updateSuccessionPlanSchema.parse(req.body);
+    const result = await analyticsService.updateSuccessionPlan(
+      orgId,
+      req.params.id as string,
+      data,
+    );
+    sendSuccess(res, result);
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      return next(new ValidationError("Invalid succession plan data", err.flatten().fieldErrors));
+    }
+    next(err);
+  }
+});
+
+// DELETE /succession-plans/:id — delete plan (S2)
+router.delete(
+  "/:id",
+  authorize("hr_admin", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      await analyticsService.deleteSuccessionPlan(orgId, req.params.id as string);
+      sendSuccess(res, { deleted: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 // POST /succession-plans/:id/candidates
 router.post("/:id/candidates", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { employee_id, readiness, development_notes, nine_box_position } = req.body;
-    if (!employee_id) {
-      throw new ValidationError("employee_id is required");
-    }
-    const result = await analyticsService.addSuccessionCandidate(orgId, req.params.id as string, {
-      employee_id: Number(employee_id),
-      readiness,
-      development_notes,
-      nine_box_position,
-    });
+    const data = addSuccessionCandidateSchema.parse(req.body);
+    const result = await analyticsService.addSuccessionCandidate(orgId, req.params.id as string, data);
     sendSuccess(res, result, 201);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      return next(new ValidationError("Invalid candidate data", err.flatten().fieldErrors));
+    }
     next(err);
   }
 });
@@ -82,14 +122,35 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const { readiness, development_notes, nine_box_position } = req.body;
+      const data = updateSuccessionCandidateSchema.parse(req.body);
       const result = await analyticsService.updateSuccessionCandidate(
         orgId,
         req.params.id as string,
         req.params.candidateId as string,
-        { readiness, development_notes, nine_box_position },
+        data,
       );
       sendSuccess(res, result);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid candidate data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// DELETE /succession-plans/:id/candidates/:candidateId — remove candidate (S2)
+router.delete(
+  "/:id/candidates/:candidateId",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      await analyticsService.deleteSuccessionCandidate(
+        orgId,
+        req.params.id as string,
+        req.params.candidateId as string,
+      );
+      sendSuccess(res, { deleted: true });
     } catch (err) {
       next(err);
     }

@@ -17,7 +17,22 @@ import {
   FeedbackVisibility,
   NominationStatus,
   MetricType,
+  SuccessionCriticality,
+  SuccessionStatus,
+  CandidateReadiness,
 } from "../types";
+
+const NINE_BOX_POSITIONS = [
+  "Star",
+  "High Performer",
+  "Solid Performer",
+  "High Potential",
+  "Core Player",
+  "Average",
+  "Inconsistent",
+  "Improvement Needed",
+  "Action Required",
+] as const;
 
 // ---------------------------------------------------------------------------
 // Common / Reusable
@@ -112,6 +127,10 @@ export const addCompetencySchema = z.object({
   category: z.string().max(100).optional(),
   weight: z.number().min(0).max(100).default(1),
   order: z.number().int().min(0).default(0),
+});
+
+export const reorderCompetenciesSchema = z.object({
+  competency_ids: z.array(z.string().uuid()).min(1),
 });
 
 // ---------------------------------------------------------------------------
@@ -274,6 +293,43 @@ export const assignCareerTrackSchema = z.object({
   target_level_id: z.string().uuid().optional(),
   notes: z.string().optional(),
 });
+
+// ---------------------------------------------------------------------------
+// Succession Planning
+// ---------------------------------------------------------------------------
+
+export const createSuccessionPlanSchema = z.object({
+  position_title: z.string().min(2).max(255),
+  current_holder_id: z.coerce.number().int().positive().optional(),
+  department: z.string().max(100).optional(),
+  criticality: z.nativeEnum(SuccessionCriticality).optional(),
+  status: z.nativeEnum(SuccessionStatus).optional(),
+});
+
+export const updateSuccessionPlanSchema = z
+  .object({
+    position_title: z.string().min(2).max(255).optional(),
+    current_holder_id: z.coerce.number().int().positive().nullable().optional(),
+    department: z.string().max(100).nullable().optional(),
+    criticality: z.nativeEnum(SuccessionCriticality).optional(),
+    status: z.nativeEnum(SuccessionStatus).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "No fields to update" });
+
+export const addSuccessionCandidateSchema = z.object({
+  employee_id: z.coerce.number().int().positive(),
+  readiness: z.nativeEnum(CandidateReadiness).optional(),
+  development_notes: z.string().max(5000).optional(),
+  nine_box_position: z.enum(NINE_BOX_POSITIONS).optional(),
+});
+
+export const updateSuccessionCandidateSchema = z
+  .object({
+    readiness: z.nativeEnum(CandidateReadiness).optional(),
+    development_notes: z.string().max(5000).nullable().optional(),
+    nine_box_position: z.enum(NINE_BOX_POSITIONS).nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: "No fields to update" });
 
 // ---------------------------------------------------------------------------
 // 1-on-1 Meetings
