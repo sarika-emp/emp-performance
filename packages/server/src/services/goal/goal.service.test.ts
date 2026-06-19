@@ -39,6 +39,7 @@ import {
 
 const ORG_ID = 1;
 const USER_ID = 10;
+const ADMIN_ACTOR = { userId: USER_ID, role: "org_admin" };
 
 function makeGoal(overrides: Record<string, any> = {}) {
   return {
@@ -171,7 +172,7 @@ describe("goal.service", () => {
       mockDB.findOne.mockResolvedValue(makeGoal());
       mockDB.update.mockResolvedValue(makeGoal({ title: "Updated title" }));
 
-      const result = await updateGoal(ORG_ID, "goal-1", { title: "Updated title" });
+      const result = await updateGoal(ORG_ID, "goal-1", { title: "Updated title" }, ADMIN_ACTOR);
 
       expect(result.title).toBe("Updated title");
     });
@@ -180,7 +181,7 @@ describe("goal.service", () => {
       mockDB.findOne.mockResolvedValue(makeGoal());
       mockDB.update.mockResolvedValue(makeGoal({ status: "completed", progress: 100 }));
 
-      await updateGoal(ORG_ID, "goal-1", { status: "completed" });
+      await updateGoal(ORG_ID, "goal-1", { status: "completed" }, ADMIN_ACTOR);
 
       expect(mockDB.update).toHaveBeenCalledWith(
         "goals",
@@ -196,7 +197,7 @@ describe("goal.service", () => {
     it("should throw NotFoundError for missing goal", async () => {
       mockDB.findOne.mockResolvedValue(null);
 
-      await expect(updateGoal(ORG_ID, "nope", {})).rejects.toThrow("not found");
+      await expect(updateGoal(ORG_ID, "nope", {}, ADMIN_ACTOR)).rejects.toThrow("not found");
     });
   });
 
@@ -208,7 +209,7 @@ describe("goal.service", () => {
       mockDB.findOne.mockResolvedValue(makeGoal());
       mockDB.update.mockResolvedValue(makeGoal({ status: "cancelled" }));
 
-      await deleteGoal(ORG_ID, "goal-1");
+      await deleteGoal(ORG_ID, "goal-1", ADMIN_ACTOR);
 
       expect(mockDB.update).toHaveBeenCalledWith(
         "goals",
@@ -241,7 +242,7 @@ describe("goal.service", () => {
       const result = await checkIn(ORG_ID, "goal-1", USER_ID, {
         progress: 30,
         notes: "Making progress",
-      });
+      }, ADMIN_ACTOR);
 
       expect(result.progress).toBe(30);
       expect(mockDB.create).toHaveBeenCalledWith(
@@ -264,7 +265,7 @@ describe("goal.service", () => {
         .mockResolvedValueOnce({ data: [{ progress: 10 }], total: 1, page: 1, limit: 1, totalPages: 1 });
       mockDB.update.mockResolvedValue(goal);
 
-      await checkIn(ORG_ID, "goal-1", USER_ID, { progress: 10 });
+      await checkIn(ORG_ID, "goal-1", USER_ID, { progress: 10 }, ADMIN_ACTOR);
 
       // Last update call should transition status
       const updateCalls = mockDB.update.mock.calls;

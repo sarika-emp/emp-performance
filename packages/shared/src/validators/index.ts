@@ -126,6 +126,20 @@ export const createGoalSchema = z.object({
   employee_id: z.number().int().optional(),
 });
 
+export const updateGoalSchema = z
+  .object({
+    title: z.string().min(2).max(300).optional(),
+    description: z.string().nullable().optional(),
+    category: z.nativeEnum(GoalCategory).optional(),
+    priority: z.nativeEnum(GoalPriority).optional(),
+    status: z.nativeEnum(GoalStatus).optional(),
+    start_date: z.string().nullable().optional(),
+    due_date: z.string().nullable().optional(),
+    cycle_id: z.string().uuid().nullable().optional(),
+    parent_goal_id: z.string().uuid().nullable().optional(),
+  })
+  .strict();
+
 export const addKeyResultSchema = z.object({
   title: z.string().min(2).max(300),
   metric_type: z.nativeEnum(MetricType).default(MetricType.NUMBER),
@@ -135,10 +149,31 @@ export const addKeyResultSchema = z.object({
   weight: z.number().min(0).max(100).default(1),
 });
 
-export const checkInSchema = z.object({
-  progress: z.number().min(0).max(100),
-  notes: z.string().optional(),
-});
+export const updateKeyResultSchema = z
+  .object({
+    title: z.string().min(2).max(300).optional(),
+    metric_type: z.nativeEnum(MetricType).optional(),
+    target_value: z.number().optional(),
+    current_value: z.number().optional(),
+    unit: z.string().max(50).nullable().optional(),
+    weight: z.number().min(0).max(100).optional(),
+  })
+  .strict();
+
+export const checkInSchema = z
+  .object({
+    progress: z.number().min(0).max(100),
+    notes: z.string().optional(),
+    key_result_id: z.string().uuid().optional(),
+    current_value: z.number().optional(),
+  })
+  .refine(
+    (val) => val.key_result_id === undefined || val.current_value !== undefined,
+    {
+      message: "current_value is required when key_result_id is provided",
+      path: ["current_value"],
+    },
+  );
 
 // ---------------------------------------------------------------------------
 // Performance Improvement Plans (PIPs)
