@@ -381,6 +381,24 @@ export const nominatePeerSchema = z.object({
   nominee_id: z.number().int(),
 });
 
+// Submission a nominated peer reviewer fills out for an approved nomination (#F9).
+export const submitPeerReviewSchema = z.object({
+  overall_rating: z.number().min(1).max(5),
+  ratings: z
+    .array(
+      z.object({
+        competency_id: z.string().uuid(),
+        rating: z.number().int().min(1).max(5),
+        comments: z.string().max(2000).optional(),
+      }),
+    )
+    .max(100)
+    .optional(),
+  strengths: z.string().max(5000).optional(),
+  improvements: z.string().max(5000).optional(),
+  comments: z.string().max(5000).optional(),
+});
+
 // ---------------------------------------------------------------------------
 // AI Summary
 // ---------------------------------------------------------------------------

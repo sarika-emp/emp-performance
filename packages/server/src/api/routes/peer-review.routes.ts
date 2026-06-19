@@ -8,7 +8,9 @@ import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as peerReviewService from "../../services/peer-review/peer-review.service";
 import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
-import { nominatePeerSchema } from "@emp-performance/shared";
+import { nominatePeerSchema, submitPeerReviewSchema } from "@emp-performance/shared";
+
+const ADMIN_ROLES = ["hr_admin", "hr_manager", "org_admin", "super_admin"];
 
 const router = Router();
 router.use(authenticate);
@@ -99,5 +101,66 @@ router.put(
     }
   },
 );
+
+// GET /peer-reviews/responses?cycleId=&reviewerEmployeeId=&status=
+// Lists submitted/draft peer-review responses for the org (HR/admin oversight or
+// a reviewer scoping to their own via reviewerEmployeeId).
+router.get("/responses", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const result = await peerReviewService.listResponses(orgId, {
+      page: parseInt(req.query.page as string) || 1,
+      limit: parseInt((req.query.perPage as string) ?? (req.query.limit as string)) || 50,
+      cycleId: req.query.cycleId as string | undefined,
+      reviewerEmployeeId: req.query.reviewerEmployeeId
+        ? parseInt(req.query.reviewerEmployeeId as string)
+        : undefined,
+      revieweeEmployeeId: req.query.revieweeEmployeeId
+        ? parseInt(req.query.revieweeEmployeeId as string)
+        : undefined,
+      status: req.query.status as string | undefined,
+    });
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /peer-reviews/:id/response — the reviewer's pending/submitted response for a nomination.
+router.get("/:id/response", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const isAdmin = ADMIN_ROLES.includes(req.user!.role);
+    const result = await peerReviewService.getResponse(
+      orgId,
+      req.params.id as string,
+      req.user!.empcloudUserId,
+      isAdmin,
+    );
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /peer-reviews/:id/submit — the nominated reviewer submits their review.
+router.post("/:id/submit", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const data = submitPeerReviewSchema.parse(req.body);
+    const result = await peerReviewService.submitPeerReview(
+      orgId,
+      req.params.id as string,
+      req.user!.empcloudUserId,
+      data,
+    );
+    sendSuccess(res, result, 201);
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      return next(new ValidationError("Invalid peer review data", err.flatten().fieldErrors));
+    }
+    next(err);
+  }
+});
 
 export { router as peerReviewRoutes };

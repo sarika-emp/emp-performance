@@ -484,11 +484,26 @@ const spec = {
       },
     },
     "/api/v1/peer-reviews/{id}/submit": {
-      put: {
+      post: {
         tags: ["Peer Reviews"],
         summary: "Submit peer review",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "Peer review submitted" } },
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "201": { description: "Peer review submitted" } },
+      },
+    },
+    "/api/v1/peer-reviews/{id}/response": {
+      get: {
+        tags: ["Peer Reviews"],
+        summary: "Get the reviewer's peer-review response for a nomination",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "200": { description: "Peer review response (or null)" } },
+      },
+    },
+    "/api/v1/peer-reviews/responses": {
+      get: {
+        tags: ["Peer Reviews"],
+        summary: "List peer-review responses",
+        responses: { "200": { description: "Peer review response list" } },
       },
     },
 

@@ -166,6 +166,9 @@ const PeerReviewNominatePage = lazy(() =>
 const PeerReviewQueuePage = lazy(() =>
   import("@/pages/peer-reviews/PeerReviewQueuePage").then((m) => ({ default: m.PeerReviewQueuePage })),
 );
+const PeerReviewSubmitPage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewSubmitPage").then((m) => ({ default: m.PeerReviewSubmitPage })),
+);
 
 // Analytics
 const AnalyticsPage = lazy(() =>
@@ -278,6 +281,7 @@ export function AppRoutes() {
 
         {/* Peer Reviews */}
         <Route path="/peer-reviews/nominate" element={<PeerReviewNominatePage />} />
+        <Route path="/peer-reviews/submit" element={<PeerReviewSubmitPage />} />
         <Route path="/peer-reviews/queue" element={<PeerReviewQueuePage />} />
 
         {/* Analytics */}
