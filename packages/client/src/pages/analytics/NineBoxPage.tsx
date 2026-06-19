@@ -1,8 +1,22 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Grid3X3, ChevronDown, X, Users } from "lucide-react";
-import { apiGet } from "@/api/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Grid3X3, ChevronDown, X, Users, Plus, Trash2, Pencil } from "lucide-react";
+import toast from "react-hot-toast";
+import { apiGet, apiPost, apiDelete } from "@/api/client";
 import type { NineBoxPosition } from "@emp-performance/shared";
+
+interface OrgUser {
+  id: number;
+  full_name: string;
+}
+
+interface PotentialAssessment {
+  id: string;
+  employee_id: number;
+  potential_rating: number;
+  notes: string | null;
+  employee_name?: string;
+}
 
 interface NineBoxEmployee {
   id: number;
@@ -48,8 +62,14 @@ const POTENTIAL_LABELS = ["High Potential", "Medium Potential", "Low Potential"]
 const PERFORMANCE_LABELS = ["Low Performance", "Medium Performance", "High Performance"];
 
 export function NineBoxPage() {
+  const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<string>("");
   const [selectedBox, setSelectedBox] = useState<NineBoxPosition | null>(null);
+
+  // A5: potential-assessment form state
+  const [formEmployeeId, setFormEmployeeId] = useState<string>("");
+  const [formRating, setFormRating] = useState<number>(3);
+  const [formNotes, setFormNotes] = useState<string>("");
 
   const { data: cyclesData } = useQuery({
     queryKey: ["review-cycles-list"],
@@ -77,6 +97,72 @@ export function NineBoxPage() {
   const totalEmployees = nineBoxData?.data?.totalEmployees ?? 0;
 
   const selectedBoxData = selectedBox && boxes ? boxes[selectedBox] : null;
+
+  // A5: org users for the employee picker
+  const { data: usersData } = useQuery({
+    queryKey: ["org-users-picker"],
+    queryFn: () => apiGet<OrgUser[]>("/users", { limit: 500 }),
+    enabled: !!activeCycleId,
+  });
+  const orgUsers = usersData?.data || [];
+
+  // A5: existing potential assessments for the cycle
+  const { data: assessmentsData } = useQuery({
+    queryKey: ["potential-assessments", activeCycleId],
+    queryFn: () =>
+      apiGet<PotentialAssessment[]>("/analytics/potential-assessments", { cycleId: activeCycleId }),
+    enabled: !!activeCycleId,
+  });
+  const assessments = assessmentsData?.data || [];
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["potential-assessments", activeCycleId] });
+    queryClient.invalidateQueries({ queryKey: ["nine-box", activeCycleId] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: (body: { cycle_id: string; employee_id: number; potential_rating: number; notes?: string }) =>
+      apiPost("/analytics/potential-assessments", body),
+    onSuccess: () => {
+      toast.success("Potential assessment saved");
+      setFormEmployeeId("");
+      setFormRating(3);
+      setFormNotes("");
+      invalidate();
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to save assessment"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/analytics/potential-assessments/${id}`),
+    onSuccess: () => {
+      toast.success("Assessment removed");
+      invalidate();
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to remove assessment"),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formEmployeeId) {
+      toast.error("Select an employee");
+      return;
+    }
+    saveMutation.mutate({
+      cycle_id: activeCycleId,
+      employee_id: Number(formEmployeeId),
+      potential_rating: formRating,
+      notes: formNotes.trim() || undefined,
+    });
+  };
+
+  const startEdit = (a: PotentialAssessment) => {
+    setFormEmployeeId(String(a.employee_id));
+    setFormRating(a.potential_rating);
+    setFormNotes(a.notes || "");
+  };
 
   return (
     <div>
@@ -268,6 +354,125 @@ export function NineBoxPage() {
               )}
             </div>
           )}
+
+          {/* A5: Potential Assessment form + list */}
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <Plus className="h-5 w-5 text-brand-600" />
+                Assess Potential
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Rate an employee's potential (1–5) for this cycle. Saving an existing employee updates their rating.
+              </p>
+              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Employee</label>
+                  <select
+                    value={formEmployeeId}
+                    onChange={(e) => setFormEmployeeId(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  >
+                    <option value="">Select employee...</option>
+                    {orgUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Potential Rating: <span className="font-bold text-brand-600">{formRating}</span>
+                  </label>
+                  <div className="mt-2 flex gap-2">
+                    {[1, 2, 3, 4, 5].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setFormRating(r)}
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+                          formRating === r
+                            ? "border-brand-500 bg-brand-50 text-brand-700"
+                            : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes (optional)</label>
+                  <textarea
+                    value={formNotes}
+                    onChange={(e) => setFormNotes(e.target.value)}
+                    rows={3}
+                    maxLength={2000}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    placeholder="Rationale for the potential rating..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={saveMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  {saveMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  Save Assessment
+                </button>
+              </form>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Assessments ({assessments.length})
+              </h3>
+              {assessments.length === 0 ? (
+                <p className="mt-4 text-sm text-gray-500">No potential assessments yet for this cycle.</p>
+              ) : (
+                <ul className="mt-4 divide-y divide-gray-100">
+                  {assessments.map((a) => (
+                    <li key={a.id} className="flex items-center justify-between py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-gray-900">
+                          {a.employee_name || `Employee ${a.employee_id}`}
+                        </p>
+                        {a.notes && <p className="truncate text-xs text-gray-500">{a.notes}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                          {a.potential_rating}/5
+                        </span>
+                        <button
+                          onClick={() => startEdit(a)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm("Remove this potential assessment?")) {
+                              deleteMutation.mutate(a.id);
+                            }
+                          }}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

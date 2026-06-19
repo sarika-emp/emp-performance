@@ -4,6 +4,7 @@ import { ArrowLeft, Star, User, Users, FileText } from "lucide-react";
 import { apiGet } from "@/api/client";
 import type { Review, ReviewCompetencyRating } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { AiSummaryPanel } from "@/components/AiSummaryPanel";
 
 type RatingWithName = ReviewCompetencyRating & { competency_name?: string | null };
 type ReviewWithRatings = Review & { competency_ratings: RatingWithName[] };
@@ -96,6 +97,9 @@ export function ReviewPage() {
           </p>
         </div>
       </div>
+
+      {/* A3: AI summary panel for the current review */}
+      <AiSummaryPanel scope="review" id={review.id} />
 
       {/* Side-by-side reviews */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">

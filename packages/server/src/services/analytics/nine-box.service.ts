@@ -5,6 +5,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { getDB } from "../../db/adapters";
+import { getEmpCloudDB } from "../../db/empcloud";
 import { NotFoundError, ValidationError } from "../../utils/errors";
 import type {
   NineBoxPosition,
@@ -13,6 +14,57 @@ import type {
   NineBoxCell,
   PotentialAssessment,
 } from "@emp-performance/shared";
+
+// ---------------------------------------------------------------------------
+// Employee identity resolution (best-effort EmpCloud lookup)
+// Resolves real names + department names for a set of employee ids in one
+// round-trip; degrades gracefully to "Employee {id}" on any failure (A6).
+// ---------------------------------------------------------------------------
+
+export interface ResolvedEmployee {
+  name: string;
+  department: string | null;
+}
+
+export async function resolveEmployees(
+  orgId: number,
+  ids: number[],
+): Promise<Map<number, ResolvedEmployee>> {
+  const map = new Map<number, ResolvedEmployee>();
+  const unique = [...new Set(ids.filter((id) => id && id > 0))];
+  if (unique.length === 0) return map;
+
+  try {
+    const db = getEmpCloudDB();
+    const users = await db("users")
+      .where({ organization_id: orgId })
+      .whereIn("id", unique)
+      .select("id", "first_name", "last_name", "department_id");
+
+    const deptIds = [
+      ...new Set(users.map((u: any) => u.department_id).filter((d: any) => d != null)),
+    ];
+    const deptMap = new Map<number, string>();
+    if (deptIds.length > 0) {
+      const depts = await db("organization_departments")
+        .where({ organization_id: orgId })
+        .whereIn("id", deptIds)
+        .select("id", "name");
+      for (const d of depts) deptMap.set(d.id, d.name);
+    }
+
+    for (const u of users) {
+      map.set(u.id, {
+        name: `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || `Employee ${u.id}`,
+        department: u.department_id != null ? deptMap.get(u.department_id) ?? null : null,
+      });
+    }
+  } catch {
+    // Degrade to ids only — EmpCloud DB unavailable.
+  }
+
+  return map;
+}
 
 // ---------------------------------------------------------------------------
 // Nine-Box Classification
@@ -87,6 +139,12 @@ export async function getNineBoxData(
 
   let totalEmployees = 0;
 
+  // Resolve real names + departments for the mapped employees (A6).
+  const mappedIds = participants.data
+    .filter((p: any) => p.final_rating != null && potentialMap.get(p.employee_id) != null)
+    .map((p: any) => p.employee_id);
+  const identities = await resolveEmployees(orgId, mappedIds);
+
   for (const p of participants.data) {
     const performance = p.final_rating;
     const potential = potentialMap.get(p.employee_id);
@@ -95,10 +153,11 @@ export async function getNineBoxData(
 
     const position = classifyNineBox(performance, potential);
 
+    const identity = identities.get(p.employee_id);
     const employee: NineBoxEmployee = {
       id: p.employee_id,
-      name: `Employee ${p.employee_id}`,
-      department: null,
+      name: identity?.name ?? `Employee ${p.employee_id}`,
+      department: identity?.department ?? null,
       rating: performance,
       potential,
     };
@@ -169,7 +228,7 @@ export async function createPotentialAssessment(
 export async function listPotentialAssessments(
   orgId: number,
   cycleId: string,
-): Promise<PotentialAssessment[]> {
+): Promise<(PotentialAssessment & { employee_name: string })[]> {
   const db = getDB();
 
   const cycle = await db.findOne<any>("review_cycles", {
@@ -183,5 +242,28 @@ export async function listPotentialAssessments(
     limit: 10000,
   });
 
-  return result.data;
+  // A6: resolve employee names for the assessments list.
+  const identities = await resolveEmployees(
+    orgId,
+    result.data.map((a) => a.employee_id),
+  );
+  return result.data.map((a) => ({
+    ...a,
+    employee_name: identities.get(a.employee_id)?.name ?? `Employee ${a.employee_id}`,
+  }));
+}
+
+// A7: delete a potential assessment (allows correcting a mis-rated employee).
+// Ownership scoped by organization_id.
+export async function deletePotentialAssessment(
+  orgId: number,
+  assessmentId: string,
+): Promise<void> {
+  const db = getDB();
+  const existing = await db.findOne<PotentialAssessment>("potential_assessments", {
+    id: assessmentId,
+    organization_id: orgId,
+  });
+  if (!existing) throw new NotFoundError("PotentialAssessment", assessmentId);
+  await db.delete("potential_assessments", assessmentId);
 }

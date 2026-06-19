@@ -5,6 +5,7 @@
 // when OPENAI_API_KEY is set.
 // ============================================================================
 
+import { v4 as uuidv4 } from "uuid";
 import { getDB } from "../../db/adapters";
 import { logger } from "../../utils/logger";
 import { NotFoundError } from "../../utils/errors";
@@ -128,6 +129,72 @@ export interface TeamSummary {
 function extractRows<T>(result: any): T[] {
   const rows = Array.isArray(result) ? (result[0] || result) : [];
   return Array.isArray(rows) ? rows : [];
+}
+
+// ---------------------------------------------------------------------------
+// A8: persistence / caching layer for generated summaries.
+// Summaries are stored serialized in ai_summary_cache and served unless the
+// caller explicitly requests regeneration. The cached model name is recorded
+// so consumers can tell template vs LLM output apart.
+// ---------------------------------------------------------------------------
+
+const SUMMARY_MODEL = process.env.OPENAI_API_KEY ? "gpt-4o-mini" : "template";
+
+async function readSummaryCache<T>(
+  orgId: number,
+  scope: "review" | "employee" | "team",
+  scopeKey: string,
+  cycleId: string,
+): Promise<(T & { generated_at: string; model: string | null }) | null> {
+  const db = getDB();
+  const row = await db.findOne<any>("ai_summary_cache", {
+    organization_id: orgId,
+    scope,
+    scope_key: scopeKey,
+    cycle_id: cycleId,
+  });
+  if (!row) return null;
+  try {
+    const payload = typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload;
+    return { ...(payload as T), generated_at: row.generated_at, model: row.model };
+  } catch {
+    return null;
+  }
+}
+
+async function writeSummaryCache<T>(
+  orgId: number,
+  scope: "review" | "employee" | "team",
+  scopeKey: string,
+  cycleId: string,
+  payload: T,
+): Promise<void> {
+  const db = getDB();
+  try {
+    const existing = await db.findOne<any>("ai_summary_cache", {
+      organization_id: orgId,
+      scope,
+      scope_key: scopeKey,
+      cycle_id: cycleId,
+    });
+    const data: Record<string, any> = {
+      organization_id: orgId,
+      scope,
+      scope_key: scopeKey,
+      cycle_id: cycleId,
+      model: SUMMARY_MODEL,
+      payload: JSON.stringify(payload),
+      generated_at: new Date().toISOString(),
+    };
+    if (existing) {
+      await db.update("ai_summary_cache", existing.id, data as any);
+    } else {
+      await db.create("ai_summary_cache", { id: uuidv4(), ...data } as any);
+    }
+  } catch (err) {
+    // Caching is best-effort; never fail the request because of it.
+    logger.warn("Failed to persist AI summary cache", { error: err, scope, scopeKey });
+  }
 }
 
 const RATING_THRESHOLD = 3; // Below this = weakness / needs improvement
@@ -259,12 +326,22 @@ async function tryOpenAISummary(prompt: string): Promise<string | null> {
 // generateReviewSummary
 // ---------------------------------------------------------------------------
 
-export async function generateReviewSummary(orgId: number, reviewId: string): Promise<ReviewSummary> {
+export async function generateReviewSummary(
+  orgId: number,
+  reviewId: string,
+  regenerate = false,
+): Promise<ReviewSummary> {
   const db = getDB();
 
   // 1. Fetch the review
   const review = await db.findOne<any>("reviews", { id: reviewId, organization_id: orgId });
   if (!review) throw new NotFoundError("Review", reviewId);
+
+  // A8: serve cached summary unless regeneration was requested.
+  if (!regenerate) {
+    const cached = await readSummaryCache<ReviewSummary>(orgId, "review", reviewId, review.cycle_id);
+    if (cached) return cached;
+  }
 
   // 2. Fetch competency ratings with competency names
   const ratingsRaw = await db.raw<any>(
@@ -347,7 +424,7 @@ export async function generateReviewSummary(orgId: number, reviewId: string): Pr
   );
   if (aiNarrative) narrative = aiNarrative;
 
-  return {
+  const summary: ReviewSummary = {
     review_id: reviewId,
     employee_id: review.employee_id,
     reviewer_id: review.reviewer_id,
@@ -378,6 +455,9 @@ export async function generateReviewSummary(orgId: number, reviewId: string): Pr
     narrative_summary: narrative,
     generated_at: new Date().toISOString(),
   };
+
+  await writeSummaryCache(orgId, "review", reviewId, review.cycle_id, summary);
+  return summary;
 }
 
 // ---------------------------------------------------------------------------
@@ -388,12 +468,19 @@ export async function generateEmployeeSummary(
   orgId: number,
   userId: number,
   cycleId: string,
+  regenerate = false,
 ): Promise<EmployeeSummary> {
   const db = getDB();
 
   // Verify cycle exists
   const cycle = await db.findOne<any>("review_cycles", { id: cycleId, organization_id: orgId });
   if (!cycle) throw new NotFoundError("ReviewCycle", cycleId);
+
+  // A8: serve cached summary unless regeneration was requested.
+  if (!regenerate) {
+    const cached = await readSummaryCache<EmployeeSummary>(orgId, "employee", String(userId), cycleId);
+    if (cached) return cached;
+  }
 
   // Fetch all reviews for this employee in this cycle
   const reviewsResult = await db.findMany<any>("reviews", {
@@ -513,7 +600,7 @@ export async function generateEmployeeSummary(
   );
   if (aiNarrative) narrative = aiNarrative;
 
-  return {
+  const summary: EmployeeSummary = {
     employee_id: userId,
     cycle_id: cycleId,
     reviews: {
@@ -543,6 +630,9 @@ export async function generateEmployeeSummary(
     narrative_summary: narrative,
     generated_at: new Date().toISOString(),
   };
+
+  await writeSummaryCache(orgId, "employee", String(userId), cycleId, summary);
+  return summary;
 }
 
 // ---------------------------------------------------------------------------
@@ -553,12 +643,19 @@ export async function generateTeamSummary(
   orgId: number,
   managerId: number,
   cycleId: string,
+  regenerate = false,
 ): Promise<TeamSummary> {
   const db = getDB();
 
   // Verify cycle
   const cycle = await db.findOne<any>("review_cycles", { id: cycleId, organization_id: orgId });
   if (!cycle) throw new NotFoundError("ReviewCycle", cycleId);
+
+  // A8: serve cached summary unless regeneration was requested.
+  if (!regenerate) {
+    const cached = await readSummaryCache<TeamSummary>(orgId, "team", String(managerId), cycleId);
+    if (cached) return cached;
+  }
 
   // Get direct reports from review_cycle_participants
   const participantsResult = await db.findMany<any>("review_cycle_participants", {
@@ -678,7 +775,7 @@ export async function generateTeamSummary(
   );
   if (aiNarrative) narrative = aiNarrative;
 
-  return {
+  const summary: TeamSummary = {
     manager_id: managerId,
     cycle_id: cycleId,
     team_size: teamSize,
@@ -692,4 +789,7 @@ export async function generateTeamSummary(
     narrative_summary: narrative,
     generated_at: new Date().toISOString(),
   };
+
+  await writeSummaryCache(orgId, "team", String(managerId), cycleId, summary);
+  return summary;
 }

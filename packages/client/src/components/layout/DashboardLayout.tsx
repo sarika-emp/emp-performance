@@ -23,6 +23,7 @@ import {
   Heart,
   UserPlus,
   ShieldCheck,
+  Gauge,
 } from "lucide-react";
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
   { to: "/analytics/nine-box", label: "9-Box Grid", icon: Grid3X3, adminOnly: true },
   { to: "/analytics/skills-gap", label: "Skills Gap", icon: Radar, adminOnly: true },
+  { to: "/manager-effectiveness", label: "Manager Effectiveness", icon: Gauge, adminOnly: true },
   { to: "/succession", label: "Succession", icon: Shield, adminOnly: true },
   { to: "/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];

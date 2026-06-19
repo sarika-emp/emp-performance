@@ -481,3 +481,14 @@ export const updateActionItemSchema = z
     status: actionItemStatusEnum.optional(),
   })
   .strict();
+
+// ---------------------------------------------------------------------------
+// Potential Assessments (nine-box) — A5/A7
+// ---------------------------------------------------------------------------
+
+export const createPotentialAssessmentSchema = z.object({
+  cycle_id: z.string().uuid(),
+  employee_id: z.coerce.number().int().positive(),
+  potential_rating: z.coerce.number().int().min(1).max(5),
+  notes: z.string().max(2000).nullable().optional(),
+});

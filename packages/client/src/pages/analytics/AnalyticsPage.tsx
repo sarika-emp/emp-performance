@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -7,6 +8,7 @@ import {
   RefreshCw,
   Loader2,
   ArrowUpRight,
+  ChevronDown,
 } from "lucide-react";
 import {
   BarChart,
@@ -24,6 +26,8 @@ import {
   Legend,
 } from "recharts";
 import { apiGet } from "@/api/client";
+import { AiSummaryPanel } from "@/components/AiSummaryPanel";
+import { getUser } from "@/lib/auth-store";
 
 interface OverviewData {
   activeCycles: number;
@@ -33,13 +37,29 @@ interface OverviewData {
   feedbackCount: number;
 }
 
+interface ReviewCycle {
+  id: string;
+  name: string;
+  status: string;
+}
+
 const PIE_COLORS = ["#10b981", "#f59e0b", "#ef4444", "#6366f1", "#8b5cf6"];
 
 export function AnalyticsPage() {
+  const [selectedCycleId, setSelectedCycleId] = useState<string>("");
+
   const { data: overviewData, isLoading: overviewLoading } = useQuery({
     queryKey: ["analytics", "overview"],
     queryFn: () => apiGet<OverviewData>("/analytics/overview"),
   });
+
+  const { data: cyclesData } = useQuery({
+    queryKey: ["review-cycles-list", "analytics"],
+    queryFn: () =>
+      apiGet<{ data: ReviewCycle[]; total: number }>("/review-cycles", { perPage: 100 }),
+  });
+
+  const cycles = cyclesData?.data?.data || [];
 
   const { data: trendsData } = useQuery({
     queryKey: ["analytics", "trends"],
@@ -51,18 +71,30 @@ export function AnalyticsPage() {
     queryFn: () => apiGet<any[]>("/analytics/goal-completion"),
   });
 
+  // A1: real ratings-distribution wired to the selected cycle (no mock data).
+  const { data: distData, isLoading: distLoading } = useQuery({
+    queryKey: ["analytics", "ratings-distribution", selectedCycleId],
+    queryFn: () =>
+      apiGet<any[]>("/analytics/ratings-distribution", { cycleId: selectedCycleId }),
+    enabled: !!selectedCycleId,
+  });
+
   const overview = overviewData?.data;
   const trends = trendsData?.data || [];
   const goals = goalData?.data || [];
 
-  // Build bell curve data — placeholder with mock distribution labels
-  const bellCurveData = [
-    { rating: "1", count: 2 },
-    { rating: "2", count: 8 },
-    { rating: "3", count: 25 },
-    { rating: "4", count: 15 },
-    { rating: "5", count: 5 },
-  ];
+  // A1: bell curve built from real /analytics/ratings-distribution rows for
+  // the chosen cycle. Buckets 1-5 are zero-filled so the chart is complete.
+  const distRows = distData?.data || [];
+  const distMap = new Map<string, number>();
+  for (const row of distRows) {
+    distMap.set(String(Number(row.rating)), Number(row.count) || 0);
+  }
+  const bellCurveData = ["1", "2", "3", "4", "5"].map((rating) => ({
+    rating,
+    count: distMap.get(rating) ?? 0,
+  }));
+  const hasDistData = distRows.length > 0;
 
   // Real goal-completion data, grouped by category. Drop the dummy
   // fallback — it gave the misleading impression there were goals when
@@ -73,19 +105,14 @@ export function AnalyticsPage() {
     completed: Number(g.completed) || 0,
   }));
 
-  // Trends line data
-  const lineData = trends.length > 0
-    ? trends.map((t: any) => ({
-        name: t.cycle_name,
-        avgRating: parseFloat(t.avg_rating) || 0,
-        reviews: Number(t.review_count) || 0,
-      }))
-    : [
-        { name: "Q1 2025", avgRating: 3.2, reviews: 45 },
-        { name: "Q2 2025", avgRating: 3.5, reviews: 52 },
-        { name: "Q3 2025", avgRating: 3.4, reviews: 48 },
-        { name: "Q4 2025", avgRating: 3.7, reviews: 55 },
-      ];
+  // A1: trends from real data only — no fabricated Q1-Q4 2025 fallback.
+  const lineData = trends.map((t: any) => ({
+    name: t.cycle_name,
+    avgRating: parseFloat(t.avg_rating) || 0,
+    reviews: Number(t.review_count) || 0,
+  }));
+
+  const currentUser = getUser();
 
   const statCards = [
     {
@@ -120,8 +147,28 @@ export function AnalyticsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-      <p className="mt-1 text-sm text-gray-500">Performance analytics and reporting.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+          <p className="mt-1 text-sm text-gray-500">Performance analytics and reporting.</p>
+        </div>
+        {/* A1: cycle selector drives the ratings-distribution chart */}
+        <div className="relative">
+          <select
+            value={selectedCycleId}
+            onChange={(e) => setSelectedCycleId(e.target.value)}
+            className="appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 pr-10 text-sm font-medium text-gray-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          >
+            <option value="">Select cycle for distribution...</option>
+            {cycles.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        </div>
+      </div>
 
       {/* Stat Cards */}
       {overviewLoading ? (
@@ -162,17 +209,33 @@ export function AnalyticsPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">Ratings Distribution</h2>
           <p className="mt-1 text-sm text-gray-500">Bell curve of performance ratings</p>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={bellCurveData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="rating" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {!selectedCycleId ? (
+            <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-center">
+              <BarChart3 className="h-8 w-8 text-gray-300" />
+              <p className="mt-2 text-sm text-gray-500">Select a review cycle to see the distribution</p>
+            </div>
+          ) : distLoading ? (
+            <div className="mt-4 flex h-64 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
+            </div>
+          ) : !hasDistData ? (
+            <div className="mt-4 flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-center">
+              <BarChart3 className="h-8 w-8 text-gray-300" />
+              <p className="mt-2 text-sm text-gray-500">No submitted ratings for this cycle yet</p>
+            </div>
+          ) : (
+            <div className="mt-4 h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bellCurveData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="rating" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Goal Completion - Pie Chart */}
@@ -240,27 +303,46 @@ export function AnalyticsPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-900">Performance Trends</h2>
           <p className="mt-1 text-sm text-gray-500">Average ratings over review cycles</p>
-          <div className="mt-4 h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="avgRating"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  name="Avg Rating"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {lineData.length === 0 ? (
+            <div className="mt-4 flex h-72 flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-center">
+              <BarChart3 className="h-8 w-8 text-gray-300" />
+              <p className="mt-2 text-sm text-gray-500">No review cycle trend data yet</p>
+            </div>
+          ) : (
+            <div className="mt-4 h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={lineData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis domain={[0, 5]} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="avgRating"
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    name="Avg Rating"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* A3: AI team summary for the signed-in manager (uses the selected cycle) */}
+      {currentUser && (
+        <div className="mt-8">
+          <AiSummaryPanel
+            scope="team"
+            id={currentUser.empcloudUserId}
+            cycleId={selectedCycleId}
+            title="AI Team Summary"
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -159,6 +159,12 @@ const NineBoxPage = lazy(() =>
 const SkillsGapPage = lazy(() =>
   import("@/pages/analytics/SkillsGapPage").then((m) => ({ default: m.SkillsGapPage })),
 );
+const ManagerEffectivenessPage = lazy(() =>
+  import("@/pages/manager-effectiveness/ManagerEffectivenessPage").then((m) => ({ default: m.ManagerEffectivenessPage })),
+);
+const ManagerDetailPage = lazy(() =>
+  import("@/pages/manager-effectiveness/ManagerDetailPage").then((m) => ({ default: m.ManagerDetailPage })),
+);
 
 // Letters
 const LetterTemplatePage = lazy(() =>
@@ -255,6 +261,10 @@ export function AppRoutes() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/analytics/nine-box" element={<NineBoxPage />} />
         <Route path="/analytics/skills-gap" element={<SkillsGapPage />} />
+
+        {/* Manager Effectiveness */}
+        <Route path="/manager-effectiveness" element={<ManagerEffectivenessPage />} />
+        <Route path="/manager-effectiveness/:managerId" element={<ManagerDetailPage />} />
 
         {/* Letters */}
         <Route path="/letters/templates" element={<LetterTemplatePage />} />
