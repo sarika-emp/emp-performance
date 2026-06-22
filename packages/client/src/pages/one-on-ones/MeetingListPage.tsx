@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Plus, Users, Calendar, Clock, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Users,
+  Calendar,
+  Clock,
+  Loader2,
+  CheckCircle2,
+  Search,
+} from "lucide-react";
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 
@@ -9,20 +18,45 @@ interface Meeting {
   title: string;
   employee_id: number;
   manager_id: number;
+  employee_name: string | null;
+  manager_name: string | null;
   scheduled_at: string;
   duration_minutes: number;
   status: string;
 }
 
+interface MeetingPage {
+  data: Meeting[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
+const STATUS_OPTIONS = ["", "requested", "scheduled", "completed", "cancelled"];
+
 export function MeetingListPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("scheduled_at");
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+
   const { data, isLoading } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: () => apiGet<{ data: Meeting[]; total: number }>("/meetings"),
+    queryKey: ["meetings", page, search, status, sort, order],
+    queryFn: () =>
+      apiGet<MeetingPage>("/meetings", {
+        page,
+        perPage: 20,
+        sort,
+        order,
+        ...(search ? { search } : {}),
+        ...(status ? { status } : {}),
+      }),
   });
 
-  const meetings = data?.data?.data || [];
-  const upcoming = meetings.filter((m) => m.status === "scheduled");
-  const past = meetings.filter((m) => m.status === "completed");
+  const meetings = data?.data?.data ?? [];
+  const pager = data?.data;
 
   return (
     <div>
@@ -40,6 +74,52 @@ export function MeetingListPage() {
         </Link>
       </div>
 
+      {/* Filters */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by title..."
+            className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s === "" ? "All statuses" : s}
+            </option>
+          ))}
+        </select>
+        <select
+          value={`${sort}:${order}`}
+          onChange={(e) => {
+            const [s, o] = e.target.value.split(":");
+            setSort(s);
+            setOrder(o as "asc" | "desc");
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="scheduled_at:desc">Date (newest)</option>
+          <option value="scheduled_at:asc">Date (oldest)</option>
+          <option value="title:asc">Title (A–Z)</option>
+          <option value="title:desc">Title (Z–A)</option>
+          <option value="status:asc">Status</option>
+        </select>
+      </div>
+
       {isLoading ? (
         <div className="mt-12 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
@@ -47,40 +127,41 @@ export function MeetingListPage() {
       ) : meetings.length === 0 ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
           <Users className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No meetings yet</h3>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No meetings found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Schedule your first 1-on-1 meeting.
+            Try adjusting your filters or schedule a new 1-on-1 meeting.
           </p>
         </div>
       ) : (
-        <div className="mt-6 space-y-8">
-          {/* Upcoming */}
-          {upcoming.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Upcoming ({upcoming.length})
-              </h2>
-              <div className="space-y-3">
-                {upcoming.map((meeting) => (
-                  <MeetingCard key={meeting.id} meeting={meeting} />
-                ))}
-              </div>
-            </section>
-          )}
+        <div className="mt-6 space-y-3">
+          {meetings.map((meeting) => (
+            <MeetingCard key={meeting.id} meeting={meeting} />
+          ))}
+        </div>
+      )}
 
-          {/* Past */}
-          {past.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-gray-500 mb-3">
-                Past ({past.length})
-              </h2>
-              <div className="space-y-3">
-                {past.map((meeting) => (
-                  <MeetingCard key={meeting.id} meeting={meeting} />
-                ))}
-              </div>
-            </section>
-          )}
+      {/* Pager */}
+      {pager && pager.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Page {pager.page} of {pager.totalPages} · {pager.total} total
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= pager.totalPages}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -89,6 +170,7 @@ export function MeetingListPage() {
 
 function MeetingCard({ meeting }: { meeting: Meeting }) {
   const isCompleted = meeting.status === "completed";
+  const isCancelled = meeting.status === "cancelled";
 
   return (
     <Link
@@ -108,7 +190,13 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-medium text-gray-900 truncate">{meeting.title}</h3>
-        <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+        <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {meeting.employee_name ?? `#${meeting.employee_id}`}
+            {" · "}
+            {meeting.manager_name ?? `#${meeting.manager_id}`}
+          </span>
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             {formatDate(meeting.scheduled_at)}
@@ -123,7 +211,9 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
           isCompleted
             ? "bg-green-50 text-green-700"
-            : "bg-blue-50 text-blue-700"
+            : isCancelled
+              ? "bg-gray-100 text-gray-500"
+              : "bg-blue-50 text-blue-700"
         }`}
       >
         {meeting.status}

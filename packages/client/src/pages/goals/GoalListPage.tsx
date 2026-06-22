@@ -153,19 +153,35 @@ function GoalCard({ goal, expanded, onToggle }: { goal: GoalWithKRs; expanded: b
   );
 }
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+  { value: "title:asc", label: "Title A–Z" },
+  { value: "title:desc", label: "Title Z–A" },
+  { value: "progress:desc", label: "Progress high–low" },
+  { value: "progress:asc", label: "Progress low–high" },
+  { value: "due_date:asc", label: "Due date (soonest)" },
+  { value: "priority:desc", label: "Priority high–low" },
+];
+
 export function GoalListPage() {
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  const [sortValue, setSortValue] = useState("created_at:desc");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
+  const [sort, order] = sortValue.split(":") as [string, "asc" | "desc"];
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["goals", page, category, status, search],
+    queryKey: ["goals", page, category, status, search, sortValue],
     queryFn: () =>
       apiGet<PaginatedResponse<GoalWithKRs>>("/goals", {
         page,
         perPage: 20,
+        sort,
+        order,
         ...(category && { category }),
         ...(status && { status }),
         ...(search && { search }),
@@ -247,6 +263,21 @@ export function GoalListPage() {
           <option value="at_risk">At Risk</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
+        </select>
+
+        <select
+          value={sortValue}
+          onChange={(e) => {
+            setSortValue(e.target.value);
+            setPage(1);
+          }}
+          className="ml-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
         </select>
       </div>
 

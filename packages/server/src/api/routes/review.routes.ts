@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
 import {
   createReviewSchema,
   submitReviewSchema,
   rateCompetencySchema,
+  reassignReviewerSchema,
   idParamSchema,
   paginationSchema,
 } from "@emp-performance/shared";
@@ -45,6 +46,9 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       employee_id: req.query.employee_id ? Number(req.query.employee_id) : undefined,
       type: req.query.type as string | undefined,
       status: req.query.status as string | undefined,
+      search: query.search,
+      sort: query.sort,
+      order: query.order,
     });
 
     return sendPaginated(res, result.data, result.total, result.page, result.perPage);
@@ -118,5 +122,41 @@ router.post("/:id/competency-ratings", async (req: Request, res: Response, next:
     next(err);
   }
 });
+
+// DELETE /:id — remove an unsubmitted/orphaned review (admin only)
+router.delete(
+  "/:id",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const orgId = req.user!.empcloudOrgId;
+      await reviewService.deleteReview(orgId, id);
+      return sendSuccess(res, { message: "Review deleted" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /:id/reassign — reassign an unsubmitted review to another reviewer
+router.post(
+  "/:id/reassign",
+  authorize("super_admin", "org_admin", "hr_admin", "hr_manager"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const data = reassignReviewerSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const review = await reviewService.reassignReviewer(orgId, id, data.reviewer_id);
+      return sendSuccess(res, review);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid reassignment data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
 
 export { router as reviewRoutes };

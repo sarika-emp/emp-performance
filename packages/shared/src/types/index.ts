@@ -192,6 +192,19 @@ export interface Competency {
   updated_at: string;
 }
 
+export interface CompetencyLevel {
+  id: string;
+  organization_id: number;
+  competency_id: string;
+  level: number;
+  name: string;
+  description: string | null;
+  behavioral_anchors: string[] | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ReviewCycle {
   id: string;
   organization_id: number;
@@ -297,6 +310,10 @@ export interface PerformanceImprovementPlan {
   extended_end_date: string | null;
   outcome_notes: string | null;
   created_by: number;
+  acknowledged_at: string | null;
+  acknowledged_by: number | null;
+  acknowledgement_note: string | null;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -478,6 +495,7 @@ export interface PerformanceLetterTemplate {
   name: string;
   content_template: string;
   is_default: boolean;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -487,12 +505,16 @@ export interface GeneratedPerformanceLetter {
   organization_id: number;
   employee_id: number;
   cycle_id: string | null;
-  template_id: string;
+  template_id: string | null;
+  template_name?: string | null;
   type: LetterType;
   content: string;
   file_path: string | null;
   generated_by: number;
   sent_at: string | null;
+  sent_to?: string | null;
+  voided_at?: string | null;
+  voided_by?: number | null;
   created_at: string;
 }
 

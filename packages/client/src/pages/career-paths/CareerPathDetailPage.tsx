@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Plus,
   Pencil,
   Trash2,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   Award,
   Clock,
   Check,
   X,
+  UserPlus,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import toast from "react-hot-toast";
+
+interface OrgUser {
+  id: number;
+  full_name: string;
+  email: string;
+}
 
 interface CareerPathLevel {
   id: string;
@@ -38,6 +43,7 @@ interface CareerPathDetail {
 
 export function CareerPathDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showAddLevel, setShowAddLevel] = useState(false);
   const [editingLevel, setEditingLevel] = useState<string | null>(null);
@@ -49,10 +55,68 @@ export function CareerPathDetailPage() {
   const [levelReqs, setLevelReqs] = useState("");
   const [levelExp, setLevelExp] = useState("");
 
+  // Path edit (CP3) state
+  const [editPath, setEditPath] = useState(false);
+  const [pathForm, setPathForm] = useState({
+    name: "",
+    description: "",
+    department: "",
+    is_active: true,
+  });
+
+  // Track assignment (CP1) state
+  const [showAssign, setShowAssign] = useState(false);
+  const [assignForm, setAssignForm] = useState({
+    employeeId: "",
+    currentLevelId: "",
+    targetLevelId: "",
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ["career-paths", id],
     queryFn: () => apiGet<CareerPathDetail>(`/career-paths/${id}`),
     enabled: !!id,
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ["users", "list"],
+    queryFn: () => apiGet<OrgUser[]>("/users"),
+    enabled: showAssign,
+  });
+  const orgUsers: OrgUser[] = usersData?.data ?? [];
+
+  const updatePathMutation = useMutation({
+    mutationFn: (body: any) => apiPut(`/career-paths/${id}`, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["career-paths", id] });
+      queryClient.invalidateQueries({ queryKey: ["career-paths"] });
+      toast.success("Career path updated");
+      setEditPath(false);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to update path"),
+  });
+
+  const deletePathMutation = useMutation({
+    mutationFn: () => apiDelete(`/career-paths/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["career-paths"] });
+      toast.success("Career path deleted");
+      navigate("/career-paths");
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to delete path"),
+  });
+
+  const assignTrackMutation = useMutation({
+    mutationFn: (body: any) => apiPost(`/career-paths/tracks/assign`, body),
+    onSuccess: () => {
+      toast.success("Employee assigned to track");
+      setShowAssign(false);
+      setAssignForm({ employeeId: "", currentLevelId: "", targetLevelId: "" });
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to assign track"),
   });
 
   const addLevelMutation = useMutation({
@@ -104,6 +168,31 @@ export function CareerPathDetailPage() {
     });
   }
 
+  function startEditPath() {
+    if (!data?.data) return;
+    setPathForm({
+      name: data.data.name,
+      description: data.data.description ?? "",
+      department: data.data.department ?? "",
+      is_active: data.data.is_active,
+    });
+    setEditPath(true);
+  }
+
+  function handleAssign(e: React.FormEvent) {
+    e.preventDefault();
+    if (!assignForm.employeeId || !assignForm.currentLevelId) {
+      toast.error("Select an employee and current level");
+      return;
+    }
+    assignTrackMutation.mutate({
+      employeeId: Number(assignForm.employeeId),
+      pathId: id,
+      currentLevelId: assignForm.currentLevelId,
+      ...(assignForm.targetLevelId && { targetLevelId: assignForm.targetLevelId }),
+    });
+  }
+
   const path = data?.data;
 
   if (isLoading) {
@@ -139,7 +228,7 @@ export function CareerPathDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{path.name}</h1>
           {path.description && <p className="mt-1 text-sm text-gray-500">{path.description}</p>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {path.department && (
             <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
               {path.department}
@@ -152,8 +241,191 @@ export function CareerPathDetailPage() {
           >
             {path.is_active ? "Active" : "Inactive"}
           </span>
+          <button
+            onClick={() => {
+              setAssignForm({ employeeId: "", currentLevelId: "", targetLevelId: "" });
+              setShowAssign(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <UserPlus className="h-4 w-4" />
+            Assign Employee
+          </button>
+          <button
+            onClick={startEditPath}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </button>
+          <button
+            onClick={() => {
+              if (confirm("Delete this career path? This cannot be undone.")) {
+                deletePathMutation.mutate();
+              }
+            }}
+            disabled={deletePathMutation.isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </button>
         </div>
       </div>
+
+      {/* Path edit form (CP3) */}
+      {editPath && (
+        <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50/30 p-5 space-y-3">
+          <h3 className="font-medium text-gray-900">Edit Career Path</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <input
+                value={pathForm.name}
+                onChange={(e) => setPathForm((p) => ({ ...p, name: e.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Department</label>
+              <input
+                value={pathForm.department}
+                onChange={(e) => setPathForm((p) => ({ ...p, department: e.target.value }))}
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <textarea
+              value={pathForm.description}
+              onChange={(e) => setPathForm((p) => ({ ...p, description: e.target.value }))}
+              rows={2}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={pathForm.is_active}
+              onChange={(e) => setPathForm((p) => ({ ...p, is_active: e.target.checked }))}
+              className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            />
+            Active
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                updatePathMutation.mutate({
+                  name: pathForm.name,
+                  description: pathForm.description || undefined,
+                  department: pathForm.department || undefined,
+                  is_active: pathForm.is_active,
+                })
+              }
+              disabled={!pathForm.name || updatePathMutation.isPending}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditPath(false)}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Assign employee modal (CP1) */}
+      {showAssign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Assign Employee to Track</h2>
+              <button
+                onClick={() => setShowAssign(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAssign} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Employee <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={assignForm.employeeId}
+                  onChange={(e) => setAssignForm((p) => ({ ...p, employeeId: e.target.value }))}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">— Select an employee —</option>
+                  {orgUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name} ({u.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Level <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={assignForm.currentLevelId}
+                  onChange={(e) => setAssignForm((p) => ({ ...p, currentLevelId: e.target.value }))}
+                  required
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">— Select level —</option>
+                  {(path.levels || []).map((lvl) => (
+                    <option key={lvl.id} value={lvl.id}>
+                      L{lvl.level} — {lvl.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Target Level
+                </label>
+                <select
+                  value={assignForm.targetLevelId}
+                  onChange={(e) => setAssignForm((p) => ({ ...p, targetLevelId: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">— None —</option>
+                  {(path.levels || []).map((lvl) => (
+                    <option key={lvl.id} value={lvl.id}>
+                      L{lvl.level} — {lvl.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAssign(false)}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={assignTrackMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                >
+                  {assignTrackMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Assign
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Career Ladder */}
       <div className="mt-8">

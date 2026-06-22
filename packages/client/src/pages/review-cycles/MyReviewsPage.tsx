@@ -87,7 +87,11 @@ export function MyReviewsPage() {
               return (
                 <Link
                   key={review.id}
-                  to={`/reviews/${review.id}`}
+                  to={
+                    review.status === "submitted"
+                      ? `/reviews/${review.id}`
+                      : `/reviews/${review.id}/edit`
+                  }
                   className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 hover:border-brand-200 hover:shadow-sm transition-all"
                 >
                   <div className="flex-1">

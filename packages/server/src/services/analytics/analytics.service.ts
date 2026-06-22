@@ -8,6 +8,7 @@
 // ============================================================================
 
 import { getDB } from "../../db/adapters";
+import { resolveEmployees } from "./nine-box.service";
 
 // Re-export nine-box and succession so existing imports continue to work
 export {
@@ -15,6 +16,8 @@ export {
   getNineBoxData,
   createPotentialAssessment,
   listPotentialAssessments,
+  deletePotentialAssessment,
+  resolveEmployees,
 } from "./nine-box.service";
 
 export {
@@ -154,8 +157,9 @@ export async function getRatingsDistribution(orgId: number, cycleId: string) {
 // Trends (ratings over multiple cycles)
 // ---------------------------------------------------------------------------
 
-export async function getTrends(orgId: number) {
+export async function getTrends(orgId: number, limit = 10) {
   const db = getDB();
+  const safeLimit = Math.max(1, Math.min(50, Math.floor(limit) || 10));
 
   const result = await db.raw<any>(
     `SELECT
@@ -171,8 +175,8 @@ export async function getTrends(orgId: number) {
      WHERE rc.organization_id = ?
      GROUP BY rc.id, rc.name, rc.start_date
      ORDER BY rc.start_date ASC
-     LIMIT 10`,
-    [orgId, orgId],
+     LIMIT ?`,
+    [orgId, orgId, safeLimit],
   );
 
   const rows = Array.isArray(result) ? (result[0] || result) : [];
@@ -203,8 +207,15 @@ export async function getTeamComparison(orgId: number, managerId: number) {
     [orgId, managerId],
   );
 
-  const rows = Array.isArray(result) ? (result[0] || result) : [];
-  return Array.isArray(rows) ? rows : [];
+  const rows: any[] = Array.isArray(result) ? (result[0] || result) : [];
+  const list = Array.isArray(rows) ? rows : [];
+  // A6: resolve real employee names/departments.
+  const identities = await resolveEmployees(orgId, list.map((r) => Number(r.employee_id)));
+  return list.map((r) => {
+    const id = Number(r.employee_id);
+    const ident = identities.get(id);
+    return { ...r, employee_name: ident?.name ?? `Employee ${id}`, department: ident?.department ?? null };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -235,8 +246,9 @@ export async function getGoalCompletion(orgId: number) {
 // Top Performers
 // ---------------------------------------------------------------------------
 
-export async function getTopPerformers(orgId: number, cycleId: string) {
+export async function getTopPerformers(orgId: number, cycleId: string, limit = 20) {
   const db = getDB();
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit) || 20));
 
   const result = await db.raw<any>(
     `SELECT
@@ -250,12 +262,19 @@ export async function getTopPerformers(orgId: number, cycleId: string) {
        AND r.overall_rating IS NOT NULL
      GROUP BY r.employee_id
      ORDER BY avg_rating DESC
-     LIMIT 20`,
-    [orgId, cycleId],
+     LIMIT ?`,
+    [orgId, cycleId, safeLimit],
   );
 
-  const rows = Array.isArray(result) ? (result[0] || result) : [];
-  return Array.isArray(rows) ? rows : [];
+  const rows: any[] = Array.isArray(result) ? (result[0] || result) : [];
+  const list = Array.isArray(rows) ? rows : [];
+  // A6: resolve real employee names/departments.
+  const identities = await resolveEmployees(orgId, list.map((r) => Number(r.employee_id)));
+  return list.map((r) => {
+    const id = Number(r.employee_id);
+    const ident = identities.get(id);
+    return { ...r, employee_name: ident?.name ?? `Employee ${id}`, department: ident?.department ?? null };
+  });
 }
 
 // ---------------------------------------------------------------------------

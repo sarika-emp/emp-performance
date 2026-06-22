@@ -18,6 +18,12 @@ interface Cycle {
   status: string;
 }
 
+interface ParentGoalOption {
+  id: string;
+  title: string;
+  category: string;
+}
+
 export function GoalCreatePage() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
@@ -28,6 +34,7 @@ export function GoalCreatePage() {
   const [priority, setPriority] = useState("medium");
   const [employeeId, setEmployeeId] = useState<string>("");
   const [cycleId, setCycleId] = useState<string>("");
+  const [parentGoalId, setParentGoalId] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
 
@@ -48,6 +55,20 @@ export function GoalCreatePage() {
     queryFn: () => apiGet<any>("/review-cycles", { perPage: 100 }),
   });
   const cycles: Cycle[] = cyclesData?.data?.data ?? cyclesData?.data ?? [];
+
+  // Candidate parent goals (for alignment on creation). Scoped to the selected
+  // cycle when one is chosen so the parent stays in the same cycle (G7).
+  const { data: parentData } = useQuery({
+    queryKey: ["goals", "parent-options", cycleId],
+    queryFn: () =>
+      apiGet<any>("/goals", {
+        perPage: 100,
+        sort: "title",
+        order: "asc",
+        ...(cycleId && { cycleId }),
+      }),
+  });
+  const parentGoals: ParentGoalOption[] = parentData?.data?.data ?? [];
 
   const mutation = useMutation({
     mutationFn: (body: any) => apiPost("/goals", body),
@@ -73,6 +94,7 @@ export function GoalCreatePage() {
       priority,
       employee_id: employeeId ? Number(employeeId) : undefined,
       cycle_id: cycleId || undefined,
+      parent_goal_id: parentGoalId || undefined,
       start_date: startDate || undefined,
       due_date: dueDate || undefined,
     });
@@ -141,7 +163,10 @@ export function GoalCreatePage() {
             <label className="block text-sm font-medium text-gray-700">Review Cycle</label>
             <select
               value={cycleId}
-              onChange={(e) => setCycleId(e.target.value)}
+              onChange={(e) => {
+                setCycleId(e.target.value);
+                setParentGoalId("");
+              }}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="">— None —</option>
@@ -151,6 +176,28 @@ export function GoalCreatePage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Parent Goal (alignment)
+            </label>
+            <select
+              value={parentGoalId}
+              onChange={(e) => setParentGoalId(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">— None (top-level goal) —</option>
+              {parentGoals.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.title}
+                  {g.category ? ` (${g.category})` : ""}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              Link this goal to a higher-level goal to build the alignment tree.
+            </p>
           </div>
 
           <div>

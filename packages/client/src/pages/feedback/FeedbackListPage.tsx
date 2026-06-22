@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import {
   Heart,
   MessageSquare,
   Lightbulb,
-  Send,
   Loader2,
-  Sparkles,
+  Search,
+  Send,
+  Trash2,
 } from "lucide-react";
-import { apiGet, apiPost } from "@/api/client";
+import { apiGet, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
   id: string;
-  from_user_id: number;
+  from_user_id: number | null;
   to_user_id: number;
   type: string;
   visibility: string;
@@ -24,10 +27,20 @@ interface FeedbackItem {
   created_at: string;
 }
 
+interface PaginatedFeedback {
+  data: FeedbackItem[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
+const ADMIN_ROLES = new Set(["super_admin", "org_admin", "hr_admin", "hr_manager"]);
+
 const TYPE_CONFIG: Record<string, { icon: typeof Heart; color: string; label: string }> = {
   kudos: { icon: Heart, color: "bg-pink-50 text-pink-600", label: "Kudos" },
   constructive: { icon: MessageSquare, color: "bg-blue-50 text-blue-600", label: "Constructive" },
-  suggestion: { icon: Lightbulb, color: "bg-amber-50 text-amber-600", label: "Suggestion" },
+  general: { icon: Lightbulb, color: "bg-amber-50 text-amber-600", label: "General" },
 };
 
 const VISIBILITY_LABELS: Record<string, string> = {
@@ -44,50 +57,40 @@ function parseTags(tags: string | string[] | null): string[] {
 
 export function FeedbackListPage() {
   const queryClient = useQueryClient();
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const currentUser = useAuthStore((s) => s.user);
+  const canManageAny = ADMIN_ROLES.has(currentUser?.role ?? "");
 
-  const [toUserId, setToUserId] = useState("");
-  const [type, setType] = useState("kudos");
-  const [message, setMessage] = useState("");
-  const [visibility, setVisibility] = useState("public");
-  const [tagsStr, setTagsStr] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["feedback", "all", typeFilter],
+    queryKey: ["feedback", "all", typeFilter, search, page],
     queryFn: () =>
-      apiGet<{ data: FeedbackItem[]; total: number }>(
-        "/feedback",
-        typeFilter !== "all" ? { type: typeFilter } : undefined,
-      ),
+      apiGet<PaginatedFeedback>("/feedback", {
+        page,
+        perPage: 20,
+        ...(typeFilter !== "all" && { type: typeFilter }),
+        ...(search && { search }),
+      }),
   });
 
-  const giveMutation = useMutation({
-    mutationFn: (body: any) => apiPost("/feedback", body),
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/feedback/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
-      toast.success("Feedback sent!");
-      setToUserId("");
-      setMessage("");
-      setTagsStr("");
+      toast.success("Feedback deleted");
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to send feedback"),
+      toast.error(err.response?.data?.error?.message || "Failed to delete feedback"),
   });
 
-  const feedbackList = data?.data?.data || [];
+  const feedbackList = data?.data?.data ?? [];
+  const pagination = data?.data;
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!toUserId || !message.trim()) return;
-    giveMutation.mutate({
-      to_user_id: parseInt(toUserId),
-      type,
-      message: message.trim(),
-      visibility,
-      tags: tagsStr
-        ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean)
-        : undefined,
-    });
+  function handleDelete(id: string) {
+    if (!window.confirm("Delete this feedback? This cannot be undone.")) return;
+    deleteMutation.mutate(id);
   }
 
   return (
@@ -99,102 +102,54 @@ export function FeedbackListPage() {
             View and manage all feedback across the organization.
           </p>
         </div>
+        <Link
+          to="/feedback/give"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          <Send className="h-4 w-4" />
+          Give Feedback
+        </Link>
       </div>
 
-      {/* Give Feedback Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Give Feedback</h2>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Recipient (User ID)</label>
-            <input
-              value={toUserId}
-              onChange={(e) => setToUserId(e.target.value)}
-              type="number"
-              required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              placeholder="Employee ID"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Type</label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            >
-              <option value="kudos">Kudos</option>
-              <option value="constructive">Constructive</option>
-              <option value="suggestion">Suggestion</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Visibility</label>
-            <select
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            >
-              <option value="public">Public</option>
-              <option value="manager_visible">Manager Only</option>
-              <option value="private">Private</option>
-            </select>
-          </div>
-        </div>
-        <div className="mt-3">
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={3}
-            required
-            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            placeholder="Write your feedback message..."
-          />
-        </div>
-        <div className="mt-3 flex items-center gap-3">
+      {/* Filters */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
-            value={tagsStr}
-            onChange={(e) => setTagsStr(e.target.value)}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            placeholder="Tags (comma-separated, e.g. teamwork, leadership)"
+            type="text"
+            placeholder="Search feedback..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
-          <button
-            type="submit"
-            disabled={giveMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-          >
-            <Send className="h-4 w-4" />
-            {giveMutation.isPending ? "Sending..." : "Send"}
-          </button>
         </div>
-      </form>
 
-      {/* Type filter tabs */}
-      <div className="mt-6 flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
-        {[
-          { key: "all", label: "All" },
-          { key: "kudos", label: "Kudos" },
-          { key: "constructive", label: "Constructive" },
-          { key: "suggestion", label: "Suggestion" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setTypeFilter(tab.key)}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              typeFilter === tab.key
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        <div className="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+          {[
+            { key: "all", label: "All" },
+            { key: "kudos", label: "Kudos" },
+            { key: "constructive", label: "Constructive" },
+            { key: "general", label: "General" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setTypeFilter(tab.key);
+                setPage(1);
+              }}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                typeFilter === tab.key
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Feedback List */}
@@ -205,8 +160,8 @@ export function FeedbackListPage() {
       ) : feedbackList.length === 0 ? (
         <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
           <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No feedback yet</h3>
-          <p className="mt-1 text-sm text-gray-500">Be the first to give feedback!</p>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No feedback found</h3>
+          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
         </div>
       ) : (
         <div className="mt-4 space-y-4">
@@ -214,6 +169,7 @@ export function FeedbackListPage() {
             const cfg = TYPE_CONFIG[item.type] || TYPE_CONFIG.kudos;
             const Icon = cfg.icon;
             const tags = parseTags(item.tags);
+            const canDelete = canManageAny || item.from_user_id === currentUser?.empcloudUserId;
             return (
               <div
                 key={item.id}
@@ -226,7 +182,9 @@ export function FeedbackListPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium text-gray-900">
-                        {item.is_anonymous ? "Anonymous" : `User #${item.from_user_id}`}
+                        {item.is_anonymous || item.from_user_id == null
+                          ? "Anonymous"
+                          : `User #${item.from_user_id}`}
                       </span>
                       <span className="text-gray-300">-&gt;</span>
                       <span className="text-sm font-medium text-gray-900">
@@ -241,6 +199,16 @@ export function FeedbackListPage() {
                       <span className="ml-auto text-xs text-gray-400">
                         {formatDate(item.created_at)}
                       </span>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deleteMutation.isPending}
+                          className="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          title="Delete feedback"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                     <p className="mt-2 text-sm text-gray-700">{item.message}</p>
                     {tags.length > 0 && (
@@ -260,6 +228,31 @@ export function FeedbackListPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

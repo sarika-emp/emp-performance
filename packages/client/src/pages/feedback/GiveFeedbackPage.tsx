@@ -104,7 +104,7 @@ export function GiveFeedbackPage() {
             >
               <option value="kudos">Kudos</option>
               <option value="constructive">Constructive</option>
-              <option value="suggestion">Suggestion</option>
+              <option value="general">General</option>
             </select>
           </div>
           <div>

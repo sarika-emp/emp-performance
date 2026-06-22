@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { apiGet, apiPost } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
@@ -68,6 +69,7 @@ export function MyPIPPage() {
   const [showAddUpdate, setShowAddUpdate] = useState(false);
   const [updateNotes, setUpdateNotes] = useState("");
   const [updateRating, setUpdateRating] = useState<number | undefined>();
+  const [ackNote, setAckNote] = useState("");
 
   // Find the user's active PIP
   const { data: listData, isLoading: listLoading } = useQuery({
@@ -113,6 +115,17 @@ export function MyPIPPage() {
       setUpdateNotes("");
       setUpdateRating(undefined);
     },
+  });
+
+  const acknowledgeMutation = useMutation({
+    mutationFn: (body: any) => apiPost(`/pips/${pipId}/acknowledge`, body),
+    onSuccess: () => {
+      toast.success("PIP acknowledged");
+      queryClient.invalidateQueries({ queryKey: ["my-pip-detail", pipId] });
+      setAckNote("");
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to acknowledge PIP"),
   });
 
   if (listLoading || pipLoading) {
@@ -219,6 +232,53 @@ export function MyPIPPage() {
           </p>
           <p className="mt-1 text-sm text-gray-700">{pip.reason}</p>
         </div>
+      </div>
+
+      {/* Acknowledgement / sign-off (P7) */}
+      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-5">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-brand-600" />
+          <h2 className="text-sm font-semibold text-gray-900">Acknowledgement</h2>
+        </div>
+        {pip.acknowledged_at ? (
+          <div className="mt-3 rounded-md border border-green-200 bg-green-50 px-4 py-3">
+            <p className="text-sm font-medium text-green-800">
+              You acknowledged this plan on {formatDate(pip.acknowledged_at)}.
+            </p>
+            {pip.acknowledgement_note && (
+              <p className="mt-1 text-sm text-green-700">
+                Your note: {pip.acknowledgement_note}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="mt-3">
+            <p className="text-sm text-gray-600">
+              By acknowledging, you confirm that you have read and understood this
+              Performance Improvement Plan. This does not indicate agreement with its
+              contents.
+            </p>
+            <textarea
+              value={ackNote}
+              onChange={(e) => setAckNote(e.target.value)}
+              rows={2}
+              placeholder="Optional: add a comment with your acknowledgement..."
+              className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <button
+              onClick={() =>
+                acknowledgeMutation.mutate({
+                  ...(ackNote.trim() && { note: ackNote.trim() }),
+                })
+              }
+              disabled={acknowledgeMutation.isPending}
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {acknowledgeMutation.isPending ? "Submitting..." : "Acknowledge PIP"}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">

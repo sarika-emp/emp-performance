@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   MessageSquare,
@@ -7,13 +7,16 @@ import {
   Lightbulb,
   Send,
   Loader2,
+  Search,
+  Trash2,
 } from "lucide-react";
-import { apiGet } from "@/api/client";
+import { apiGet, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 interface FeedbackItem {
   id: string;
-  from_user_id: number;
+  from_user_id: number | null;
   to_user_id: number;
   type: string;
   visibility: string;
@@ -23,37 +26,67 @@ interface FeedbackItem {
   created_at: string;
 }
 
+interface PaginatedFeedback {
+  data: FeedbackItem[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
 const TYPE_ICONS: Record<string, typeof Heart> = {
   kudos: Heart,
   constructive: MessageSquare,
-  suggestion: Lightbulb,
+  general: Lightbulb,
 };
 
 const TYPE_COLORS: Record<string, string> = {
   kudos: "bg-pink-50 text-pink-600",
   constructive: "bg-blue-50 text-blue-600",
-  suggestion: "bg-amber-50 text-amber-600",
+  general: "bg-amber-50 text-amber-600",
 };
 
 export function MyFeedbackPage() {
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<"received" | "given">("received");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data: receivedData, isLoading: receivedLoading } = useQuery({
-    queryKey: ["feedback", "received"],
-    queryFn: () => apiGet<{ data: FeedbackItem[]; total: number }>("/feedback/received"),
-    enabled: tab === "received",
+  const endpoint = tab === "received" ? "/feedback/received" : "/feedback/given";
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["feedback", tab, search, page],
+    queryFn: () =>
+      apiGet<PaginatedFeedback>(endpoint, {
+        page,
+        perPage: 20,
+        ...(search && { search }),
+      }),
   });
 
-  const { data: givenData, isLoading: givenLoading } = useQuery({
-    queryKey: ["feedback", "given"],
-    queryFn: () => apiGet<{ data: FeedbackItem[]; total: number }>("/feedback/given"),
-    enabled: tab === "given",
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/feedback/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feedback"] });
+      toast.success("Feedback deleted");
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to delete feedback"),
   });
 
-  const feedbackList = tab === "received"
-    ? receivedData?.data?.data || []
-    : givenData?.data?.data || [];
-  const isLoading = tab === "received" ? receivedLoading : givenLoading;
+  const feedbackList = data?.data?.data ?? [];
+  const pagination = data?.data;
+
+  function switchTab(next: "received" | "given") {
+    setTab(next);
+    setSearch("");
+    setPage(1);
+  }
+
+  function handleDelete(id: string) {
+    if (!window.confirm("Delete this feedback? This cannot be undone.")) return;
+    deleteMutation.mutate(id);
+  }
 
   return (
     <div>
@@ -72,27 +105,42 @@ export function MyFeedbackPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
-        <button
-          onClick={() => setTab("received")}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-            tab === "received"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Received
-        </button>
-        <button
-          onClick={() => setTab("given")}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-            tab === "given"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Given
-        </button>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="flex gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+          <button
+            onClick={() => switchTab("received")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === "received"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Received
+          </button>
+          <button
+            onClick={() => switchTab("given")}
+            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === "given"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Given
+          </button>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search feedback..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
       </div>
 
       {/* List */}
@@ -104,7 +152,7 @@ export function MyFeedbackPage() {
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
           <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
           <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No feedback {tab} yet
+            No feedback {tab} {search ? "matches your search" : "yet"}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
             {tab === "received"
@@ -137,12 +185,22 @@ export function MyFeedbackPage() {
                       </span>
                       <span className="text-xs text-gray-400">
                         {tab === "received"
-                          ? `from ${item.is_anonymous ? "Anonymous" : `User #${item.from_user_id}`}`
+                          ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : `User #${item.from_user_id}`}`
                           : `to User #${item.to_user_id}`}
                       </span>
                       <span className="ml-auto text-xs text-gray-400">
                         {formatDate(item.created_at)}
                       </span>
+                      {tab === "given" && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deleteMutation.isPending}
+                          className="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                          title="Delete feedback"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                     <p className="mt-2 text-sm text-gray-700">{item.message}</p>
                     {tags.length > 0 && (
@@ -162,6 +220,31 @@ export function MyFeedbackPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

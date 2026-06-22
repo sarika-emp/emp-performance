@@ -6,8 +6,26 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 const LoginPage = lazy(() =>
   import("@/pages/auth/LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+const RegisterPage = lazy(() =>
+  import("@/pages/auth/RegisterPage").then((m) => ({ default: m.RegisterPage })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/auth/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/pages/auth/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })),
+);
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard/DashboardPage").then((m) => ({ default: m.DashboardPage })),
+);
+const ProfilePage = lazy(() =>
+  import("@/pages/profile/ProfilePage").then((m) => ({ default: m.ProfilePage })),
+);
+const NotificationsPage = lazy(() =>
+  import("@/pages/notifications/NotificationsPage").then((m) => ({ default: m.NotificationsPage })),
+);
+const NotificationLogPage = lazy(() =>
+  import("@/pages/settings/NotificationLogPage").then((m) => ({ default: m.NotificationLogPage })),
 );
 
 // Review Cycles
@@ -25,6 +43,9 @@ const ReviewPage = lazy(() =>
 );
 const MyReviewsPage = lazy(() =>
   import("@/pages/review-cycles/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
+);
+const MyReviewFormPage = lazy(() =>
+  import("@/pages/self-service/MyReviewFormPage").then((m) => ({ default: m.MyReviewFormPage })),
 );
 
 // Goals
@@ -109,6 +130,12 @@ const CareerPathDetailPage = lazy(() =>
 const CareerPathCreatePage = lazy(() =>
   import("@/pages/career-paths/CareerPathCreatePage").then((m) => ({ default: m.CareerPathCreatePage })),
 );
+const EmployeeTrackPage = lazy(() =>
+  import("@/pages/career-paths/EmployeeTrackPage").then((m) => ({ default: m.EmployeeTrackPage })),
+);
+const CareerTrackRosterPage = lazy(() =>
+  import("@/pages/career-paths/CareerTrackRosterPage").then((m) => ({ default: m.CareerTrackRosterPage })),
+);
 
 // 1-on-1 Meetings
 const MeetingListPage = lazy(() =>
@@ -128,6 +155,20 @@ const FeedbackListPage = lazy(() =>
 const GiveFeedbackPage = lazy(() =>
   import("@/pages/feedback/GiveFeedbackPage").then((m) => ({ default: m.GiveFeedbackPage })),
 );
+const KudosWallPage = lazy(() =>
+  import("@/pages/feedback/KudosWallPage").then((m) => ({ default: m.KudosWallPage })),
+);
+
+// Peer Reviews
+const PeerReviewNominatePage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewNominatePage").then((m) => ({ default: m.PeerReviewNominatePage })),
+);
+const PeerReviewQueuePage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewQueuePage").then((m) => ({ default: m.PeerReviewQueuePage })),
+);
+const PeerReviewSubmitPage = lazy(() =>
+  import("@/pages/peer-reviews/PeerReviewSubmitPage").then((m) => ({ default: m.PeerReviewSubmitPage })),
+);
 
 // Analytics
 const AnalyticsPage = lazy(() =>
@@ -138,6 +179,12 @@ const NineBoxPage = lazy(() =>
 );
 const SkillsGapPage = lazy(() =>
   import("@/pages/analytics/SkillsGapPage").then((m) => ({ default: m.SkillsGapPage })),
+);
+const ManagerEffectivenessPage = lazy(() =>
+  import("@/pages/manager-effectiveness/ManagerEffectivenessPage").then((m) => ({ default: m.ManagerEffectivenessPage })),
+);
+const ManagerDetailPage = lazy(() =>
+  import("@/pages/manager-effectiveness/ManagerDetailPage").then((m) => ({ default: m.ManagerDetailPage })),
 );
 
 // Letters
@@ -166,16 +213,22 @@ export function AppRoutes() {
     <>
       {/* Public auth */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       {/* Protected routes inside DashboardLayout */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Review Cycles */}
         <Route path="/review-cycles" element={<ReviewCycleListPage />} />
         <Route path="/review-cycles/new" element={<ReviewCycleCreatePage />} />
         <Route path="/review-cycles/:id" element={<ReviewCycleDetailPage />} />
         <Route path="/reviews/my" element={<MyReviewsPage />} />
+        <Route path="/reviews/:id/edit" element={<MyReviewFormPage />} />
         <Route path="/reviews/:id" element={<ReviewPage />} />
 
         {/* Goals */}
@@ -212,6 +265,8 @@ export function AppRoutes() {
         {/* Career Paths */}
         <Route path="/career-paths" element={<CareerPathListPage />} />
         <Route path="/career-paths/new" element={<CareerPathCreatePage />} />
+        <Route path="/career-paths/roster" element={<CareerTrackRosterPage />} />
+        <Route path="/career-paths/tracks" element={<EmployeeTrackPage />} />
         <Route path="/career-paths/:id" element={<CareerPathDetailPage />} />
 
         {/* 1-on-1 Meetings */}
@@ -222,11 +277,21 @@ export function AppRoutes() {
         {/* Feedback */}
         <Route path="/feedback" element={<FeedbackListPage />} />
         <Route path="/feedback/give" element={<GiveFeedbackPage />} />
+        <Route path="/feedback/wall" element={<KudosWallPage />} />
+
+        {/* Peer Reviews */}
+        <Route path="/peer-reviews/nominate" element={<PeerReviewNominatePage />} />
+        <Route path="/peer-reviews/submit" element={<PeerReviewSubmitPage />} />
+        <Route path="/peer-reviews/queue" element={<PeerReviewQueuePage />} />
 
         {/* Analytics */}
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/analytics/nine-box" element={<NineBoxPage />} />
         <Route path="/analytics/skills-gap" element={<SkillsGapPage />} />
+
+        {/* Manager Effectiveness */}
+        <Route path="/manager-effectiveness" element={<ManagerEffectivenessPage />} />
+        <Route path="/manager-effectiveness/:managerId" element={<ManagerDetailPage />} />
 
         {/* Letters */}
         <Route path="/letters/templates" element={<LetterTemplatePage />} />
@@ -238,6 +303,7 @@ export function AppRoutes() {
 
         {/* Settings */}
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/notification-log" element={<NotificationLogPage />} />
       </Route>
 
       {/* 404 */}

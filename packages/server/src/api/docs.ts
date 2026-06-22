@@ -188,29 +188,65 @@ const spec = {
     "/api/v1/competencies/{id}": {
       get: {
         tags: ["Competencies"],
-        summary: "Get competency by ID",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "Competency data" } },
+        summary: "Get competency framework by ID",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Competency framework data" } },
       },
       put: {
         tags: ["Competencies"],
-        summary: "Update competency",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "Competency updated" } },
+        summary: "Update competency framework",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Competency framework updated" } },
       },
       delete: {
         tags: ["Competencies"],
-        summary: "Delete competency",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "Competency deleted" } },
+        summary: "Delete competency framework",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Competency framework deleted" } },
       },
     },
     "/api/v1/competencies/{id}/levels": {
+      get: {
+        tags: ["Competencies"],
+        summary: "List proficiency levels for a competency",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Proficiency level list" } },
+      },
       post: {
         tags: ["Competencies"],
-        summary: "Add level to competency",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "201": { description: "Level added" } },
+        summary: "Add a proficiency level to a competency",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "201": { description: "Proficiency level added" } },
+      },
+    },
+    "/api/v1/competencies/{id}/levels/{levelId}": {
+      put: {
+        tags: ["Competencies"],
+        summary: "Update a proficiency level",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "levelId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Proficiency level updated" } },
+      },
+      delete: {
+        tags: ["Competencies"],
+        summary: "Delete a proficiency level",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "levelId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: { "200": { description: "Proficiency level deleted" } },
       },
     },
 
@@ -484,11 +520,26 @@ const spec = {
       },
     },
     "/api/v1/peer-reviews/{id}/submit": {
-      put: {
+      post: {
         tags: ["Peer Reviews"],
         summary: "Submit peer review",
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
-        responses: { "200": { description: "Peer review submitted" } },
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "201": { description: "Peer review submitted" } },
+      },
+    },
+    "/api/v1/peer-reviews/{id}/response": {
+      get: {
+        tags: ["Peer Reviews"],
+        summary: "Get the reviewer's peer-review response for a nomination",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "200": { description: "Peer review response (or null)" } },
+      },
+    },
+    "/api/v1/peer-reviews/responses": {
+      get: {
+        tags: ["Peer Reviews"],
+        summary: "List peer-review responses",
+        responses: { "200": { description: "Peer review response list" } },
       },
     },
 

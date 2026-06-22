@@ -1,10 +1,15 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
-import { sendSuccess } from "../../utils/response";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
 import {
   createFrameworkSchema,
   addCompetencySchema,
+  reorderCompetenciesSchema,
+  createCompetencyLevelSchema,
+  updateCompetencyLevelSchema,
+  reorderCompetencyLevelsSchema,
+  paginationSchema,
   idParamSchema,
 } from "@emp-performance/shared";
 import * as frameworkService from "../../services/competency/competency-framework.service";
@@ -14,12 +19,24 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// GET / — list frameworks
+// GET / — list frameworks (paginated + search + active filter)
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const frameworks = await frameworkService.listFrameworks(orgId);
-    return sendSuccess(res, frameworks);
+    const pagination = paginationSchema.parse(req.query);
+    const isActiveParam = req.query.is_active as string | undefined;
+    const result = await frameworkService.listFrameworks(orgId, {
+      page: pagination.page,
+      perPage: pagination.perPage,
+      sort: pagination.sort,
+      order: pagination.order,
+      search: pagination.search,
+      isActive:
+        isActiveParam === undefined || isActiveParam === ""
+          ? undefined
+          : isActiveParam === "true" || isActiveParam === "1",
+    });
+    return sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }
@@ -112,6 +129,28 @@ router.post(
   },
 );
 
+// PUT /:id/competencies/reorder — bulk reorder competencies within a framework
+// NOTE: must be declared before "/:id/competencies/:compId" so "reorder" is not
+// captured as a :compId param.
+router.put(
+  "/:id/competencies/reorder",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const { competency_ids } = reorderCompetenciesSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const competencies = await frameworkService.reorderCompetencies(orgId, id, competency_ids);
+      return sendSuccess(res, competencies);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid reorder data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
 // PUT /:id/competencies/:compId — update competency
 router.put(
   "/:id/competencies/:compId",
@@ -144,6 +183,107 @@ router.delete(
       const orgId = req.user!.empcloudOrgId;
       await frameworkService.removeCompetency(orgId, id, compId);
       return sendSuccess(res, { message: "Competency removed" });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Competency proficiency levels (C6)
+// Here :id is a COMPETENCY id (a child of a framework), not a framework id.
+// Levels resolve their org via competency -> framework -> organization_id.
+// ---------------------------------------------------------------------------
+
+// GET /:id/levels — list proficiency levels for a competency
+router.get(
+  "/:id/levels",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const orgId = req.user!.empcloudOrgId;
+      const levels = await frameworkService.listLevels(orgId, id);
+      return sendSuccess(res, levels);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /:id/levels — add a proficiency level to a competency (admin only)
+router.post(
+  "/:id/levels",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const data = createCompetencyLevelSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const level = await frameworkService.createLevel(orgId, id, data);
+      return sendSuccess(res, level, 201);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// PUT /:id/levels/reorder — bulk reorder a competency's levels.
+// NOTE: declared before "/:id/levels/:levelId" so "reorder" is not captured
+// as a :levelId param.
+router.put(
+  "/:id/levels/reorder",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const { level_ids } = reorderCompetencyLevelsSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const levels = await frameworkService.reorderLevels(orgId, id, level_ids);
+      return sendSuccess(res, levels);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid reorder data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// PUT /:id/levels/:levelId — update a proficiency level
+router.put(
+  "/:id/levels/:levelId",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const levelId = req.params.levelId as string;
+      const data = updateCompetencyLevelSchema.parse(req.body);
+      const orgId = req.user!.empcloudOrgId;
+      const level = await frameworkService.updateLevel(orgId, id, levelId, data);
+      return sendSuccess(res, level);
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
+      next(err);
+    }
+  },
+);
+
+// DELETE /:id/levels/:levelId — delete a proficiency level
+router.delete(
+  "/:id/levels/:levelId",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const levelId = req.params.levelId as string;
+      const orgId = req.user!.empcloudOrgId;
+      await frameworkService.deleteLevel(orgId, id, levelId);
+      return sendSuccess(res, { message: "Level deleted" });
     } catch (err) {
       next(err);
     }

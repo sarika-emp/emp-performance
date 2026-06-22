@@ -5,8 +5,14 @@
 // ============================================================================
 
 import { Router, Request, Response, NextFunction } from "express";
+import {
+  updateNotificationSettingsSchema,
+  notificationListQuerySchema,
+  notificationLogQuerySchema,
+  idParamSchema,
+} from "@emp-performance/shared";
 import { authenticate, authorize } from "../middleware/auth.middleware";
-import { sendSuccess, sendError } from "../../utils/response";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import { logger } from "../../utils/logger";
 import {
   processReviewDeadlineReminders,
@@ -19,11 +25,107 @@ import {
   getNotificationSettings,
   updateNotificationSettings,
 } from "../../services/notification/notification-settings.service";
+import {
+  listNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  listDeliveryLog,
+} from "../../services/notification/notification.service";
 import { sendEmail } from "../../services/email/email.service";
-import { ValidationError } from "../../utils/errors";
+import { ValidationError, NotFoundError } from "../../utils/errors";
 
 const router = Router();
 router.use(authenticate);
+
+// ===========================================================================
+// IN-APP NOTIFICATION FEED (PL1) — available to every authenticated user
+// ===========================================================================
+
+// GET /feed — paginated notifications for the current user
+router.get("/feed", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const userId = req.user!.empcloudUserId;
+    const q = notificationListQuerySchema.parse(req.query);
+    const perPage = q.perPage ?? q.per_page ?? 20;
+    const result = await listNotifications(orgId, userId, {
+      page: q.page,
+      perPage,
+      unreadOnly: q.unreadOnly,
+    });
+    return sendPaginated(res, result.data, result.total, result.page, result.perPage);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /unread-count — unread notification count for the bell badge
+router.get("/unread-count", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const count = await getUnreadCount(req.user!.empcloudOrgId, req.user!.empcloudUserId);
+    return sendSuccess(res, { count });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /read-all — mark every notification read
+router.post("/read-all", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const updated = await markAllAsRead(req.user!.empcloudOrgId, req.user!.empcloudUserId);
+    return sendSuccess(res, { updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /:id/read — mark a single notification read
+router.patch("/:id/read", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const updated = await markAsRead(req.user!.empcloudOrgId, req.user!.empcloudUserId, id);
+    if (!updated) throw new NotFoundError("Notification", id);
+    return sendSuccess(res, updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /:id — remove a notification
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = idParamSchema.parse(req.params);
+    const ok = await deleteNotification(req.user!.empcloudOrgId, req.user!.empcloudUserId, id);
+    if (!ok) throw new NotFoundError("Notification", id);
+    return sendSuccess(res, { message: "Notification deleted" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /log — org-scoped email/notification delivery log (admins only, PL11)
+router.get(
+  "/log",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const q = notificationLogQuerySchema.parse(req.query);
+      const perPage = q.perPage ?? q.per_page ?? 20;
+      const result = await listDeliveryLog(orgId, {
+        page: q.page,
+        perPage,
+        status: q.status,
+        category: q.category,
+      });
+      return sendPaginated(res, result.data, result.total, result.page, result.perPage);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // ---------------------------------------------------------------------------
 // POST /send-review-reminders — manually trigger review reminders
@@ -31,9 +133,9 @@ router.use(authenticate);
 router.post(
   "/send-review-reminders",
   authorize("super_admin", "org_admin", "hr_admin"),
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await processReviewDeadlineReminders();
+      await processReviewDeadlineReminders(req.user!.empcloudOrgId);
       return sendSuccess(res, { message: "Review reminders processed" });
     } catch (err) {
       next(err);
@@ -47,9 +149,9 @@ router.post(
 router.post(
   "/send-pip-reminders",
   authorize("super_admin", "org_admin", "hr_admin"),
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await processPIPCheckInReminders();
+      await processPIPCheckInReminders(req.user!.empcloudOrgId);
       return sendSuccess(res, { message: "PIP reminders processed" });
     } catch (err) {
       next(err);
@@ -63,9 +165,9 @@ router.post(
 router.post(
   "/send-meeting-reminders",
   authorize("super_admin", "org_admin", "hr_admin"),
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await processOneOnOneReminders();
+      await processOneOnOneReminders(req.user!.empcloudOrgId);
       return sendSuccess(res, { message: "Meeting reminders processed" });
     } catch (err) {
       next(err);
@@ -79,9 +181,9 @@ router.post(
 router.post(
   "/send-goal-reminders",
   authorize("super_admin", "org_admin", "hr_admin"),
-  async (_req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await processGoalDeadlineReminders();
+      await processGoalDeadlineReminders(req.user!.empcloudOrgId);
       return sendSuccess(res, { message: "Goal reminders processed" });
     } catch (err) {
       next(err);
@@ -115,6 +217,7 @@ router.get(
 // ---------------------------------------------------------------------------
 router.get(
   "/settings",
+  authorize("super_admin", "org_admin", "hr_admin", "hr_manager"),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
@@ -135,7 +238,8 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const settings = await updateNotificationSettings(orgId, req.body);
+      const input = updateNotificationSettingsSchema.parse(req.body);
+      const settings = await updateNotificationSettings(orgId, input);
       return sendSuccess(res, settings);
     } catch (err) {
       next(err);

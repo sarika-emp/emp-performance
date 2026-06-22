@@ -138,13 +138,55 @@ router.post(
   },
 );
 
-// GET /:id/participants — list participants
+// POST /:id/reopen — reopen a completed cycle
+router.post(
+  "/:id/reopen",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const orgId = req.user!.empcloudOrgId;
+      const cycle = await cycleService.reopenCycle(orgId, id);
+      return sendSuccess(res, cycle);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /:id/transition — explicit workflow transition (in_review / calibration / active)
+router.post(
+  "/:id/transition",
+  authorize("super_admin", "org_admin", "hr_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = idParamSchema.parse(req.params);
+      const orgId = req.user!.empcloudOrgId;
+      const target = req.body?.status;
+      if (target !== "in_review" && target !== "calibration" && target !== "active") {
+        throw new ValidationError("status must be one of: in_review, calibration, active");
+      }
+      const cycle = await cycleService.transitionCycle(orgId, id, target);
+      return sendSuccess(res, cycle);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /:id/participants — list participants (paginated + searchable)
 router.get("/:id/participants", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = idParamSchema.parse(req.params);
+    const query = paginationSchema.parse(req.query);
     const orgId = req.user!.empcloudOrgId;
-    const participants = await cycleService.listParticipants(orgId, id);
-    return sendSuccess(res, participants);
+    const result = await cycleService.listParticipants(orgId, id, {
+      page: query.page,
+      perPage: query.perPage,
+      status: req.query.status as string | undefined,
+      search: query.search,
+    });
+    return sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }

@@ -7,9 +7,11 @@ import {
   Users,
   Shield,
   ChevronRight,
+  Search,
   X,
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
+import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface SuccessionPlan {
   id: string;
@@ -39,6 +41,10 @@ const STATUS_COLORS: Record<string, string> = {
 export function SuccessionPage() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [criticality, setCriticality] = useState("");
+  const [status, setStatus] = useState("");
   const [form, setForm] = useState({
     position_title: "",
     department: "",
@@ -47,17 +53,26 @@ export function SuccessionPage() {
   });
 
   const { data: plansData, isLoading } = useQuery({
-    queryKey: ["succession-plans"],
-    queryFn: () => apiGet<SuccessionPlan[]>("/succession-plans"),
+    queryKey: ["succession-plans", page, search, criticality, status],
+    queryFn: () =>
+      apiGet<PaginatedResponse<SuccessionPlan>>("/succession-plans", {
+        page,
+        perPage: 20,
+        ...(search && { search }),
+        ...(criticality && { criticality }),
+        ...(status && { status }),
+      }),
   });
 
-  const plans = plansData?.data || [];
+  const plans = plansData?.data?.data || [];
+  const pagination = plansData?.data;
 
   const createMutation = useMutation({
     mutationFn: (body: any) => apiPost("/succession-plans", body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["succession-plans"] });
       setShowCreate(false);
+      setPage(1);
       setForm({ position_title: "", department: "", criticality: "medium", current_holder_id: "" });
     },
   });
@@ -92,6 +107,50 @@ export function SuccessionPage() {
           <Plus className="h-4 w-4" />
           New Plan
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by position..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+        <select
+          value={criticality}
+          onChange={(e) => {
+            setCriticality(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Criticality</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+        <select
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="identified">Identified</option>
+          <option value="developing">Developing</option>
+          <option value="ready">Ready</option>
+        </select>
       </div>
 
       {/* Create Form Modal */}
@@ -241,6 +300,31 @@ export function SuccessionPage() {
               <ChevronRight className="h-5 w-5 text-gray-400" />
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

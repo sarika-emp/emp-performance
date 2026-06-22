@@ -1,17 +1,41 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Plus, Award, ChevronRight, Layers } from "lucide-react";
+import { Plus, Award, ChevronRight, Layers, Search } from "lucide-react";
 import { apiGet } from "@/api/client";
-import type { CompetencyFramework } from "@emp-performance/shared";
+import type { CompetencyFramework, PaginatedResponse } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+  { value: "name:asc", label: "Name A–Z" },
+  { value: "name:desc", label: "Name Z–A" },
+];
+
 export function FrameworkListPage() {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [active, setActive] = useState("");
+  const [sortValue, setSortValue] = useState("created_at:desc");
+
+  const [sort, order] = sortValue.split(":") as [string, "asc" | "desc"];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["frameworks"],
-    queryFn: () => apiGet<CompetencyFramework[]>("/competencies"),
+    queryKey: ["frameworks", page, search, active, sortValue],
+    queryFn: () =>
+      apiGet<PaginatedResponse<CompetencyFramework>>("/competencies", {
+        page,
+        perPage: 20,
+        sort,
+        order,
+        ...(search && { search }),
+        ...(active && { is_active: active }),
+      }),
   });
 
-  const frameworks = data?.data ?? [];
+  const frameworks = data?.data?.data ?? [];
+  const pagination = data?.data;
 
   return (
     <div className="space-y-6">
@@ -32,6 +56,51 @@ export function FrameworkListPage() {
         </Link>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search frameworks..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </div>
+
+        <select
+          value={active}
+          onChange={(e) => {
+            setActive(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+
+        <select
+          value={sortValue}
+          onChange={(e) => {
+            setSortValue(e.target.value);
+            setPage(1);
+          }}
+          className="ml-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {SORT_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* List */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -40,7 +109,7 @@ export function FrameworkListPage() {
       ) : frameworks.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
           <Award className="mx-auto h-10 w-10 text-gray-400" />
-          <p className="mt-2 text-sm font-medium text-gray-900">No frameworks yet</p>
+          <p className="mt-2 text-sm font-medium text-gray-900">No frameworks found</p>
           <p className="mt-1 text-sm text-gray-500">
             Create your first competency framework to define evaluation criteria.
           </p>
@@ -92,6 +161,31 @@ export function FrameworkListPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
+          <div className="flex gap-2">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(page + 1)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

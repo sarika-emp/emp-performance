@@ -28,6 +28,8 @@ interface MeetingDetail {
   title: string;
   employee_id: number;
   manager_id: number;
+  employee_name: string | null;
+  manager_name: string | null;
   scheduled_at: string;
   duration_minutes: number;
   status: string;
@@ -106,7 +108,8 @@ export function MyOneOnOneDetailPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{meeting.title}</h1>
-          <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
+          <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-500">
+            <span>with {meeting.manager_name ?? `#${meeting.manager_id}`}</span>
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
               {formatDate(meeting.scheduled_at)}

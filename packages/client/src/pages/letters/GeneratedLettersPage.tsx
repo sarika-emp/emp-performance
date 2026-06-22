@@ -1,6 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import {
   FileText,
   Send,
@@ -11,13 +16,17 @@ import {
   X,
   Mail,
   Settings,
+  Search,
+  RefreshCw,
+  Ban,
 } from "lucide-react";
-import { apiGet, apiPost } from "@/api/client";
+import { apiGet, apiPost, api } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   GeneratedPerformanceLetter,
   PerformanceLetterTemplate,
   PaginatedResponse,
+  ReviewCycle,
 } from "@emp-performance/shared";
 
 interface OrgUser {
@@ -42,10 +51,23 @@ const TYPE_LABELS: Record<string, string> = {
   warning: "Warning",
 };
 
+async function downloadLetter(letter: GeneratedPerformanceLetter) {
+  const res = await api.get(`/letters/${letter.id}/download`, { responseType: "blob" });
+  const url = URL.createObjectURL(res.data as Blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `letter_${letter.type}_employee_${letter.employee_id}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function GeneratedLettersPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [showGenerate, setShowGenerate] = useState(false);
   const [viewingLetter, setViewingLetter] = useState<GeneratedPerformanceLetter | null>(null);
 
@@ -61,14 +83,23 @@ export function GeneratedLettersPage() {
   });
   const orgUsers: OrgUser[] = usersData?.data ?? [];
 
+  const { data: cyclesData } = useQuery({
+    queryKey: ["review-cycles", "letters-picker"],
+    queryFn: () => apiGet<PaginatedResponse<ReviewCycle>>("/review-cycles", { perPage: 100 }),
+  });
+  const cycles: ReviewCycle[] = cyclesData?.data?.data ?? [];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["generated-letters", page, filterType],
+    queryKey: ["generated-letters", page, filterType, filterStatus, search],
     queryFn: () =>
       apiGet<PaginatedResponse<GeneratedPerformanceLetter>>("/letters", {
         page,
         perPage: 20,
         ...(filterType && { type: filterType }),
+        ...(filterStatus && { status: filterStatus }),
+        ...(search && { search }),
       }),
+    placeholderData: keepPreviousData,
   });
 
   const letters = data?.data?.data ?? [];
@@ -76,10 +107,13 @@ export function GeneratedLettersPage() {
 
   const { data: templatesData } = useQuery({
     queryKey: ["letter-templates-all"],
-    queryFn: () => apiGet<PerformanceLetterTemplate[]>("/letters/templates"),
+    queryFn: () =>
+      apiGet<PaginatedResponse<PerformanceLetterTemplate>>("/letters/templates", {
+        perPage: 100,
+      }),
   });
 
-  const templates = templatesData?.data ?? [];
+  const templates = templatesData?.data?.data ?? [];
 
   // When generating, narrow the template dropdown by letter type so the
   // user picks a template that matches the letter they intend to send (#20).
@@ -87,6 +121,13 @@ export function GeneratedLettersPage() {
     if (!genTypeFilter) return templates;
     return templates.filter((t) => t.type === genTypeFilter);
   }, [templates, genTypeFilter]);
+
+  // L6: pre-select the default template for the chosen type when available.
+  useEffect(() => {
+    if (genTemplateId) return;
+    const def = visibleTemplates.find((t) => t.is_default);
+    if (def) setGenTemplateId(def.id);
+  }, [visibleTemplates, genTemplateId]);
 
   const generateMutation = useMutation({
     mutationFn: (body: { employee_id: number; template_id: string; cycle_id?: string }) =>
@@ -107,16 +148,20 @@ export function GeneratedLettersPage() {
     },
   });
 
-  const handleDownload = (letter: GeneratedPerformanceLetter) => {
-    // Create downloadable text content
-    const blob = new Blob([letter.content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `letter_${letter.type}_employee_${letter.employee_id}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const regenerateMutation = useMutation({
+    mutationFn: (letterId: string) => apiPost(`/letters/${letterId}/regenerate`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generated-letters"] });
+    },
+  });
+
+  const voidMutation = useMutation({
+    mutationFn: (letterId: string) => apiPost(`/letters/${letterId}/void`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generated-letters"] });
+      setViewingLetter(null);
+    },
+  });
 
   return (
     <div>
@@ -145,8 +190,25 @@ export function GeneratedLettersPage() {
         </div>
       </div>
 
-      {/* Filter */}
-      <div className="mt-4">
+      {/* Filters */}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setSearch(searchInput.trim());
+            setPage(1);
+          }}
+          className="relative flex-1"
+        >
+          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search letter content…"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </form>
         <select
           value={filterType}
           onChange={(e) => {
@@ -161,6 +223,19 @@ export function GeneratedLettersPage() {
               {label}
             </option>
           ))}
+        </select>
+        <select
+          value={filterStatus}
+          onChange={(e) => {
+            setFilterStatus(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="draft">Draft</option>
+          <option value="sent">Sent</option>
+          <option value="voided">Voided</option>
         </select>
       </div>
 
@@ -262,15 +337,20 @@ export function GeneratedLettersPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Review Cycle ID (optional)
+                Review Cycle (optional)
               </label>
-              <input
-                type="text"
+              <select
                 value={genCycleId}
                 onChange={(e) => setGenCycleId(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                placeholder="UUID of review cycle (optional)"
-              />
+              >
+                <option value="">— No cycle —</option>
+                {cycles.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -326,15 +406,39 @@ export function GeneratedLettersPage() {
                 {viewingLetter.content}
               </div>
             </div>
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
               <button
-                onClick={() => handleDownload(viewingLetter)}
+                onClick={() => downloadLetter(viewingLetter)}
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <Download className="h-4 w-4" />
                 Download
               </button>
-              {!viewingLetter.sent_at && (
+              {!viewingLetter.sent_at && !viewingLetter.voided_at && (
+                <button
+                  onClick={() => regenerateMutation.mutate(viewingLetter.id)}
+                  disabled={regenerateMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
+                </button>
+              )}
+              {!viewingLetter.voided_at && (
+                <button
+                  onClick={() => {
+                    if (confirm("Void this letter? This cannot be undone.")) {
+                      voidMutation.mutate(viewingLetter.id);
+                    }
+                  }}
+                  disabled={voidMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  <Ban className="h-4 w-4" />
+                  Void
+                </button>
+              )}
+              {!viewingLetter.sent_at && !viewingLetter.voided_at && (
                 <button
                   onClick={() => {
                     sendMutation.mutate(viewingLetter.id);
@@ -387,10 +491,19 @@ export function GeneratedLettersPage() {
                   <span className="text-sm font-medium text-gray-900">
                     Employee #{letter.employee_id}
                   </span>
-                  {letter.sent_at && (
+                  {letter.voided_at ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <Ban className="h-3 w-3" />
+                      Voided
+                    </span>
+                  ) : letter.sent_at ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
                       <Mail className="h-3 w-3" />
                       Sent {formatDate(letter.sent_at)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                      Draft
                     </span>
                   )}
                 </div>
@@ -409,13 +522,13 @@ export function GeneratedLettersPage() {
                   <Eye className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => handleDownload(letter)}
+                  onClick={() => downloadLetter(letter)}
                   className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   title="Download"
                 >
                   <Download className="h-4 w-4" />
                 </button>
-                {!letter.sent_at && (
+                {!letter.sent_at && !letter.voided_at && (
                   <button
                     onClick={() => sendMutation.mutate(letter.id)}
                     disabled={sendMutation.isPending}

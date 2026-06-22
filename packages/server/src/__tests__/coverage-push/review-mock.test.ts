@@ -274,9 +274,10 @@ describe("review-cycle.service", () => {
 
     it("should return participants", async () => {
       mockDB.findOne.mockResolvedValue({ id: "c-1" });
-      mockDB.findMany.mockResolvedValue({ data: [{ id: "p-1" }], total: 1, page: 1, limit: 20, totalPages: 1 });
+      mockDB.findMany.mockResolvedValue({ data: [{ id: "p-1", employee_id: 10 }], total: 1, page: 1, limit: 20, totalPages: 1 });
       const result = await listParticipants(ORG, "c-1");
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(1);
     });
   });
 
@@ -354,10 +355,22 @@ describe("review.service", () => {
     });
 
     it("should create a review", async () => {
-      mockDB.findOne.mockResolvedValue({ id: "c-1" });
+      // 1st findOne resolves the cycle; 2nd is the duplicate-guard lookup (none).
+      mockDB.findOne
+        .mockResolvedValueOnce({ id: "c-1" })
+        .mockResolvedValueOnce(null);
       mockDB.create.mockResolvedValue({ id: "rev-1", status: "pending" });
       const result = await createReview(ORG, { cycle_id: "c-1", employee_id: 10, reviewer_id: 20, type: "manager" });
       expect(result.status).toBe("pending");
+    });
+
+    it("should reject a duplicate review", async () => {
+      mockDB.findOne
+        .mockResolvedValueOnce({ id: "c-1" })
+        .mockResolvedValueOnce({ id: "rev-existing" });
+      await expect(
+        createReview(ORG, { cycle_id: "c-1", employee_id: 10, reviewer_id: 20, type: "manager" }),
+      ).rejects.toThrow();
     });
   });
 

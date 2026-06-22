@@ -182,10 +182,57 @@ function GoalTreeNodeComponent({
   );
 }
 
+interface CycleOption {
+  id: string;
+  name: string;
+}
+
+interface OwnerOption {
+  id: number;
+  full_name: string;
+  email: string;
+}
+
+/**
+ * Recursively prune the tree to nodes matching the owner/status filters. A
+ * parent is kept if it matches OR any descendant matches, so context isn't
+ * lost (G8).
+ */
+function filterTree(
+  nodes: GoalTreeNode[],
+  ownerId: string,
+  status: string,
+): GoalTreeNode[] {
+  const out: GoalTreeNode[] = [];
+  for (const node of nodes) {
+    const children = filterTree(node.children ?? [], ownerId, status);
+    const ownerMatch = !ownerId || String(node.employee_id) === ownerId;
+    const statusMatch = !status || node.status === status;
+    if ((ownerMatch && statusMatch) || children.length > 0) {
+      out.push({ ...node, children });
+    }
+  }
+  return out;
+}
+
 export function GoalAlignmentPage() {
   const navigate = useNavigate();
   const [cycleId, setCycleId] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const { data: cyclesData } = useQuery({
+    queryKey: ["review-cycles", "alignment"],
+    queryFn: () => apiGet<any>("/review-cycles", { perPage: 100 }),
+  });
+  const cycles: CycleOption[] = cyclesData?.data?.data ?? cyclesData?.data ?? [];
+
+  const { data: usersData } = useQuery({
+    queryKey: ["users", "list"],
+    queryFn: () => apiGet<OwnerOption[]>("/users"),
+  });
+  const owners: OwnerOption[] = usersData?.data ?? [];
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["goals", "tree", cycleId],
@@ -193,7 +240,11 @@ export function GoalAlignmentPage() {
       apiGet<GoalTreeNode[]>("/goals/tree", cycleId ? { cycleId } : undefined),
   });
 
-  const tree = data?.data ?? [];
+  const rawTree = data?.data ?? [];
+  const tree = useMemo(
+    () => filterTree(rawTree, ownerId, statusFilter),
+    [rawTree, ownerId, statusFilter],
+  );
 
   // Pre-collect every node id that has children — used by both Expand All
   // and the per-row toggle. Memoized so the buttons read stable data
@@ -274,6 +325,61 @@ export function GoalAlignmentPage() {
             Collapse All
           </button>
         </div>
+      </div>
+
+      {/* Filters */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <select
+          value={cycleId}
+          onChange={(e) => setCycleId(e.target.value)}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Cycles</option>
+          {cycles.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={ownerId}
+          onChange={(e) => setOwnerId(e.target.value)}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Owners</option>
+          {owners.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.full_name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">All Statuses</option>
+          <option value="not_started">Not Started</option>
+          <option value="in_progress">In Progress</option>
+          <option value="at_risk">At Risk</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        {(cycleId || ownerId || statusFilter) && (
+          <button
+            type="button"
+            onClick={() => {
+              setCycleId("");
+              setOwnerId("");
+              setStatusFilter("");
+            }}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {/* Legend */}

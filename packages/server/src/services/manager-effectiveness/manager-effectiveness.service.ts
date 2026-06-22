@@ -25,6 +25,7 @@ export interface ManagerEffectivenessScore {
   team_size: number;
   avg_team_rating: number | null;
   reviews_completed_on_time_pct: number | null;
+  rating_variance: number | null;
   one_on_one_frequency: number | null;
   goal_completion_rate: number | null;
   feedback_given_count: number;
@@ -302,6 +303,7 @@ export async function calculateScore(
     team_size: teamSize,
     avg_team_rating: avgTeamRating,
     reviews_completed_on_time_pct: reviewsCompletedOnTimePct,
+    rating_variance: ratingVariance,
     one_on_one_frequency: oneOnOneFrequency,
     goal_completion_rate: goalCompletionRate,
     feedback_given_count: feedbackGivenCount,
@@ -322,19 +324,72 @@ export async function calculateScore(
 // listManagerScores
 // ---------------------------------------------------------------------------
 
+const SCORE_SORT_COLUMNS = new Set([
+  "overall_score",
+  "team_performance_score",
+  "review_quality_score",
+  "engagement_score",
+  "team_size",
+  "avg_team_rating",
+  "calculated_at",
+]);
+
+// A9: paginated + sortable list of manager scores for a period. The raw
+// hardcoded 1000-row cap is gone; callers page through results instead.
 export async function listManagerScores(
   orgId: number,
   period: string,
-): Promise<ManagerEffectivenessScore[]> {
+  params: {
+    page?: number;
+    perPage?: number;
+    sort?: string;
+    order?: "asc" | "desc";
+  } = {},
+): Promise<{
+  data: ManagerEffectivenessScore[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}> {
   const db = getDB();
+  const page = params.page ?? 1;
+  const perPage = params.perPage ?? 20;
+  const sort =
+    params.sort && SCORE_SORT_COLUMNS.has(params.sort) ? params.sort : "overall_score";
+  const order = params.order === "asc" ? "asc" : "desc";
 
   const result = await db.findMany<ManagerEffectivenessScore>("manager_effectiveness_scores", {
+    page,
+    limit: perPage,
     filters: { organization_id: orgId, period },
-    sort: { field: "overall_score", order: "desc" },
-    limit: 1000,
+    sort: { field: sort, order },
   });
 
-  return result.data;
+  return {
+    data: result.data,
+    total: result.total,
+    page: result.page,
+    perPage: result.limit,
+    totalPages: result.totalPages,
+  };
+}
+
+// A7: delete a manager effectiveness score (allows correcting/recomputing
+// from a clean slate). Ownership scoped by organization_id.
+export async function deleteScore(
+  orgId: number,
+  managerUserId: number,
+  period: string,
+): Promise<void> {
+  const db = getDB();
+  const existing = await db.findOne<ManagerEffectivenessScore>("manager_effectiveness_scores", {
+    organization_id: orgId,
+    manager_user_id: managerUserId,
+    period,
+  });
+  if (!existing) throw new NotFoundError("ManagerEffectivenessScore", `${managerUserId}/${period}`);
+  await db.delete("manager_effectiveness_scores", existing.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -384,7 +439,7 @@ export async function getManagerDetail(
       },
       review_quality: {
         reviews_completed_on_time_pct: score.reviews_completed_on_time_pct,
-        rating_variance: null, // Not stored, computed at calculation time
+        rating_variance: score.rating_variance ?? null,
         description: reviewQualityDesc,
       },
       engagement: {

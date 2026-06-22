@@ -1,39 +1,62 @@
 // ============================================================================
 // ONE-ON-ONE MEETING ROUTES
-// CRUD for meetings, agenda items, and meeting completion.
+// CRUD for meetings, agenda items, action items, and meeting lifecycle.
+// All routes require auth; access to a meeting is enforced in the service layer
+// (employee, manager, or admin only).
 // ============================================================================
 
 import { Router, Request, Response, NextFunction } from "express";
+import {
+  createMeetingSchema,
+  updateMeetingSchema,
+  requestMeetingSchema,
+  addAgendaItemSchema,
+  updateAgendaItemSchema,
+  createActionItemSchema,
+  updateActionItemSchema,
+  paginationSchema,
+} from "@emp-performance/shared";
 import { authenticate } from "../middleware/auth.middleware";
 import * as meetingService from "../../services/one-on-one/one-on-one.service";
-import { sendSuccess } from "../../utils/response";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
 
 const router = Router();
 router.use(authenticate);
 
-// GET /meetings
+function actorOf(req: Request): meetingService.Actor {
+  return { userId: req.user!.empcloudUserId, role: req.user!.role };
+}
+
+// GET /meetings — paginated, searchable, participant-scoped
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.listMeetings(orgId, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
-      managerId: req.query.managerId ? parseInt(req.query.managerId as string) : undefined,
-      employeeId: req.query.employeeId ? parseInt(req.query.employeeId as string) : undefined,
+    const pagination = paginationSchema.parse(req.query);
+    const result = await meetingService.listMeetings(orgId, actorOf(req), {
+      page: pagination.page,
+      perPage: pagination.perPage,
+      sort: pagination.sort,
+      order: pagination.order,
+      search: pagination.search,
+      managerId: req.query.managerId ? Number(req.query.managerId) : undefined,
+      employeeId: req.query.employeeId ? Number(req.query.employeeId) : undefined,
       status: req.query.status as string | undefined,
     });
-    sendSuccess(res, result);
+    sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }
 });
 
-// GET /meetings/:id
+// GET /meetings/:id — agenda paginated via agendaPage/agendaPerPage
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.getMeeting(orgId, req.params.id as string);
+    const result = await meetingService.getMeeting(orgId, req.params.id as string, actorOf(req), {
+      agendaPage: req.query.agendaPage ? Number(req.query.agendaPage) : undefined,
+      agendaPerPage: req.query.agendaPerPage ? Number(req.query.agendaPerPage) : undefined,
+    });
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -44,17 +67,20 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { employee_id, manager_id, title, scheduled_at, duration_minutes } = req.body;
-    if (!employee_id || !manager_id || !title || !scheduled_at) {
-      throw new ValidationError("employee_id, manager_id, title, and scheduled_at are required");
-    }
-    const result = await meetingService.createMeeting(orgId, {
-      employee_id,
-      manager_id,
-      title,
-      scheduled_at,
-      duration_minutes,
-    });
+    const data = createMeetingSchema.parse(req.body);
+    const result = await meetingService.createMeeting(orgId, data);
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/request — employee-initiated request (O8)
+router.post("/request", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const data = requestMeetingSchema.parse(req.body);
+    const result = await meetingService.requestMeeting(orgId, req.user!.empcloudUserId, data);
     sendSuccess(res, result, 201);
   } catch (err) {
     next(err);
@@ -65,7 +91,8 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.updateMeeting(orgId, req.params.id as string, req.body);
+    const data = updateMeetingSchema.parse(req.body);
+    const result = await meetingService.updateMeeting(orgId, req.params.id as string, data, actorOf(req));
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -76,8 +103,41 @@ router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
 router.post("/:id/complete", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.completeMeeting(orgId, req.params.id as string);
+    const result = await meetingService.completeMeeting(orgId, req.params.id as string, actorOf(req));
     sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/:id/reopen (O7)
+router.post("/:id/reopen", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const result = await meetingService.reopenMeeting(orgId, req.params.id as string, actorOf(req));
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/:id/cancel (O3)
+router.post("/:id/cancel", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const result = await meetingService.cancelMeeting(orgId, req.params.id as string, actorOf(req));
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /meetings/:id (O3)
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    await meetingService.deleteMeeting(orgId, req.params.id as string, actorOf(req));
+    sendSuccess(res, { deleted: true });
   } catch (err) {
     next(err);
   }
@@ -91,14 +151,13 @@ router.post("/:id/complete", async (req: Request, res: Response, next: NextFunct
 const agendaHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const { title, description, order } = req.body;
-    if (!title) throw new ValidationError("Title is required");
-    const result = await meetingService.addAgendaItem(orgId, req.params.meetingId as string, {
-      title,
-      description,
-      added_by: req.user!.empcloudUserId,
-      order,
-    });
+    const data = addAgendaItemSchema.parse(req.body);
+    const result = await meetingService.addAgendaItem(
+      orgId,
+      req.params.meetingId as string,
+      { title: data.title, description: data.description, added_by: req.user!.empcloudUserId, order: data.order },
+      actorOf(req),
+    );
     sendSuccess(res, result, 201);
   } catch (err) {
     next(err);
@@ -111,22 +170,112 @@ router.post("/:meetingId/agenda-items", agendaHandler);
 router.put("/agenda/:itemId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.updateAgendaItem(orgId, req.params.itemId as string, req.body);
+    const data = updateAgendaItemSchema.parse(req.body);
+    const result = await meetingService.updateAgendaItem(orgId, req.params.itemId as string, data, actorOf(req));
     sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
 });
 
-// POST /meetings/agenda/:itemId/complete
+// DELETE /meetings/agenda/:itemId (O3)
+router.delete("/agenda/:itemId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    await meetingService.deleteAgendaItem(orgId, req.params.itemId as string, actorOf(req));
+    sendSuccess(res, { deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/agenda/:itemId/complete — toggles discussed state (O7)
 router.post("/agenda/:itemId/complete", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const result = await meetingService.completeAgendaItem(orgId, req.params.itemId as string);
+    const result = await meetingService.completeAgendaItem(orgId, req.params.itemId as string, actorOf(req));
     sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Action Items (O4)
+// ---------------------------------------------------------------------------
+
+// GET /meetings/:meetingId/action-items
+router.get("/:meetingId/action-items", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const result = await meetingService.listActionItems(orgId, req.params.meetingId as string, actorOf(req));
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/:meetingId/action-items
+router.post("/:meetingId/action-items", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const data = createActionItemSchema.parse(req.body);
+    const result = await meetingService.addActionItem(orgId, req.params.meetingId as string, data, actorOf(req));
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /meetings/action-items/:actionItemId
+router.put("/action-items/:actionItemId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const data = updateActionItemSchema.parse(req.body);
+    const result = await meetingService.updateActionItem(
+      orgId,
+      req.params.actionItemId as string,
+      data,
+      actorOf(req),
+    );
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /meetings/action-items/:actionItemId
+router.delete("/action-items/:actionItemId", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    await meetingService.deleteActionItem(orgId, req.params.actionItemId as string, actorOf(req));
+    sendSuccess(res, { deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /meetings/:meetingId/action-items/carry-forward { toMeetingId }
+router.post(
+  "/:meetingId/action-items/carry-forward",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const toMeetingId = req.body?.toMeetingId as string;
+      if (!toMeetingId) {
+        throw new ValidationError("toMeetingId is required");
+      }
+      const result = await meetingService.carryForwardActionItems(
+        orgId,
+        req.params.meetingId as string,
+        toMeetingId,
+        actorOf(req),
+      );
+      sendSuccess(res, result, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export { router as oneOnOneRoutes };

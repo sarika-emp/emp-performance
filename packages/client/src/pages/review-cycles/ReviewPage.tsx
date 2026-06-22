@@ -4,8 +4,10 @@ import { ArrowLeft, Star, User, Users, FileText } from "lucide-react";
 import { apiGet } from "@/api/client";
 import type { Review, ReviewCompetencyRating } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { AiSummaryPanel } from "@/components/AiSummaryPanel";
 
-type ReviewWithRatings = Review & { competency_ratings: ReviewCompetencyRating[] };
+type RatingWithName = ReviewCompetencyRating & { competency_name?: string | null };
+type ReviewWithRatings = Review & { competency_ratings: RatingWithName[] };
 
 const TYPE_COLORS: Record<string, string> = {
   self: "bg-blue-100 text-blue-700",
@@ -96,6 +98,9 @@ export function ReviewPage() {
         </div>
       </div>
 
+      {/* A3: AI summary panel for the current review */}
+      <AiSummaryPanel scope="review" id={review.id} />
+
       {/* Side-by-side reviews */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
         {(siblingReviews.length > 0 ? siblingReviews : [review]).map((rev) => {
@@ -159,7 +164,7 @@ export function ReviewPage() {
                     {review.competency_ratings.map((cr) => (
                       <div key={cr.id} className="flex items-center justify-between">
                         <span className="text-sm text-gray-700 truncate max-w-[140px]">
-                          {cr.competency_id.slice(0, 8)}...
+                          {cr.competency_name ?? `${cr.competency_id.slice(0, 8)}...`}
                         </span>
                         <StarRating rating={cr.rating} />
                       </div>

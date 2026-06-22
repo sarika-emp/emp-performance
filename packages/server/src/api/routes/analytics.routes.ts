@@ -8,21 +8,28 @@ import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as analyticsService from "../../services/analytics/analytics.service";
 import { sendSuccess } from "../../utils/response";
-import { ValidationError } from "../../utils/errors";
+import { ValidationError, ForbiddenError } from "../../utils/errors";
+import { createPotentialAssessmentSchema } from "@emp-performance/shared";
 
 const router = Router();
 router.use(authenticate);
 
-// GET /analytics/overview
-router.get("/overview", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const result = await analyticsService.getOverview(orgId);
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+const HR_ROLES = ["hr_admin", "hr_manager", "org_admin", "super_admin"] as const;
+
+// GET /analytics/overview — org-wide stats (HR only, A4)
+router.get(
+  "/overview",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const result = await analyticsService.getOverview(orgId);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /analytics/my-overview — current user's My Performance card values
 router.get("/my-overview", async (req: Request, res: Response, next: NextFunction) => {
@@ -36,29 +43,38 @@ router.get("/my-overview", async (req: Request, res: Response, next: NextFunctio
   }
 });
 
-// GET /analytics/ratings-distribution?cycleId=xxx
-router.get("/ratings-distribution", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const cycleId = req.query.cycleId as string;
-    if (!cycleId) throw new ValidationError("cycleId query parameter is required");
-    const result = await analyticsService.getRatingsDistribution(orgId, cycleId);
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /analytics/ratings-distribution?cycleId=xxx (HR only, A4)
+router.get(
+  "/ratings-distribution",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const cycleId = req.query.cycleId as string;
+      if (!cycleId) throw new ValidationError("cycleId query parameter is required");
+      const result = await analyticsService.getRatingsDistribution(orgId, cycleId);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
-// GET /analytics/trends
-router.get("/trends", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const result = await analyticsService.getTrends(orgId);
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /analytics/trends (HR only, A4)
+router.get(
+  "/trends",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const result = await analyticsService.getTrends(orgId, limit);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /analytics/team-comparison?managerId=xxx
 router.get(
@@ -76,29 +92,38 @@ router.get(
   },
 );
 
-// GET /analytics/goal-completion
-router.get("/goal-completion", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const result = await analyticsService.getGoalCompletion(orgId);
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /analytics/goal-completion (HR only, A4)
+router.get(
+  "/goal-completion",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const result = await analyticsService.getGoalCompletion(orgId);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
-// GET /analytics/top-performers?cycleId=xxx
-router.get("/top-performers", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const cycleId = req.query.cycleId as string;
-    if (!cycleId) throw new ValidationError("cycleId query parameter is required");
-    const result = await analyticsService.getTopPerformers(orgId, cycleId);
-    sendSuccess(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+// GET /analytics/top-performers?cycleId=xxx (HR only, A4)
+router.get(
+  "/top-performers",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const cycleId = req.query.cycleId as string;
+      if (!cycleId) throw new ValidationError("cycleId query parameter is required");
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const result = await analyticsService.getTopPerformers(orgId, cycleId, limit);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /analytics/nine-box?cycleId=xxx
 router.get(
@@ -125,16 +150,35 @@ router.post(
     try {
       const orgId = req.user!.empcloudOrgId;
       const assessedBy = req.user!.empcloudUserId;
-      const { cycle_id, employee_id, potential_rating, notes } = req.body;
-      if (!cycle_id || !employee_id || potential_rating == null) {
-        throw new ValidationError("cycle_id, employee_id, and potential_rating are required");
-      }
+      const body = createPotentialAssessmentSchema.parse(req.body);
       const result = await analyticsService.createPotentialAssessment(
         orgId,
-        { cycle_id, employee_id: Number(employee_id), potential_rating: Number(potential_rating), notes },
+        {
+          cycle_id: body.cycle_id,
+          employee_id: body.employee_id,
+          potential_rating: body.potential_rating,
+          notes: body.notes ?? undefined,
+        },
         assessedBy,
       );
       sendSuccess(res, result, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /analytics/potential-assessments/:id — remove an assessment (A7)
+router.delete(
+  "/potential-assessments/:id",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const id = req.params.id as string;
+      if (!id) throw new ValidationError("id is required");
+      await analyticsService.deletePotentialAssessment(orgId, id);
+      sendSuccess(res, { deleted: true });
     } catch (err) {
       next(err);
     }
@@ -178,11 +222,17 @@ router.get(
 );
 
 // GET /analytics/skills-gap/:employeeId — individual skills gap
+// A4: a user may read their own gap; otherwise HR/admin only.
 router.get("/skills-gap/:employeeId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const employeeId = parseInt(req.params.employeeId as string);
     if (isNaN(employeeId)) throw new ValidationError("employeeId must be a number");
+
+    const isHr = (HR_ROLES as readonly string[]).includes(req.user!.role);
+    if (!isHr && req.user!.empcloudUserId !== employeeId) {
+      throw new ForbiddenError("You may only view your own skills gap");
+    }
 
     const result = await analyticsService.getSkillsGap(orgId, employeeId);
     const recommendations = analyticsService.getLearningRecommendations(result.competencies);

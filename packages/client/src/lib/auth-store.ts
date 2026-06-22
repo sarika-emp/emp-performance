@@ -42,6 +42,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
+    // Best-effort server-side revocation of the refresh token (PL3). We use a
+    // keepalive fetch so it completes even as we navigate away, and never block
+    // the client-side teardown on it.
+    const refreshToken = localStorage.getItem("refresh_token");
+    const accessToken = localStorage.getItem("access_token");
+    if (refreshToken) {
+      const base = (import.meta as any).env?.VITE_API_URL || "/api/v1";
+      try {
+        void fetch(`${base}/auth/logout`, {
+          method: "POST",
+          keepalive: true,
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch {
+        // ignore — local teardown proceeds regardless
+      }
+    }
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");

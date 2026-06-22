@@ -1,10 +1,24 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Plus, Search } from "lucide-react";
-import { apiGet } from "@/api/client";
+import { AlertTriangle, Plus, Search, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { apiGet, apiDelete } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
+import { useAuthStore } from "@/lib/auth-store";
 import type { PerformanceImprovementPlan, PaginatedResponse } from "@emp-performance/shared";
+
+const SORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "created_at:desc", label: "Newest first" },
+  { value: "created_at:asc", label: "Oldest first" },
+  { value: "start_date:desc", label: "Start date (latest)" },
+  { value: "start_date:asc", label: "Start date (earliest)" },
+  { value: "end_date:asc", label: "End date (soonest)" },
+  { value: "end_date:desc", label: "End date (latest)" },
+  { value: "status:asc", label: "Status (A–Z)" },
+];
+
+const ADMIN_ROLES = new Set(["super_admin", "org_admin", "hr_admin", "hr_manager"]);
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -34,17 +48,46 @@ export function PIPListPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  const [sortValue, setSortValue] = useState("created_at:desc");
+  const queryClient = useQueryClient();
+  const role = useAuthStore((s) => s.user?.role);
+  const canManage = !!role && ADMIN_ROLES.has(role);
+
+  const [sort, order] = sortValue.split(":") as [string, "asc" | "desc"];
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["pips", page, status, search],
+    queryKey: ["pips", page, status, search, sortValue],
     queryFn: () =>
       apiGet<PaginatedResponse<PIPWithMeta>>("/pips", {
         page,
         perPage: 20,
+        sort,
+        order,
         ...(status && { status }),
         ...(search && { search }),
       }),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDelete(`/pips/${id}`),
+    onSuccess: () => {
+      toast.success("PIP deleted");
+      queryClient.invalidateQueries({ queryKey: ["pips"] });
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to delete PIP"),
+  });
+
+  function handleDelete(pip: PIPWithMeta) {
+    const label = pip.employee_name ?? `Employee #${pip.employee_id}`;
+    if (
+      window.confirm(
+        `Delete the PIP for ${label}? This removes it from the active list but preserves the record for audit.`,
+      )
+    ) {
+      deleteMutation.mutate(pip.id);
+    }
+  }
 
   const pips = data?.data?.data ?? [];
   const pagination = data?.data;
@@ -100,6 +143,21 @@ export function PIPListPage() {
           <option value="completed_failure">Completed (Failure)</option>
           <option value="cancelled">Cancelled</option>
         </select>
+
+        <select
+          value={sortValue}
+          onChange={(e) => {
+            setSortValue(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              Sort: {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -146,6 +204,11 @@ export function PIPListPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Objectives
                 </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -187,6 +250,18 @@ export function PIPListPage() {
                       ? `${pip.objectives_met}/${pip.objectives_total} met`
                       : "-"}
                   </td>
+                  {canManage && (
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleDelete(pip)}
+                        disabled={deleteMutation.isPending}
+                        title="Delete PIP"
+                        className="inline-flex items-center rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

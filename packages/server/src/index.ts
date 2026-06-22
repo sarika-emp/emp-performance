@@ -145,9 +145,9 @@ v1.get("/letter-templates", authenticate, authorize("hr_admin", "hr_manager", "o
   async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const type = req.query.type as letterService.LetterType | undefined;
-      const result = await letterService.listTemplates(orgId, type);
-      return sendSuccess(res, result);
+      const type = letterService.isLetterType(req.query.type) ? req.query.type : undefined;
+      const result = await letterService.listTemplates(orgId, { type, perPage: 1000 });
+      return sendSuccess(res, result.data);
     } catch (err) { next(err); }
   },
 );

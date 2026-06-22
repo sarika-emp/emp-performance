@@ -49,6 +49,7 @@ interface CreatePathData {
   name: string;
   description?: string;
   department?: string;
+  is_active?: boolean;
   created_by: number;
 }
 
@@ -86,24 +87,101 @@ export async function createPath(orgId: number, data: CreatePathData): Promise<C
     name: data.name,
     description: data.description || null,
     department: data.department || null,
-    is_active: true,
+    // CP3: honor the submitted is_active instead of hardcoding true.
+    is_active: data.is_active ?? true,
     created_by: data.created_by,
   });
   logger.info(`Career path created: ${path.name} (org: ${orgId})`);
   return path;
 }
 
+const PATH_SORT_COLUMNS = new Set(["name", "department", "created_at", "updated_at", "is_active"]);
+
 export async function listPaths(
+  orgId: number,
+  params?: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    order?: "asc" | "desc";
+    search?: string;
+    department?: string;
+    isActive?: boolean;
+  },
+) {
+  const db = getDB();
+  const sort =
+    params?.sort && PATH_SORT_COLUMNS.has(params.sort) ? params.sort : "name";
+  const order = params?.order === "desc" ? "desc" : "asc";
+
+  const filters: Record<string, any> = { organization_id: orgId };
+  if (params?.department) filters.department = params.department;
+  if (params?.isActive !== undefined) filters.is_active = params.isActive;
+
+  return db.findMany<CareerPath>("career_paths", {
+    page: params?.page || 1,
+    limit: params?.limit || 20,
+    filters,
+    sort: { field: sort, order },
+    search: params?.search,
+    searchFields: ["name", "description", "department"],
+  });
+}
+
+// CP5: org-wide roster of every employee assigned to a career track, with their
+// path + current/target level resolved. Used by the track coverage view.
+export async function listTrackRoster(
   orgId: number,
   params?: { page?: number; limit?: number },
 ) {
   const db = getDB();
-  return db.findMany<CareerPath>("career_paths", {
-    page: params?.page || 1,
-    limit: params?.limit || 50,
+  const page = params?.page || 1;
+  const limit = params?.limit || 50;
+
+  // Restrict to tracks whose path belongs to this org.
+  const orgPaths = await db.findMany<CareerPath>("career_paths", {
     filters: { organization_id: orgId },
-    sort: { field: "name", order: "asc" },
+    page: 1,
+    limit: 1000,
   });
+  const orgPathIds = orgPaths.data.map((p) => p.id);
+  if (orgPathIds.length === 0) {
+    return { data: [], total: 0, page, limit, totalPages: 0 };
+  }
+
+  const tracks = await db.findMany<EmployeeCareerTrack>("employee_career_tracks", {
+    filters: { career_path_id: orgPathIds },
+    sort: { field: "assigned_at", order: "desc" },
+    page,
+    limit,
+  });
+
+  const pathById = new Map(orgPaths.data.map((p) => [p.id, p]));
+  const enriched = await Promise.all(
+    tracks.data.map(async (track) => {
+      const currentLevel = await db.findById<CareerPathLevel>(
+        "career_path_levels",
+        track.current_level_id,
+      );
+      const targetLevel = track.target_level_id
+        ? await db.findById<CareerPathLevel>("career_path_levels", track.target_level_id)
+        : null;
+      return {
+        ...track,
+        path: pathById.get(track.career_path_id) ?? null,
+        currentLevel,
+        targetLevel,
+      };
+    }),
+  );
+
+  return {
+    data: enriched,
+    total: tracks.total,
+    page: tracks.page,
+    limit: tracks.limit,
+    totalPages: tracks.totalPages,
+  };
 }
 
 export async function getPath(orgId: number, id: string) {
@@ -135,7 +213,14 @@ export async function updatePath(orgId: number, id: string, data: UpdatePathData
   if (!existing) {
     throw new NotFoundError("Career path", id);
   }
-  return db.update<CareerPath>("career_paths", id, data);
+  // CP2: whitelist updatable columns — never forward req.body verbatim, which
+  // would let clients overwrite id/organization_id/created_by (mass-assignment).
+  const updateData: Partial<CareerPath> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.description !== undefined) updateData.description = data.description || null;
+  if (data.department !== undefined) updateData.department = data.department || null;
+  if (data.is_active !== undefined) updateData.is_active = data.is_active;
+  return db.update<CareerPath>("career_paths", id, updateData);
 }
 
 export async function deletePath(orgId: number, id: string): Promise<void> {
@@ -200,7 +285,15 @@ export async function updateLevel(
     throw new NotFoundError("Career path", level.career_path_id);
   }
 
-  return db.update<CareerPathLevel>("career_path_levels", levelId, data);
+  // CP2: whitelist updatable columns — do not forward req.body verbatim.
+  const updateData: Partial<CareerPathLevel> = {};
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.level !== undefined) updateData.level = data.level;
+  if (data.description !== undefined) updateData.description = data.description || null;
+  if (data.requirements !== undefined) updateData.requirements = data.requirements || null;
+  if (data.min_years_experience !== undefined)
+    updateData.min_years_experience = data.min_years_experience ?? null;
+  return db.update<CareerPathLevel>("career_path_levels", levelId, updateData);
 }
 
 export async function removeLevel(orgId: number, levelId: string): Promise<void> {
@@ -216,6 +309,21 @@ export async function removeLevel(orgId: number, levelId: string): Promise<void>
   });
   if (!path) {
     throw new NotFoundError("Career path", level.career_path_id);
+  }
+
+  // CP4: employee_career_tracks.current_level_id is ON DELETE CASCADE, so
+  // deleting a level that an employee is currently on (or targeting) would
+  // silently wipe their entire track. Block deletion while the level is in use.
+  const inUseAsCurrent = await db.count("employee_career_tracks", {
+    current_level_id: levelId,
+  });
+  const inUseAsTarget = await db.count("employee_career_tracks", {
+    target_level_id: levelId,
+  });
+  if (inUseAsCurrent + inUseAsTarget > 0) {
+    throw new ValidationError(
+      "Cannot delete this level because one or more employees are currently assigned to it. Reassign those employees first.",
+    );
   }
 
   await db.delete("career_path_levels", levelId);

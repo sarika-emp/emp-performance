@@ -20,10 +20,15 @@ import {
   GitBranch,
   FileText,
   Radar,
+  Heart,
+  UserPlus,
+  ShieldCheck,
+  Gauge,
 } from "lucide-react";
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
 import { BackToDashboard } from "@/components/BackToDashboard";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type Role = "org_admin" | "hr_admin" | "hr_manager" | "employee";
 
@@ -41,6 +46,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/my/reviews", label: "My Reviews", icon: RefreshCw },
   { to: "/my/goals", label: "My Goals", icon: Target },
   { to: "/my/feedback", label: "My Feedback", icon: MessageSquare },
+  { to: "/feedback/wall", label: "Kudos Wall", icon: Heart },
+  { to: "/peer-reviews/nominate", label: "Nominate Peers", icon: UserPlus },
   { to: "/my/one-on-ones", label: "My 1-on-1s", icon: Users },
   { to: "/my/skills", label: "My Skills", icon: Radar },
   { to: "/my/letters", label: "My Letters", icon: FileText },
@@ -53,10 +60,12 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/career-paths", label: "Career Paths", icon: Route },
   { to: "/one-on-ones", label: "All 1-on-1s", icon: Users, adminOnly: true },
   { to: "/feedback", label: "All Feedback", icon: MessageSquare, adminOnly: true },
+  { to: "/peer-reviews/queue", label: "Peer Approvals", icon: ShieldCheck, adminOnly: true },
   { to: "/letters", label: "Letters", icon: FileText, adminOnly: true },
   { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
   { to: "/analytics/nine-box", label: "9-Box Grid", icon: Grid3X3, adminOnly: true },
   { to: "/analytics/skills-gap", label: "Skills Gap", icon: Radar, adminOnly: true },
+  { to: "/manager-effectiveness", label: "Manager Effectiveness", icon: Gauge, adminOnly: true },
   { to: "/succession", label: "Succession", icon: Shield, adminOnly: true },
   { to: "/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];
@@ -175,10 +184,17 @@ export function DashboardLayout() {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
-              {getInitials(displayName)}
-            </div>
-            <span className="hidden md:block text-sm font-medium text-gray-700">{displayName}</span>
+            <NotificationBell />
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-gray-50"
+              title="My profile"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
+                {getInitials(displayName)}
+              </div>
+              <span className="hidden md:block text-sm font-medium text-gray-700">{displayName}</span>
+            </NavLink>
           </div>
         </header>
 

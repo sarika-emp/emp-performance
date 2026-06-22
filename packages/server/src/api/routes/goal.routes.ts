@@ -4,11 +4,13 @@
 // ============================================================================
 
 import { Router, Request, Response, NextFunction } from "express";
-import { authenticate, authorize } from "../middleware/auth.middleware";
-import { sendSuccess, sendPaginated, sendError } from "../../utils/response";
+import { authenticate } from "../middleware/auth.middleware";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import {
   createGoalSchema,
+  updateGoalSchema,
   addKeyResultSchema,
+  updateKeyResultSchema,
   checkInSchema,
   paginationSchema,
   idParamSchema,
@@ -17,6 +19,11 @@ import * as goalService from "../../services/goal/goal.service";
 
 const router = Router();
 router.use(authenticate);
+
+// Build the acting-user descriptor used for ownership/RBAC checks (G5).
+function actorOf(req: Request) {
+  return { userId: req.user!.empcloudUserId, role: req.user!.role };
+}
 
 // ---------------------------------------------------------------------------
 // GET /tree — hierarchical goal alignment tree
@@ -109,8 +116,9 @@ router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
+    const data = updateGoalSchema.parse(req.body);
 
-    const goal = await goalService.updateGoal(orgId, id, req.body);
+    const goal = await goalService.updateGoal(orgId, id, data, actorOf(req));
     return sendSuccess(res, goal);
   } catch (err) {
     next(err);
@@ -125,7 +133,7 @@ router.delete("/:id", async (req: Request, res: Response, next: NextFunction) =>
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
 
-    await goalService.deleteGoal(orgId, id);
+    await goalService.deleteGoal(orgId, id, actorOf(req));
     return sendSuccess(res, { deleted: true });
   } catch (err) {
     next(err);
@@ -141,7 +149,7 @@ router.post("/:id/key-results", async (req: Request, res: Response, next: NextFu
     const { id } = idParamSchema.parse(req.params);
     const data = addKeyResultSchema.parse(req.body);
 
-    const kr = await goalService.addKeyResult(orgId, id, data);
+    const kr = await goalService.addKeyResult(orgId, id, data, actorOf(req));
     return sendSuccess(res, kr, 201);
   } catch (err) {
     next(err);
@@ -156,8 +164,9 @@ router.put("/:id/key-results/:krId", async (req: Request, res: Response, next: N
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
     const krId = req.params.krId as string;
+    const data = updateKeyResultSchema.parse(req.body);
 
-    const kr = await goalService.updateKeyResult(orgId, id, krId, req.body);
+    const kr = await goalService.updateKeyResult(orgId, id, krId, data, actorOf(req));
     return sendSuccess(res, kr);
   } catch (err) {
     next(err);
@@ -175,7 +184,7 @@ router.delete(
       const { id } = idParamSchema.parse(req.params);
       const krId = req.params.krId as string;
 
-      await goalService.deleteKeyResult(orgId, id, krId);
+      await goalService.deleteKeyResult(orgId, id, krId, actorOf(req));
       return sendSuccess(res, { deleted: true });
     } catch (err) {
       next(err);
@@ -192,11 +201,13 @@ router.post("/:id/check-in", async (req: Request, res: Response, next: NextFunct
     const { id } = idParamSchema.parse(req.params);
     const data = checkInSchema.parse(req.body);
 
-    const checkIn = await goalService.checkIn(orgId, id, req.user!.empcloudUserId, {
-      ...data,
-      key_result_id: req.body.key_result_id,
-      current_value: req.body.current_value,
-    });
+    const checkIn = await goalService.checkIn(
+      orgId,
+      id,
+      req.user!.empcloudUserId,
+      data,
+      actorOf(req),
+    );
     return sendSuccess(res, checkIn, 201);
   } catch (err) {
     next(err);
@@ -210,9 +221,13 @@ router.get("/:id/check-ins", async (req: Request, res: Response, next: NextFunct
   try {
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
+    const pagination = paginationSchema.parse(req.query);
 
-    const checkIns = await goalService.getCheckIns(orgId, id);
-    return sendSuccess(res, checkIns);
+    const result = await goalService.getCheckIns(orgId, id, {
+      page: pagination.page,
+      perPage: pagination.perPage,
+    });
+    return sendPaginated(res, result.data, result.total, result.page, result.perPage);
   } catch (err) {
     next(err);
   }

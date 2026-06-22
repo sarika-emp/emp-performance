@@ -6,8 +6,13 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as careerPathService from "../../services/career/career-path.service";
-import { sendSuccess } from "../../utils/response";
+import { sendSuccess, sendPaginated } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
+import {
+  createCareerPathSchema,
+  addLevelSchema,
+  paginationSchema,
+} from "@emp-performance/shared";
 
 const router = Router();
 router.use(authenticate);
@@ -16,18 +21,48 @@ router.use(authenticate);
 // Career Paths
 // ---------------------------------------------------------------------------
 
-// GET /career-paths
+// GET /career-paths — paginated + search + department/active filters
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const result = await careerPathService.listPaths(orgId, { page, limit });
-    sendSuccess(res, result);
+    const pagination = paginationSchema.parse(req.query);
+    const isActiveParam = req.query.is_active as string | undefined;
+    const result = await careerPathService.listPaths(orgId, {
+      page: pagination.page,
+      limit: pagination.perPage,
+      sort: pagination.sort,
+      order: pagination.order,
+      search: pagination.search,
+      department: (req.query.department as string) || undefined,
+      isActive:
+        isActiveParam === undefined || isActiveParam === ""
+          ? undefined
+          : isActiveParam === "true" || isActiveParam === "1",
+    });
+    sendPaginated(res, result.data, result.total, result.page, result.limit);
   } catch (err) {
     next(err);
   }
 });
+
+// GET /career-paths/tracks/roster — org-wide track roster / coverage view
+router.get(
+  "/tracks/roster",
+  authorize("hr_admin", "hr_manager", "org_admin"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.empcloudOrgId;
+      const pagination = paginationSchema.parse(req.query);
+      const result = await careerPathService.listTrackRoster(orgId, {
+        page: pagination.page,
+        limit: pagination.perPage,
+      });
+      sendPaginated(res, result.data, result.total, result.page, result.limit);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /career-paths/:id
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
@@ -47,16 +82,19 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const { name, description, department } = req.body;
-      if (!name) throw new ValidationError("Name is required");
+      const data = createCareerPathSchema.parse(req.body);
       const result = await careerPathService.createPath(orgId, {
-        name,
-        description,
-        department,
+        name: data.name,
+        description: data.description,
+        department: data.department,
+        is_active: data.is_active,
         created_by: req.user!.empcloudUserId,
       });
       sendSuccess(res, result, 201);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid career path data", err.flatten().fieldErrors));
+      }
       next(err);
     }
   },
@@ -69,9 +107,13 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const result = await careerPathService.updatePath(orgId, req.params.id as string, req.body);
+      const data = createCareerPathSchema.partial().parse(req.body);
+      const result = await careerPathService.updatePath(orgId, req.params.id as string, data);
       sendSuccess(res, result);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid career path data", err.flatten().fieldErrors));
+      }
       next(err);
     }
   },
@@ -103,17 +145,19 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const { title, level, description, requirements, min_years_experience } = req.body;
-      if (!title || level === undefined) throw new ValidationError("Title and level are required");
+      const data = addLevelSchema.parse(req.body);
       const result = await careerPathService.addLevel(orgId, req.params.pathId as string, {
-        title,
-        level,
-        description,
-        requirements,
-        min_years_experience,
+        title: data.title,
+        level: data.level,
+        description: data.description,
+        requirements: data.requirements,
+        min_years_experience: data.min_years_experience,
       });
       sendSuccess(res, result, 201);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
       next(err);
     }
   },
@@ -126,9 +170,13 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const orgId = req.user!.empcloudOrgId;
-      const result = await careerPathService.updateLevel(orgId, req.params.levelId as string, req.body);
+      const data = addLevelSchema.partial().parse(req.body);
+      const result = await careerPathService.updateLevel(orgId, req.params.levelId as string, data);
       sendSuccess(res, result);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        return next(new ValidationError("Invalid level data", err.flatten().fieldErrors));
+      }
       next(err);
     }
   },

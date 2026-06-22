@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { getDB } from "../../db/adapters";
-import { NotFoundError, ValidationError } from "../../utils/errors";
+import { NotFoundError, ValidationError, ConflictError } from "../../utils/errors";
 import { logger } from "../../utils/logger";
 import type {
   Review,
@@ -8,6 +8,17 @@ import type {
   ReviewCycle,
   Competency,
 } from "@emp-performance/shared";
+
+// Columns the review list may be sorted by. Anything else falls back to
+// created_at so the client cannot inject arbitrary SQL via the sort param.
+const REVIEW_SORTABLE_COLUMNS = new Set([
+  "created_at",
+  "updated_at",
+  "type",
+  "status",
+  "overall_rating",
+  "submitted_at",
+]);
 
 // ---------------------------------------------------------------------------
 // Create review
@@ -31,6 +42,21 @@ export async function createReview(
   });
   if (!cycle) throw new NotFoundError("ReviewCycle", data.cycle_id);
 
+  // Reject duplicates on (cycle, employee, reviewer, type) so a participant
+  // never ends up with two identical review rows (#R10).
+  const duplicate = await db.findOne<Review>("reviews", {
+    organization_id: orgId,
+    cycle_id: data.cycle_id,
+    employee_id: data.employee_id,
+    reviewer_id: data.reviewer_id,
+    type: data.type,
+  });
+  if (duplicate) {
+    throw new ConflictError(
+      "A review of this type already exists for this reviewer and employee in this cycle",
+    );
+  }
+
   const record: Record<string, any> = {
     id: uuidv4(),
     organization_id: orgId,
@@ -53,10 +79,14 @@ export async function createReview(
 // Get review (with competency ratings)
 // ---------------------------------------------------------------------------
 
+export type ReviewCompetencyRatingWithName = ReviewCompetencyRating & {
+  competency_name: string | null;
+};
+
 export async function getReview(
   orgId: number,
   id: string,
-): Promise<Review & { competency_ratings: ReviewCompetencyRating[] }> {
+): Promise<Review & { competency_ratings: ReviewCompetencyRatingWithName[] }> {
   const db = getDB();
   const review = await db.findOne<Review>("reviews", {
     id,
@@ -66,9 +96,19 @@ export async function getReview(
 
   const ratings = await db.findMany<ReviewCompetencyRating>("review_competency_ratings", {
     filters: { review_id: id },
+    limit: 1000,
   });
 
-  return { ...review, competency_ratings: ratings.data };
+  // Resolve competency names so the UI can show readable labels instead of a
+  // truncated uuid (#R9).
+  const ratingsWithNames: ReviewCompetencyRatingWithName[] = await Promise.all(
+    ratings.data.map(async (r) => {
+      const competency = await db.findById<Competency>("competencies", r.competency_id);
+      return { ...r, competency_name: competency?.name ?? null };
+    }),
+  );
+
+  return { ...review, competency_ratings: ratingsWithNames };
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +125,9 @@ export async function listReviews(
     employee_id?: number;
     type?: string;
     status?: string;
+    search?: string;
+    sort?: string;
+    order?: "asc" | "desc";
   },
 ): Promise<{ data: Review[]; total: number; page: number; perPage: number }> {
   const db = getDB();
@@ -98,14 +141,100 @@ export async function listReviews(
   if (params.type) filters.type = params.type;
   if (params.status) filters.status = params.status;
 
+  const sortField = REVIEW_SORTABLE_COLUMNS.has(params.sort ?? "")
+    ? (params.sort as string)
+    : "created_at";
+  const sortOrder = params.order ?? "desc";
+
+  const search = (params.search ?? "").trim();
+  if (search) {
+    // Free-text search over summary/strengths/improvements; the findMany helper
+    // has no LIKE support so drop to a parameterized raw query (#R7).
+    const offset = (page - 1) * perPage;
+    const where: string[] = ["organization_id = ?"];
+    const args: any[] = [orgId];
+    if (params.cycle_id) { where.push("cycle_id = ?"); args.push(params.cycle_id); }
+    if (params.reviewer_id) { where.push("reviewer_id = ?"); args.push(params.reviewer_id); }
+    if (params.employee_id) { where.push("employee_id = ?"); args.push(params.employee_id); }
+    if (params.type) { where.push("type = ?"); args.push(params.type); }
+    if (params.status) { where.push("status = ?"); args.push(params.status); }
+    where.push("(summary LIKE ? OR strengths LIKE ? OR improvements LIKE ?)");
+    const term = `%${search}%`;
+    args.push(term, term, term);
+
+    const orderDir = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
+    const rowsRes = await db.raw<any>(
+      `SELECT * FROM reviews WHERE ${where.join(" AND ")} ORDER BY ${sortField} ${orderDir} LIMIT ? OFFSET ?`,
+      [...args, perPage, offset],
+    );
+    const totalRes = await db.raw<any>(
+      `SELECT COUNT(*) AS c FROM reviews WHERE ${where.join(" AND ")}`,
+      args,
+    );
+    const rows = (Array.isArray(rowsRes) ? rowsRes[0] || rowsRes : []) as Review[];
+    const totalRows = (Array.isArray(totalRes) ? totalRes[0] || totalRes : []) as any[];
+    const total = Number(totalRows?.[0]?.c ?? 0);
+    return { data: rows, total, page, perPage };
+  }
+
   const result = await db.findMany<Review>("reviews", {
     page,
     limit: perPage,
     filters,
-    sort: { field: "created_at", order: "desc" },
+    sort: { field: sortField, order: sortOrder },
   });
 
   return { data: result.data, total: result.total, page, perPage };
+}
+
+// ---------------------------------------------------------------------------
+// Delete / reassign
+// ---------------------------------------------------------------------------
+
+// Hard-delete a review (and its competency ratings via FK cascade). Submitted
+// reviews are protected so completed history is never silently dropped (#R8).
+export async function deleteReview(orgId: number, id: string): Promise<void> {
+  const db = getDB();
+  const review = await db.findOne<Review>("reviews", { id, organization_id: orgId });
+  if (!review) throw new NotFoundError("Review", id);
+  if (review.status === "submitted") {
+    throw new ValidationError("Cannot delete a submitted review");
+  }
+  await db.delete("reviews", id);
+}
+
+// Reassign an unsubmitted review to a different reviewer (e.g. when the
+// original reviewer leaves). Guards against creating a duplicate of an existing
+// (cycle, employee, reviewer, type) tuple (#R8).
+export async function reassignReviewer(
+  orgId: number,
+  id: string,
+  newReviewerId: number,
+): Promise<Review> {
+  const db = getDB();
+  const review = await db.findOne<Review>("reviews", { id, organization_id: orgId });
+  if (!review) throw new NotFoundError("Review", id);
+  if (review.status === "submitted") {
+    throw new ValidationError("Cannot reassign a submitted review");
+  }
+  if (review.reviewer_id === newReviewerId) {
+    return review;
+  }
+
+  const duplicate = await db.findOne<Review>("reviews", {
+    organization_id: orgId,
+    cycle_id: review.cycle_id,
+    employee_id: review.employee_id,
+    reviewer_id: newReviewerId,
+    type: review.type,
+  });
+  if (duplicate) {
+    throw new ConflictError(
+      "The target reviewer already has a review of this type for this employee in this cycle",
+    );
+  }
+
+  return db.update<Review>("reviews", id, { reviewer_id: newReviewerId } as any);
 }
 
 // ---------------------------------------------------------------------------

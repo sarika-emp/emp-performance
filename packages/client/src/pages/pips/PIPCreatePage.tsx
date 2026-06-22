@@ -14,6 +14,8 @@ interface OrgUser {
 export function PIPCreatePage() {
   const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState("");
+  const [managerId, setManagerId] = useState("");
+  const [title, setTitle] = useState("");
   const [reason, setReason] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -45,8 +47,12 @@ export function PIPCreatePage() {
     if (!employeeId) return toast.error("Select an employee");
     if (reason.trim().length < 10) return toast.error("Reason must be at least 10 characters");
     if (dateError) return;
+    if (managerId && managerId === employeeId)
+      return toast.error("The reporting manager cannot be the same as the employee");
     mutation.mutate({
       employee_id: Number(employeeId),
+      ...(managerId && { manager_id: Number(managerId) }),
+      ...(title.trim() && { title: title.trim() }),
       reason: reason.trim(),
       start_date: startDate,
       end_date: endDate,
@@ -87,6 +93,38 @@ export function PIPCreatePage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Reporting Manager</label>
+          <select
+            value={managerId}
+            onChange={(e) => setManagerId(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          >
+            <option value="">— Auto-detect from employee's reporting manager —</option>
+            {orgUsers
+              .filter((u) => String(u.id) !== employeeId)
+              .map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name} ({u.email})
+                </option>
+              ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Leave blank to use the employee's reporting manager on record.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Q3 Performance Improvement Plan"
+            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
         </div>
 
         <div>
