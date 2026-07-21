@@ -174,7 +174,7 @@ export function GeneratedLettersPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            to="/letter-templates"
+            to="/letters/templates"
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <Settings className="h-4 w-4" />
@@ -323,7 +323,7 @@ export function GeneratedLettersPage() {
                 {visibleTemplates.length === 0 && (
                   <p className="mt-1 text-xs text-gray-500">
                     <Link
-                      to="/letter-templates"
+                      to="/letters/templates"
                       className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700"
                     >
                       <Settings className="h-3 w-3" />
