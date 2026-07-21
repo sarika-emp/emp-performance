@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { cn, formatDate } from "@/lib/utils";
 import type { Goal, KeyResult, GoalCheckIn } from "@emp-performance/shared";
 
@@ -65,6 +66,7 @@ interface GoalFull extends Goal {
 }
 
 export function GoalDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
@@ -260,15 +262,29 @@ export function GoalDetailPage() {
     });
   }
 
-  function confirmDeleteKR(krId: string, krName: string) {
-    if (window.confirm(`Delete key result "${krName}"? This cannot be undone.`)) {
+  async function confirmDeleteKR(krId: string, krName: string) {
+    if (
+      await confirm({
+        title: "Delete key result?",
+        message: `Delete key result "${krName}"? This cannot be undone.`,
+        confirmLabel: "Delete",
+        variant: "danger",
+      })
+    ) {
       deleteKRMutation.mutate(krId);
     }
   }
 
-  function handleStatusChange(value: string) {
+  async function handleStatusChange(value: string) {
     if (value === "cancelled") {
-      if (!window.confirm("Cancel this goal? It will be archived and hidden from lists.")) {
+      if (
+        !(await confirm({
+          title: "Cancel goal?",
+          message: "Cancel this goal? It will be archived and hidden from lists.",
+          confirmLabel: "Cancel goal",
+          variant: "danger",
+        }))
+      ) {
         return;
       }
     }

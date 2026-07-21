@@ -17,6 +17,7 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   PerformanceImprovementPlan,
@@ -65,6 +66,7 @@ interface PIPFull extends PerformanceImprovementPlan {
 }
 
 export function PIPDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -171,8 +173,15 @@ export function PIPDetailPage() {
     setEditObjDueDate(obj.due_date?.slice(0, 10) ?? "");
   }
 
-  function handleDeleteObjective(obj: PIPObjective) {
-    if (window.confirm(`Remove the objective "${obj.title}"?`)) {
+  async function handleDeleteObjective(obj: PIPObjective) {
+    if (
+      await confirm({
+        title: "Remove objective?",
+        message: `Remove the objective "${obj.title}"?`,
+        confirmLabel: "Remove",
+        variant: "danger",
+      })
+    ) {
       deleteObjectiveMutation.mutate(obj.id);
     }
   }

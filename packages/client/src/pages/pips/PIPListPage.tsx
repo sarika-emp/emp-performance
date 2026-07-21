@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { apiGet, apiDelete } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { PerformanceImprovementPlan, PaginatedResponse } from "@emp-performance/shared";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
@@ -45,6 +46,7 @@ interface PIPWithMeta extends PerformanceImprovementPlan {
 }
 
 export function PIPListPage() {
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
@@ -78,12 +80,15 @@ export function PIPListPage() {
       toast.error(err.response?.data?.error?.message || "Failed to delete PIP"),
   });
 
-  function handleDelete(pip: PIPWithMeta) {
+  async function handleDelete(pip: PIPWithMeta) {
     const label = pip.employee_name ?? `Employee #${pip.employee_id}`;
     if (
-      window.confirm(
-        `Delete the PIP for ${label}? This removes it from the active list but preserves the record for audit.`,
-      )
+      await confirm({
+        title: "Delete PIP?",
+        message: `Delete the PIP for ${label}? This removes it from the active list but preserves the record for audit.`,
+        confirmLabel: "Delete",
+        variant: "danger",
+      })
     ) {
       deleteMutation.mutate(pip.id);
     }

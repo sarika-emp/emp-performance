@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import App from "./App";
 import "./styles/globals.css";
 import { useAuthStore } from "./lib/auth-store";
+import { ConfirmDialogProvider } from "@/components/ConfirmDialog";
 
 // Load existing session from localStorage
 useAuthStore.getState().loadFromStorage();
@@ -20,7 +21,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <ConfirmDialogProvider>
+          <App />
+        </ConfirmDialogProvider>
         <Toaster position="top-right" />
       </BrowserRouter>
     </QueryClientProvider>

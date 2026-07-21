@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Grid3X3, ChevronDown, X, Users, Plus, Trash2, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { NineBoxPosition } from "@emp-performance/shared";
 
 interface OrgUser {
@@ -62,6 +63,7 @@ const POTENTIAL_LABELS = ["High Potential", "Medium Potential", "Low Potential"]
 const PERFORMANCE_LABELS = ["Low Performance", "Medium Performance", "High Performance"];
 
 export function NineBoxPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<string>("");
   const [selectedBox, setSelectedBox] = useState<NineBoxPosition | null>(null);
@@ -456,8 +458,15 @@ export function NineBoxPage() {
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (window.confirm("Remove this potential assessment?")) {
+                          onClick={async () => {
+                            if (
+                              await confirm({
+                                title: "Remove assessment?",
+                                message: "Remove this potential assessment?",
+                                confirmLabel: "Remove",
+                                variant: "danger",
+                              })
+                            ) {
                               deleteMutation.mutate(a.id);
                             }
                           }}
