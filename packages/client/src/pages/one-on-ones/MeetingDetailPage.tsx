@@ -213,6 +213,7 @@ export function MeetingDetailPage() {
   const currentNotes = notes ?? meeting?.meeting_notes ?? "";
   const isCompleted = meeting?.status === "completed";
   const isCancelled = meeting?.status === "cancelled";
+  const isScheduled = meeting?.status === "scheduled";
   const locked = isCompleted || isCancelled;
 
   if (isLoading) {
@@ -297,7 +298,7 @@ export function MeetingDetailPage() {
             Reopen
           </button>
         )}
-        {!isCancelled && (
+        {isScheduled && (
           <button
             onClick={() => {
               if (window.confirm("Cancel this meeting? It can be reopened later.")) {
