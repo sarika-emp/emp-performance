@@ -14,6 +14,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import toast from "react-hot-toast";
 
 interface OrgUser {
@@ -42,6 +43,7 @@ interface CareerPathDetail {
 }
 
 export function CareerPathDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -259,8 +261,15 @@ export function CareerPathDetailPage() {
             Edit
           </button>
           <button
-            onClick={() => {
-              if (confirm("Delete this career path? This cannot be undone.")) {
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Delete career path?",
+                  message: "Delete this career path? This cannot be undone.",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
+              ) {
                 deletePathMutation.mutate();
               }
             }}
@@ -456,8 +465,16 @@ export function CareerPathDetailPage() {
               onSaveEdit={(data) =>
                 updateLevelMutation.mutate({ levelId: level.id, body: data })
               }
-              onDelete={() => {
-                if (confirm("Remove this level?")) deleteLevelMutation.mutate(level.id);
+              onDelete={async () => {
+                if (
+                  await confirm({
+                    title: "Remove level?",
+                    message: "Remove this level?",
+                    confirmLabel: "Remove",
+                    variant: "danger",
+                  })
+                )
+                  deleteLevelMutation.mutate(level.id);
               }}
             />
           ))}

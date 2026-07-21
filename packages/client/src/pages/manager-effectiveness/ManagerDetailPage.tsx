@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, RefreshCw, Trash2, Gauge } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface Breakdown {
   team_performance: {
@@ -64,6 +65,7 @@ function ScoreBar({ label, value }: { label: string; value: number | null }) {
 }
 
 export function ManagerDetailPage() {
+  const confirm = useConfirm();
   const { managerId } = useParams<{ managerId: string }>();
   const [searchParams] = useSearchParams();
   const period = searchParams.get("period") || "";
@@ -165,8 +167,16 @@ export function ManagerDetailPage() {
             Recalculate
           </button>
           <button
-            onClick={() => {
-              if (window.confirm("Delete this manager's score for the period?")) remove.mutate();
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Delete score?",
+                  message: "Delete this manager's score for the period?",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
+              )
+                remove.mutate();
             }}
             disabled={remove.isPending}
             className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"

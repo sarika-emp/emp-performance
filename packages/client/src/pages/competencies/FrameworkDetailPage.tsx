@@ -14,12 +14,14 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { CompetencyFramework, Competency } from "@emp-performance/shared";
 import { CompetencyLevelsEditor } from "./CompetencyLevelsEditor";
 
 type FrameworkWithCompetencies = CompetencyFramework & { competencies: Competency[] };
 
 export function FrameworkDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -219,11 +221,15 @@ export function FrameworkDetailPage() {
             Edit
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               if (
-                confirm(
-                  "Delete this framework? Competencies will be hidden but historical review ratings are preserved.",
-                )
+                await confirm({
+                  title: "Delete framework?",
+                  message:
+                    "Delete this framework? Competencies will be hidden but historical review ratings are preserved.",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
               ) {
                 deleteFrameworkMutation.mutate();
               }
@@ -452,11 +458,14 @@ export function FrameworkDetailPage() {
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
-                            `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
-                          )
+                          await confirm({
+                            title: "Remove competency?",
+                            message: `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
+                            confirmLabel: "Remove",
+                            variant: "danger",
+                          })
                         ) {
                           removeMutation.mutate(comp.id);
                         }
