@@ -14,6 +14,7 @@ import {
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 import { cn, formatDate } from "@/lib/utils";
 import type { Goal, KeyResult, GoalCheckIn } from "@emp-performance/shared";
 
@@ -844,28 +845,13 @@ export function GoalDetailPage() {
                   </li>
                 ))}
               </ol>
-              {historyPager && historyPager.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-gray-100 px-5 py-2">
-                  <span className="text-xs text-gray-500">
-                    Page {historyPager.page} of {historyPager.totalPages}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      disabled={historyPage <= 1}
-                      onClick={() => setHistoryPage((p) => p - 1)}
-                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      disabled={historyPage >= historyPager.totalPages}
-                      onClick={() => setHistoryPage((p) => p + 1)}
-                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
+              {historyPager && (
+                <Pagination
+                  page={historyPager.page}
+                  totalPages={historyPager.totalPages}
+                  onPageChange={setHistoryPage}
+                  className="border-t border-gray-100 px-5 py-2"
+                />
               )}
             </div>
           )}

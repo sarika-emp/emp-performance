@@ -13,6 +13,7 @@ import {
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 interface Meeting {
   id: string;
@@ -142,28 +143,13 @@ export function MeetingListPage() {
       )}
 
       {/* Pager */}
-      {pager && pager.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pager.page} of {pager.totalPages} · {pager.total} total
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pager.totalPages}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pager && (
+        <Pagination
+          page={pager.page}
+          totalPages={pager.totalPages}
+          total={pager.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

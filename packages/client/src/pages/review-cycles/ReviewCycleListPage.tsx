@@ -22,6 +22,7 @@ import type {
 } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -368,30 +369,14 @@ export function ReviewCycleListPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setFilter("page", String(page - 1))}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setFilter("page", String(page + 1))}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Pagination — page state lives in the URL via useSearchParams; the
+          setter writes back through setFilter to preserve URL paging. */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setFilter("page", String(p))}
+        className=""
+      />
     </div>
   );
 }

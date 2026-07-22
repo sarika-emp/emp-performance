@@ -5,6 +5,7 @@ import { Heart, MessageSquare, Lightbulb, Loader2, Search, Send } from "lucide-r
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 interface FeedbackItem {
   id: string;
@@ -151,28 +152,13 @@ export function KudosWallPage() {
         </div>
       )}
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

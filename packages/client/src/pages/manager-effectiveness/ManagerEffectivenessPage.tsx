@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import {
   Gauge,
   Loader2,
-  RefreshCw,
   Play,
   Users,
   TrendingUp,
@@ -24,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import { apiGet, apiPost } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface ManagerScore {
@@ -326,29 +326,14 @@ export function ManagerEffectivenessPage() {
           </div>
         )}
 
-        {pager && pager.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
-            <p className="text-sm text-gray-500">
-              Page {pager.page} of {pager.totalPages} ({pager.total} total)
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={pager.page <= 1}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={pager.page >= pager.totalPages}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                <RefreshCw className="hidden" />
-                Next
-              </button>
-            </div>
-          </div>
+        {pager && (
+          <Pagination
+            page={pager.page}
+            totalPages={pager.totalPages}
+            total={pager.total}
+            onPageChange={setPage}
+            className="border-t border-gray-100 px-6 py-3"
+          />
         )}
       </div>
     </div>

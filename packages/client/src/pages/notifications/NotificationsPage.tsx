@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Trash2, Loader2 } from "lucide-react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/api/client";
 import { cn, formatDate } from "@/lib/utils";
+import { Pagination } from "@/components/Pagination";
 import toast from "react-hot-toast";
 
 interface NotificationItem {
@@ -139,28 +140,14 @@ export function NotificationsPage() {
         )}
       </div>
 
-      {pager && pager.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pager.page} of {pager.totalPages} · {pager.total} total
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pager.totalPages}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pager && (
+        <Pagination
+          page={pager.page}
+          totalPages={pager.totalPages}
+          total={pager.total}
+          onPageChange={setPage}
+          className="mt-4"
+        />
       )}
     </div>
   );
