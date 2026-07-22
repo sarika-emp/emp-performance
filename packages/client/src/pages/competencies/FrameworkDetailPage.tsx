@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import type { CompetencyFramework, Competency } from "@emp-performance/shared";
+import { StatusBadge } from "@/components/StatusBadge";
 import { CompetencyLevelsEditor } from "./CompetencyLevelsEditor";
 
 type FrameworkWithCompetencies = CompetencyFramework & { competencies: Competency[] };
@@ -196,15 +197,15 @@ export function FrameworkDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{framework.name}</h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            <StatusBadge
+              colorClass={
                 framework.is_active
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-100 text-gray-500"
-              }`}
+              }
             >
               {framework.is_active ? "Active" : "Inactive"}
-            </span>
+            </StatusBadge>
           </div>
           {framework.description && (
             <p className="mt-1 text-sm text-gray-500">{framework.description}</p>

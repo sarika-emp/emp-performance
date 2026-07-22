@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Plus, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type { PerformanceImprovementPlan, PaginatedResponse } from "@emp-performance/shared";
@@ -228,14 +229,9 @@ export function PIPListPage() {
                     </p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        STATUS_COLORS[pip.status] ?? "bg-gray-100 text-gray-700",
-                      )}
-                    >
+                    <StatusBadge colorClass={STATUS_COLORS[pip.status] ?? "bg-gray-100 text-gray-700"}>
                       {STATUS_LABELS[pip.status] ?? pip.status}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {formatDate(pip.start_date)}

@@ -14,6 +14,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
 
 interface OrgUser {
@@ -230,17 +231,18 @@ export function CareerPathDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {path.department && (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            <StatusBadge colorClass="bg-gray-100 text-gray-600" className="px-3 py-1">
               {path.department}
-            </span>
+            </StatusBadge>
           )}
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+          <StatusBadge
+            colorClass={
               path.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
-            }`}
+            }
+            className="px-3 py-1"
           >
             {path.is_active ? "Active" : "Inactive"}
-          </span>
+          </StatusBadge>
           <button
             onClick={() => {
               setAssignForm({ employeeId: "", currentLevelId: "", targetLevelId: "" });

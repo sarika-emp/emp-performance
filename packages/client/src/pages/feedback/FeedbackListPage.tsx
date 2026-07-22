@@ -13,6 +13,7 @@ import {
 import { apiGet, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -190,9 +191,9 @@ export function FeedbackListPage() {
                       <span className="text-sm font-medium text-gray-900">
                         User #{item.to_user_id}
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
+                      <StatusBadge colorClass={cfg.color} className="px-2">
                         {cfg.label}
-                      </span>
+                      </StatusBadge>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                         {VISIBILITY_LABELS[item.visibility] || item.visibility}
                       </span>

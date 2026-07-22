@@ -17,7 +17,8 @@ import {
   Search,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
-import { cn, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import type {
   PerformanceLetterTemplate,
   LetterType,
@@ -357,19 +358,13 @@ export function LetterTemplatePage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-gray-900">{template.name}</h3>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                      getTypeColor(template.type),
-                    )}
-                  >
+                  <StatusBadge colorClass={getTypeColor(template.type)} className="px-2">
                     {getTypeLabel(template.type)}
-                  </span>
+                  </StatusBadge>
                   {template.is_default && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                      <Check className="h-3 w-3" />
+                    <StatusBadge colorClass="bg-brand-50 text-brand-700" className="px-2" icon={<Check className="h-3 w-3" />}>
                       Default
-                    </span>
+                    </StatusBadge>
                   )}
                 </div>
                 <p className="mt-1 text-xs text-gray-400">

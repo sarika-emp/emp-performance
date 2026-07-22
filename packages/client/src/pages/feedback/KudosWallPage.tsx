@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Heart, MessageSquare, Lightbulb, Loader2, Search, Send } from "lucide-react";
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface FeedbackItem {
   id: string;
@@ -115,9 +116,9 @@ export function KudosWallPage() {
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${cfg.color}`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
+                  <StatusBadge colorClass={cfg.color} className="px-2">
                     {cfg.label}
-                  </span>
+                  </StatusBadge>
                   <span className="ml-auto text-xs text-gray-400">
                     {formatDate(item.created_at)}
                   </span>

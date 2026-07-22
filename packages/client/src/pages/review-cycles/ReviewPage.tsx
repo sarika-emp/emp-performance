@@ -5,6 +5,7 @@ import { apiGet } from "@/api/client";
 import type { Review, ReviewCompetencyRating } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 import { AiSummaryPanel } from "@/components/AiSummaryPanel";
+import { StatusBadge } from "@/components/StatusBadge";
 
 type RatingWithName = ReviewCompetencyRating & { competency_name?: string | null };
 type ReviewWithRatings = Review & { competency_ratings: RatingWithName[] };
@@ -118,17 +119,19 @@ export function ReviewPage() {
                   {rev.type === "self" && <User className="h-4 w-4 text-blue-500" />}
                   {rev.type === "manager" && <Users className="h-4 w-4 text-purple-500" />}
                   {rev.type === "peer" && <FileText className="h-4 w-4 text-amber-500" />}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[rev.type] ?? "bg-gray-100 text-gray-700"}`}
+                  <StatusBadge
+                    colorClass={TYPE_COLORS[rev.type] ?? "bg-gray-100 text-gray-700"}
+                    className="capitalize"
                   >
                     {rev.type} Review
-                  </span>
+                  </StatusBadge>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[rev.status] ?? "bg-gray-100 text-gray-700"}`}
+                <StatusBadge
+                  colorClass={STATUS_COLORS[rev.status] ?? "bg-gray-100 text-gray-700"}
+                  className="px-2 capitalize"
                 >
                   {rev.status}
-                </span>
+                </StatusBadge>
               </div>
 
               {/* Reviewer info */}

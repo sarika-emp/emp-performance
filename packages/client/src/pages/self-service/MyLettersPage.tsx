@@ -3,7 +3,8 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { FileText, Download, Loader2, Mail, Search } from "lucide-react";
 import { apiGet, api } from "@/api/client";
 import { getUser } from "@/lib/auth-store";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface PerformanceLetter {
   id: string;
@@ -162,14 +163,12 @@ export function MyLettersPage() {
                     <span className="text-sm font-medium text-gray-900">
                       {TYPE_LABELS[letter.type] ?? letter.type}
                     </span>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                        TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-800",
-                      )}
+                    <StatusBadge
+                      colorClass={TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-800"}
+                      className="px-2"
                     >
                       {letter.type}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-500">
                     Issued on {formatDate(letter.created_at)}

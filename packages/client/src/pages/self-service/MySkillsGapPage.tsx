@@ -18,6 +18,7 @@ import {
 } from "recharts";
 import { apiGet } from "@/api/client";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import { getUser } from "@/lib/auth-store";
 import type {
   SkillsGapResult,
@@ -226,14 +227,9 @@ export function MySkillsGapPage() {
                             : `+${Math.abs(comp.gap)}`}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                            STATUS_COLORS[comp.status],
-                          )}
-                        >
+                        <StatusBadge colorClass={STATUS_COLORS[comp.status]} className="px-2">
                           {STATUS_LABELS[comp.status]}
-                        </span>
+                        </StatusBadge>
                       </td>
                     </tr>
                   ))}

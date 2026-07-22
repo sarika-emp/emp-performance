@@ -9,6 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type {
@@ -96,14 +97,9 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
             >
               {goal.title}
             </Link>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
               {STATUS_LABELS[goal.status]}
-            </span>
+            </StatusBadge>
           </div>
 
           <div className="mt-2 flex items-center gap-3">

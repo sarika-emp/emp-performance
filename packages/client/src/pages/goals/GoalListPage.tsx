@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { apiGet, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   Goal,
@@ -89,14 +90,9 @@ function GoalCard({ goal, expanded, onToggle }: { goal: GoalWithKRs; expanded: b
             >
               {goal.title}
             </Link>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status] ?? "bg-gray-100 text-gray-700",
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status] ?? "bg-gray-100 text-gray-700"}>
               {STATUS_LABELS[goal.status] ?? goal.status}
-            </span>
+            </StatusBadge>
             <span className="text-xs text-gray-500">
               {CATEGORY_LABELS[goal.category] ?? goal.category}
             </span>

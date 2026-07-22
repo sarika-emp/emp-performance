@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, Award, ChevronRight, Layers, Search } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import type { CompetencyFramework, PaginatedResponse } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 
@@ -149,15 +150,16 @@ export function FrameworkListPage() {
                 <p className="mt-3 text-sm text-gray-500 line-clamp-2">{fw.description}</p>
               )}
               <div className="mt-3 flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                <StatusBadge
+                  colorClass={
                     fw.is_active
                       ? "bg-green-100 text-green-700"
                       : "bg-gray-100 text-gray-500"
-                  }`}
+                  }
+                  className="px-2"
                 >
                   {fw.is_active ? "Active" : "Inactive"}
-                </span>
+                </StatusBadge>
               </div>
             </Link>
           ))}

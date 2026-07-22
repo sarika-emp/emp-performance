@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X, Clock, ShieldCheck } from "lucide-react";
 import { apiGet, apiPut } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
 
 interface ReviewCycle {
@@ -180,12 +181,13 @@ export function PeerReviewQueuePage() {
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">User #{n.nominee_id}</td>
                     <td className="px-4 py-3 text-xs text-gray-400">{formatDate(n.created_at)}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badge.className}`}
+                      <StatusBadge
+                        colorClass={badge.className}
+                        icon={<BadgeIcon className="h-3 w-3" />}
+                        className="capitalize"
                       >
-                        <BadgeIcon className="h-3 w-3" />
                         {n.status}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {pending ? (

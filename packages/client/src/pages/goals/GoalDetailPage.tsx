@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import type { Goal, KeyResult, GoalCheckIn } from "@emp-performance/shared";
 
@@ -320,14 +321,9 @@ export function GoalDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{goal.title}</h1>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
               {STATUS_LABELS[goal.status]}
-            </span>
+            </StatusBadge>
             <span
               className={cn(
                 "text-xs font-medium capitalize",

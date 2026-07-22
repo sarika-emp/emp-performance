@@ -21,6 +21,7 @@ import type {
   PaginatedResponse,
 } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -257,11 +258,12 @@ export function ReviewCycleListPage() {
                     {TYPE_LABEL[cycle.type] ?? cycle.type}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}`}
+                    <StatusBadge
+                      colorClass={STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}
+                      className="capitalize"
                     >
                       {cycle.status.replace(/_/g, " ")}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     <span className="inline-flex items-center gap-1">

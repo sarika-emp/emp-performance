@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { apiGet } from "@/api/client";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import type {
   SkillsGapResult,
   CompetencyGap,
@@ -210,14 +211,9 @@ function IndividualView({ employeeId }: { employeeId: string }) {
                       {comp.gap > 0 ? `-${comp.gap}` : comp.gap === 0 ? "0" : `+${Math.abs(comp.gap)}`}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          STATUS_COLORS[comp.status],
-                        )}
-                      >
+                      <StatusBadge colorClass={STATUS_COLORS[comp.status]} className="px-2">
                         {STATUS_LABELS[comp.status]}
-                      </span>
+                      </StatusBadge>
                     </td>
                   </tr>
                 ))}
@@ -462,14 +458,9 @@ export function SkillsGapPage() {
                                     : `+${Math.abs(gap.gap)}`}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                                    STATUS_COLORS[gap.status],
-                                  )}
-                                >
+                                <StatusBadge colorClass={STATUS_COLORS[gap.status]} className="px-2">
                                   {STATUS_LABELS[gap.status]}
-                                </span>
+                                </StatusBadge>
                               </td>
                             </tr>
                           ))}

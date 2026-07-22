@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
 import type { PaginatedResponse } from "@emp-performance/shared";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface SuccessionPlan {
   id: string;
@@ -282,12 +283,12 @@ export function SuccessionPage() {
                   <h3 className="text-base font-semibold text-gray-900 truncate">
                     {plan.position_title}
                   </h3>
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CRITICALITY_COLORS[plan.criticality] || CRITICALITY_COLORS.medium}`}>
+                  <StatusBadge colorClass={CRITICALITY_COLORS[plan.criticality] || CRITICALITY_COLORS.medium}>
                     {plan.criticality}
-                  </span>
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[plan.status] || STATUS_COLORS.identified}`}>
+                  </StatusBadge>
+                  <StatusBadge colorClass={STATUS_COLORS[plan.status] || STATUS_COLORS.identified}>
                     {plan.status}
-                  </span>
+                  </StatusBadge>
                 </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
                   {plan.department && <span>{plan.department}</span>}

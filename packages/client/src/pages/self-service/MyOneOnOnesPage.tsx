@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
 
@@ -276,13 +277,13 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
           </span>
         </div>
       </div>
-      <span
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      <StatusBadge
+        colorClass={
           isCompleted ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
-        }`}
+        }
       >
         {meeting.status}
-      </span>
+      </StatusBadge>
     </Link>
   );
 }

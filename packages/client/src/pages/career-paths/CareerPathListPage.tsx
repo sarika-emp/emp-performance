@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, Route, ChevronRight, Loader2, Search, Users } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface CareerPath {
@@ -154,19 +155,19 @@ export function CareerPathListPage() {
               )}
               <div className="mt-3 flex items-center gap-3">
                 {path.department && (
-                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                  <StatusBadge colorClass="bg-gray-100 text-gray-600">
                     {path.department}
-                  </span>
+                  </StatusBadge>
                 )}
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                <StatusBadge
+                  colorClass={
                     path.is_active
                       ? "bg-green-50 text-green-700"
                       : "bg-gray-100 text-gray-500"
-                  }`}
+                  }
                 >
                   {path.is_active ? "Active" : "Inactive"}
-                </span>
+                </StatusBadge>
               </div>
             </Link>
           ))}

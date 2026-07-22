@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -180,9 +181,9 @@ export function MyFeedbackPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+                      <StatusBadge colorClass={colorClass} className="px-2">
                         {item.type}
-                      </span>
+                      </StatusBadge>
                       <span className="text-xs text-gray-400">
                         {tab === "received"
                           ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : `User #${item.from_user_id}`}`

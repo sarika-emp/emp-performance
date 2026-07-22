@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface Meeting {
   id: string;
@@ -207,17 +208,17 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
           </span>
         </div>
       </div>
-      <span
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      <StatusBadge
+        colorClass={
           isCompleted
             ? "bg-green-50 text-green-700"
             : isCancelled
               ? "bg-gray-100 text-gray-500"
               : "bg-blue-50 text-blue-700"
-        }`}
+        }
       >
         {meeting.status}
-      </span>
+      </StatusBadge>
     </Link>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Route, Search, Target, TrendingUp } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface OrgUser {
   id: number;
@@ -112,9 +113,9 @@ export function EmployeeTrackPage() {
                   {track.path?.name ?? "Career Path"}
                 </Link>
                 {track.path?.department && (
-                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                  <StatusBadge colorClass="bg-gray-100 text-gray-600">
                     {track.path.department}
-                  </span>
+                  </StatusBadge>
                 )}
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-6">

@@ -17,6 +17,7 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   PerformanceImprovementPlan,
@@ -237,14 +238,9 @@ export function PIPDetailPage() {
             <h1 className="text-2xl font-bold text-gray-900">
               PIP - {pip.employee_name ?? `Employee #${pip.employee_id}`}
             </h1>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                STATUS_COLORS[pip.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[pip.status]}>
               {STATUS_LABELS[pip.status]}
-            </span>
+            </StatusBadge>
           </div>
           <p className="mt-1 text-sm text-gray-500">{pip.reason}</p>
         </div>
