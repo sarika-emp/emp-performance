@@ -8,6 +8,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { EmptyState } from "@/components/EmptyState";
 import { useAuthStore } from "@/lib/auth-store";
 
 interface TrackLevel {
@@ -61,13 +62,11 @@ export function MyCareerPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : tracks.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Route className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No career path assigned</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Ask your manager or HR to assign you to a career path.
-          </p>
-        </div>
+        <EmptyState
+          icon={Route}
+          title="No career path assigned"
+          description="Ask your manager or HR to assign you to a career path."
+        />
       ) : (
         <div className="mt-6 space-y-6">
           {tracks.map((track) => (

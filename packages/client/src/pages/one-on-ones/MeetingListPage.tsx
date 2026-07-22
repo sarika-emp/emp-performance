@@ -14,6 +14,7 @@ import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Meeting {
   id: string;
@@ -127,13 +128,11 @@ export function MeetingListPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : meetings.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Users className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No meetings found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Try adjusting your filters or schedule a new 1-on-1 meeting.
-          </p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No meetings found"
+          description="Try adjusting your filters or schedule a new 1-on-1 meeting."
+        />
       ) : (
         <div className="mt-6 space-y-3">
           {meetings.map((meeting) => (

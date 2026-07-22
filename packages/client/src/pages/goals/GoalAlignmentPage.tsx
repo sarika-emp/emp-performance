@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Loader2, GitBranch } from "lucide-react";
 import { apiGet } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
 import type { GoalTreeNode } from "@emp-performance/shared";
 
@@ -419,12 +420,11 @@ export function GoalAlignmentPage() {
         )}
 
         {!isLoading && tree.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <GitBranch className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No goals found. Create goals with parent relationships to see the alignment tree.
-            </p>
-          </div>
+          <EmptyState
+            icon={GitBranch}
+            title="No goals found. Create goals with parent relationships to see the alignment tree."
+            className=""
+          />
         )}
 
         {tree.map((node) => (

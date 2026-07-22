@@ -15,6 +15,7 @@ import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -160,11 +161,12 @@ export function FeedbackListPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : feedbackList.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No feedback found</h3>
-          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No feedback found"
+          description="Try adjusting your search or filters."
+          className="mt-8"
+        />
       ) : (
         <div className="mt-4 space-y-4">
           {feedbackList.map((item) => {

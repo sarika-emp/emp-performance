@@ -20,6 +20,7 @@ import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import type {
   PerformanceLetterTemplate,
   LetterType,
@@ -342,12 +343,11 @@ export function LetterTemplatePage() {
         )}
 
         {!isLoading && templates.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No templates found. Create your first letter template.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No templates found. Create your first letter template."
+            className=""
+          />
         )}
 
         {templates.map((template) => (

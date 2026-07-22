@@ -19,6 +19,7 @@ import {
 import { apiGet } from "@/api/client";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import { getUser } from "@/lib/auth-store";
 import type {
   SkillsGapResult,
@@ -102,12 +103,10 @@ export function MySkillsGapPage() {
         <p className="mt-1 text-sm text-gray-500">
           See how your skills compare to your career path requirements.
         </p>
-        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <TrendingDown className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">
-            No competency data available yet. Complete a performance review and ensure you are assigned to a career path.
-          </p>
-        </div>
+        <EmptyState
+          icon={TrendingDown}
+          title="No competency data available yet. Complete a performance review and ensure you are assigned to a career path."
+        />
       </div>
     );
   }

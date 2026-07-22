@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { apiGet, apiDelete } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type { PerformanceImprovementPlan, PaginatedResponse } from "@emp-performance/shared";
@@ -177,10 +178,12 @@ export function PIPListPage() {
         )}
 
         {!isLoading && pips.length === 0 && (
-          <div className="p-12 text-center">
-            <AlertTriangle className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">No PIPs found.</p>
-          </div>
+          <EmptyState
+            icon={AlertTriangle}
+            title="No PIPs found."
+            bordered={false}
+            className=""
+          />
         )}
 
         {!isLoading && pips.length > 0 && (

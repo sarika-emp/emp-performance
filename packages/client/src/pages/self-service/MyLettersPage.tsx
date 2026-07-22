@@ -6,6 +6,7 @@ import { getUser } from "@/lib/auth-store";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface PerformanceLetter {
   id: string;
@@ -133,14 +134,14 @@ export function MyLettersPage() {
       )}
 
       {!isLoading && !error && letters.length === 0 && (
-        <div className="mt-6 rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
-          <FileText className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">
-            {search || filterType
+        <EmptyState
+          icon={FileText}
+          title={
+            search || filterType
               ? "No letters match your filters."
-              : "No performance letters have been issued to you yet."}
-          </p>
-        </div>
+              : "No performance letters have been issued to you yet."
+          }
+        />
       )}
 
       {letters.length > 0 && (

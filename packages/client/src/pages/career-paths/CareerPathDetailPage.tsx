@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface OrgUser {
@@ -465,10 +466,11 @@ export function CareerPathDetailPage() {
           ))}
 
           {path.levels?.length === 0 && !showAddLevel && (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-              <Award className="mx-auto h-10 w-10 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">No levels defined yet. Add your first level.</p>
-            </div>
+            <EmptyState
+              icon={Award}
+              title="No levels defined yet. Add your first level."
+              className=""
+            />
           )}
         </div>
 

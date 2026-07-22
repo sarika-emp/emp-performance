@@ -13,6 +13,7 @@ import {
 import { apiGet, apiPost } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
 
@@ -85,13 +86,11 @@ export function MyOneOnOnesPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : meetings.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Users className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No meetings yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Request a 1-on-1 with your manager to get started.
-          </p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No meetings yet"
+          description="Request a 1-on-1 with your manager to get started."
+        />
       ) : (
         <div className="mt-6 space-y-8">
           {upcoming.length > 0 && (

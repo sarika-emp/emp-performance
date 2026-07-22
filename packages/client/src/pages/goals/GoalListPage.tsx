@@ -12,6 +12,7 @@ import {
 import { apiGet, apiDelete } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   Goal,
@@ -293,12 +294,11 @@ export function GoalListPage() {
         )}
 
         {!isLoading && goals.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <Target className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No goals found. Create your first goal to get started.
-            </p>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="No goals found. Create your first goal to get started."
+            className=""
+          />
         )}
 
         {goals.map((goal) => (

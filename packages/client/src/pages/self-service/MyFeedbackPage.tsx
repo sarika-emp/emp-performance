@@ -14,6 +14,7 @@ import { apiGet, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -151,17 +152,15 @@ export function MyFeedbackPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : feedbackList.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No feedback {tab} {search ? "matches your search" : "yet"}
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {tab === "received"
+        <EmptyState
+          icon={MessageSquare}
+          title={`No feedback ${tab} ${search ? "matches your search" : "yet"}`}
+          description={
+            tab === "received"
               ? "Feedback from colleagues will appear here."
-              : "Feedback you give will appear here."}
-          </p>
-        </div>
+              : "Feedback you give will appear here."
+          }
+        />
       ) : (
         <div className="mt-4 space-y-3">
           {feedbackList.map((item) => {

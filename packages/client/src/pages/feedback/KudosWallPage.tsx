@@ -6,6 +6,7 @@ import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface FeedbackItem {
   id: string;
@@ -95,13 +96,12 @@ export function KudosWallPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : wall.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Heart className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">The wall is empty</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Public feedback and kudos will show up here.
-          </p>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="The wall is empty"
+          description="Public feedback and kudos will show up here."
+          className="mt-8"
+        />
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {wall.map((item) => {

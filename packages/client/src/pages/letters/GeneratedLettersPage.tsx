@@ -24,6 +24,7 @@ import { apiGet, apiPost, api } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import type {
   GeneratedPerformanceLetter,
   PerformanceLetterTemplate,
@@ -464,12 +465,11 @@ export function GeneratedLettersPage() {
         )}
 
         {!isLoading && letters.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No generated letters yet. Generate your first letter using a template.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No generated letters yet. Generate your first letter using a template."
+            className=""
+          />
         )}
 
         {letters.map((letter) => (

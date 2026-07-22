@@ -11,6 +11,7 @@ import {
 import { apiGet, apiPost } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type {
@@ -268,19 +269,20 @@ export function MyGoalsPage() {
         )}
 
         {!isLoading && goals.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <Target className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm font-medium text-gray-700">No goals yet</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Create your first goal to start tracking progress.
-            </p>
-            <Link
-              to="/goals/new"
-              className="mt-4 inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
-            >
-              Create a goal <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="No goals yet"
+            description="Create your first goal to start tracking progress."
+            className=""
+            action={
+              <Link
+                to="/goals/new"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
+              >
+                Create a goal <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
         )}
 
         {goals.map((goal) => (

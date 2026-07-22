@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Star, Send, Loader2, ClipboardCheck, CheckCircle2 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
+import { EmptyState } from "@/components/EmptyState";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
 
@@ -274,13 +275,12 @@ export function PeerReviewSubmitPage() {
       </div>
 
       {cycleId && !nomLoading && nominations.length === 0 && (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <ClipboardCheck className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No approved nominations</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            You have no approved peer reviews to complete in this cycle.
-          </p>
-        </div>
+        <EmptyState
+          icon={ClipboardCheck}
+          title="No approved nominations"
+          description="You have no approved peer reviews to complete in this cycle."
+          className="mt-8"
+        />
       )}
 
       {nomLoading && (

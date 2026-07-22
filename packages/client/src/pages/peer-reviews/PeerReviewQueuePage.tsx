@@ -5,6 +5,7 @@ import { apiGet, apiPut } from "@/api/client";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface ReviewCycle {
@@ -140,25 +141,23 @@ export function PeerReviewQueuePage() {
       </div>
 
       {!cycleId ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <ShieldCheck className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">Select a review cycle</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Choose a cycle above to see its peer nominations.
-          </p>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="Select a review cycle"
+          description="Choose a cycle above to see its peer nominations."
+          className="mt-8"
+        />
       ) : isLoading ? (
         <div className="mt-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : nominations.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Clock className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No nominations</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            There are no {statusFilter || ""} nominations for this cycle.
-          </p>
-        </div>
+        <EmptyState
+          icon={Clock}
+          title="No nominations"
+          description={<>There are no {statusFilter || ""} nominations for this cycle.</>}
+          className="mt-8"
+        />
       ) : (
         <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
