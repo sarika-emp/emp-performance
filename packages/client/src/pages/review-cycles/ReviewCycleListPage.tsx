@@ -15,12 +15,15 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { apiGet, apiDelete, apiPost } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import toast from "react-hot-toast";
 import type {
   ReviewCycle,
   PaginatedResponse,
 } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -50,6 +53,7 @@ const STATUS_TABS = [
 type CycleWithCount = ReviewCycle & { participant_count: number };
 
 export function ReviewCycleListPage() {
+  const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -257,11 +261,12 @@ export function ReviewCycleListPage() {
                     {TYPE_LABEL[cycle.type] ?? cycle.type}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}`}
+                    <StatusBadge
+                      colorClass={STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}
+                      className="capitalize"
                     >
                       {cycle.status.replace(/_/g, " ")}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     <span className="inline-flex items-center gap-1">
@@ -344,9 +349,16 @@ export function ReviewCycleListPage() {
                         {cycle.status === "draft" && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               setOpenMenuId(null);
-                              if (window.confirm(`Delete cycle "${cycle.name}"? This cannot be undone.`)) {
+                              if (
+                                await confirm({
+                                  title: "Delete cycle?",
+                                  message: `Delete cycle "${cycle.name}"? This cannot be undone.`,
+                                  confirmLabel: "Delete",
+                                  variant: "danger",
+                                })
+                              ) {
                                 deleteMutation.mutate(cycle.id);
                               }
                             }}
@@ -366,30 +378,14 @@ export function ReviewCycleListPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {page} of {totalPages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setFilter("page", String(page - 1))}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setFilter("page", String(page + 1))}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Pagination — page state lives in the URL via useSearchParams; the
+          setter writes back through setFilter to preserve URL paging. */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setFilter("page", String(p))}
+        className=""
+      />
     </div>
   );
 }

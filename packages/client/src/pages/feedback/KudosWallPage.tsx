@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import { Heart, MessageSquare, Lightbulb, Loader2, Search, Send } from "lucide-react";
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface FeedbackItem {
   id: string;
@@ -93,13 +96,12 @@ export function KudosWallPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : wall.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Heart className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">The wall is empty</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Public feedback and kudos will show up here.
-          </p>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="The wall is empty"
+          description="Public feedback and kudos will show up here."
+          className="mt-8"
+        />
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {wall.map((item) => {
@@ -115,9 +117,9 @@ export function KudosWallPage() {
                   <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${cfg.color}`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
+                  <StatusBadge colorClass={cfg.color} className="px-2">
                     {cfg.label}
-                  </span>
+                  </StatusBadge>
                   <span className="ml-auto text-xs text-gray-400">
                     {formatDate(item.created_at)}
                   </span>
@@ -150,28 +152,13 @@ export function KudosWallPage() {
         </div>
       )}
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

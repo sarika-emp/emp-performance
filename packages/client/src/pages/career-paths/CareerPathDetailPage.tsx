@@ -14,6 +14,9 @@ import {
   UserPlus,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface OrgUser {
@@ -42,6 +45,7 @@ interface CareerPathDetail {
 }
 
 export function CareerPathDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -230,17 +234,18 @@ export function CareerPathDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {path.department && (
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+            <StatusBadge colorClass="bg-gray-100 text-gray-600" className="px-3 py-1">
               {path.department}
-            </span>
+            </StatusBadge>
           )}
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+          <StatusBadge
+            colorClass={
               path.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
-            }`}
+            }
+            className="px-3 py-1"
           >
             {path.is_active ? "Active" : "Inactive"}
-          </span>
+          </StatusBadge>
           <button
             onClick={() => {
               setAssignForm({ employeeId: "", currentLevelId: "", targetLevelId: "" });
@@ -259,8 +264,15 @@ export function CareerPathDetailPage() {
             Edit
           </button>
           <button
-            onClick={() => {
-              if (confirm("Delete this career path? This cannot be undone.")) {
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Delete career path?",
+                  message: "Delete this career path? This cannot be undone.",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
+              ) {
                 deletePathMutation.mutate();
               }
             }}
@@ -456,17 +468,26 @@ export function CareerPathDetailPage() {
               onSaveEdit={(data) =>
                 updateLevelMutation.mutate({ levelId: level.id, body: data })
               }
-              onDelete={() => {
-                if (confirm("Remove this level?")) deleteLevelMutation.mutate(level.id);
+              onDelete={async () => {
+                if (
+                  await confirm({
+                    title: "Remove level?",
+                    message: "Remove this level?",
+                    confirmLabel: "Remove",
+                    variant: "danger",
+                  })
+                )
+                  deleteLevelMutation.mutate(level.id);
               }}
             />
           ))}
 
           {path.levels?.length === 0 && !showAddLevel && (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-              <Award className="mx-auto h-10 w-10 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">No levels defined yet. Add your first level.</p>
-            </div>
+            <EmptyState
+              icon={Award}
+              title="No levels defined yet. Add your first level."
+              className=""
+            />
           )}
         </div>
 

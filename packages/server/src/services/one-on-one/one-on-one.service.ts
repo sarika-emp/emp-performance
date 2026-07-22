@@ -424,6 +424,12 @@ export async function cancelMeeting(orgId: number, id: string, actor: Actor): Pr
   if (existing.status === "cancelled") {
     throw new ValidationError("Meeting is already cancelled");
   }
+  // Only a scheduled meeting can be cancelled — a completed meeting already
+  // happened, so cancelling it is not a valid transition. To change a completed
+  // meeting, reopen it first (back to scheduled), then cancel.
+  if (existing.status === "completed") {
+    throw new ValidationError("A completed meeting can't be cancelled. Reopen it first if you need to cancel.");
+  }
   logger.info(`1-on-1 meeting cancelled: ${id} (org: ${orgId})`);
   return db.update<Meeting>("one_on_one_meetings", id, { status: "cancelled" });
 }

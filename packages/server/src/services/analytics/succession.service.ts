@@ -101,13 +101,19 @@ export async function listSuccessionPlans(
   const planIds = result.data.map((p) => p.id);
   const countMap = new Map<string, number>();
   if (planIds.length > 0) {
-    const rows = await db.raw<{ plan_id: string; c: number | string }[]>(
+    const raw = await db.raw<any>(
       `SELECT plan_id, COUNT(*) AS c FROM succession_candidates WHERE plan_id IN (${planIds
         .map(() => "?")
         .join(",")}) GROUP BY plan_id`,
       planIds,
     );
-    for (const row of rows ?? []) {
+    // The mysql2 driver returns knex.raw() results as a [rows, fields] tuple,
+    // so the count rows live in raw[0]. Iterating `raw` directly walked the
+    // tuple (row.plan_id was undefined), leaving every count at 0.
+    const rows: { plan_id: string; c: number | string }[] = Array.isArray(raw)
+      ? (Array.isArray(raw[0]) ? raw[0] : raw)
+      : [];
+    for (const row of rows) {
       countMap.set(row.plan_id, Number(row.c));
     }
   }

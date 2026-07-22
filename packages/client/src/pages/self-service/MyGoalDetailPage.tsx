@@ -11,6 +11,7 @@ import {
   Target,
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type { Goal, KeyResult, GoalCheckIn } from "@emp-performance/shared";
@@ -159,14 +160,9 @@ export function MyGoalDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{goal.title}</h1>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
               {STATUS_LABELS[goal.status]}
-            </span>
+            </StatusBadge>
           </div>
           {goal.description && (
             <p className="mt-1 text-sm text-gray-500">{goal.description}</p>

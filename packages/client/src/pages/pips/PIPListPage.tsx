@@ -4,8 +4,12 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Plus, Search, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { PerformanceImprovementPlan, PaginatedResponse } from "@emp-performance/shared";
 
 const SORT_OPTIONS: { value: string; label: string }[] = [
@@ -45,6 +49,7 @@ interface PIPWithMeta extends PerformanceImprovementPlan {
 }
 
 export function PIPListPage() {
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
@@ -78,12 +83,15 @@ export function PIPListPage() {
       toast.error(err.response?.data?.error?.message || "Failed to delete PIP"),
   });
 
-  function handleDelete(pip: PIPWithMeta) {
+  async function handleDelete(pip: PIPWithMeta) {
     const label = pip.employee_name ?? `Employee #${pip.employee_id}`;
     if (
-      window.confirm(
-        `Delete the PIP for ${label}? This removes it from the active list but preserves the record for audit.`,
-      )
+      await confirm({
+        title: "Delete PIP?",
+        message: `Delete the PIP for ${label}? This removes it from the active list but preserves the record for audit.`,
+        confirmLabel: "Delete",
+        variant: "danger",
+      })
     ) {
       deleteMutation.mutate(pip.id);
     }
@@ -175,10 +183,12 @@ export function PIPListPage() {
         )}
 
         {!isLoading && pips.length === 0 && (
-          <div className="p-12 text-center">
-            <AlertTriangle className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">No PIPs found.</p>
-          </div>
+          <EmptyState
+            icon={AlertTriangle}
+            title="No PIPs found."
+            bordered={false}
+            className=""
+          />
         )}
 
         {!isLoading && pips.length > 0 && (
@@ -228,14 +238,9 @@ export function PIPListPage() {
                     </p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        STATUS_COLORS[pip.status] ?? "bg-gray-100 text-gray-700",
-                      )}
-                    >
+                    <StatusBadge colorClass={STATUS_COLORS[pip.status] ?? "bg-gray-100 text-gray-700"}>
                       {STATUS_LABELS[pip.status] ?? pip.status}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {formatDate(pip.start_date)}
@@ -271,28 +276,13 @@ export function PIPListPage() {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

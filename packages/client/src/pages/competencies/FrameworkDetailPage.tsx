@@ -14,12 +14,15 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { CompetencyFramework, Competency } from "@emp-performance/shared";
+import { StatusBadge } from "@/components/StatusBadge";
 import { CompetencyLevelsEditor } from "./CompetencyLevelsEditor";
 
 type FrameworkWithCompetencies = CompetencyFramework & { competencies: Competency[] };
 
 export function FrameworkDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -196,15 +199,15 @@ export function FrameworkDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{framework.name}</h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            <StatusBadge
+              colorClass={
                 framework.is_active
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-100 text-gray-500"
-              }`}
+              }
             >
               {framework.is_active ? "Active" : "Inactive"}
-            </span>
+            </StatusBadge>
           </div>
           {framework.description && (
             <p className="mt-1 text-sm text-gray-500">{framework.description}</p>
@@ -219,11 +222,15 @@ export function FrameworkDetailPage() {
             Edit
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               if (
-                confirm(
-                  "Delete this framework? Competencies will be hidden but historical review ratings are preserved.",
-                )
+                await confirm({
+                  title: "Delete framework?",
+                  message:
+                    "Delete this framework? Competencies will be hidden but historical review ratings are preserved.",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
               ) {
                 deleteFrameworkMutation.mutate();
               }
@@ -452,11 +459,14 @@ export function FrameworkDetailPage() {
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
-                            `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
-                          )
+                          await confirm({
+                            title: "Remove competency?",
+                            message: `Remove competency "${comp.name}"? Historical review ratings are preserved.`,
+                            confirmLabel: "Remove",
+                            variant: "danger",
+                          })
                         ) {
                           removeMutation.mutate(comp.id);
                         }

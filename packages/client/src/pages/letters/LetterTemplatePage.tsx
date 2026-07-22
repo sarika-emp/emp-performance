@@ -17,7 +17,11 @@ import {
   Search,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
-import { cn, formatDate } from "@/lib/utils";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import type {
   PerformanceLetterTemplate,
   LetterType,
@@ -160,6 +164,7 @@ function TemplateForm({
 }
 
 export function LetterTemplatePage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PerformanceLetterTemplate | null>(null);
@@ -340,12 +345,11 @@ export function LetterTemplatePage() {
         )}
 
         {!isLoading && templates.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No templates found. Create your first letter template.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No templates found. Create your first letter template."
+            className=""
+          />
         )}
 
         {templates.map((template) => (
@@ -357,19 +361,13 @@ export function LetterTemplatePage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-gray-900">{template.name}</h3>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                      getTypeColor(template.type),
-                    )}
-                  >
+                  <StatusBadge colorClass={getTypeColor(template.type)} className="px-2">
                     {getTypeLabel(template.type)}
-                  </span>
+                  </StatusBadge>
                   {template.is_default && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
-                      <Check className="h-3 w-3" />
+                    <StatusBadge colorClass="bg-brand-50 text-brand-700" className="px-2" icon={<Check className="h-3 w-3" />}>
                       Default
-                    </span>
+                    </StatusBadge>
                   )}
                 </div>
                 <p className="mt-1 text-xs text-gray-400">
@@ -400,8 +398,15 @@ export function LetterTemplatePage() {
                   <Pencil className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm("Delete this template? Issued letters will be preserved.")) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: "Delete template?",
+                        message: "Delete this template? Issued letters will be preserved.",
+                        confirmLabel: "Delete",
+                        variant: "danger",
+                      })
+                    ) {
                       deleteMutation.mutate(template.id);
                     }
                   }}
@@ -417,28 +422,13 @@ export function LetterTemplatePage() {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

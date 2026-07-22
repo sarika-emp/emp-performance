@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { CompetencyLevel } from "@emp-performance/shared";
 
 type LevelForm = {
@@ -33,6 +34,7 @@ function textToAnchors(text: string): string[] {
 }
 
 export function CompetencyLevelsEditor({ competencyId }: { competencyId: string }) {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [addMode, setAddMode] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -260,8 +262,15 @@ export function CompetencyLevelsEditor({ competencyId }: { competencyId: string 
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete level "${lvl.name}"?`)) {
+                    onClick={async () => {
+                      if (
+                        await confirm({
+                          title: "Delete level?",
+                          message: `Delete level "${lvl.name}"?`,
+                          confirmLabel: "Delete",
+                          variant: "danger",
+                        })
+                      ) {
                         deleteMutation.mutate(lvl.id);
                       }
                     }}

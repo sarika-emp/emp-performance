@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, Award, ChevronRight, Layers, Search } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 import type { CompetencyFramework, PaginatedResponse } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
 
@@ -149,15 +151,16 @@ export function FrameworkListPage() {
                 <p className="mt-3 text-sm text-gray-500 line-clamp-2">{fw.description}</p>
               )}
               <div className="mt-3 flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                <StatusBadge
+                  colorClass={
                     fw.is_active
                       ? "bg-green-100 text-green-700"
                       : "bg-gray-100 text-gray-500"
-                  }`}
+                  }
+                  className="px-2"
                 >
                   {fw.is_active ? "Active" : "Inactive"}
-                </span>
+                </StatusBadge>
               </div>
             </Link>
           ))}
@@ -165,28 +168,14 @@ export function FrameworkListPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+          className=""
+        />
       )}
     </div>
   );

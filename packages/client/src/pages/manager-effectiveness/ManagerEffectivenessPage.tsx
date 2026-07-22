@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import {
   Gauge,
   Loader2,
-  RefreshCw,
   Play,
   Users,
   TrendingUp,
@@ -23,6 +22,8 @@ import {
 } from "recharts";
 import toast from "react-hot-toast";
 import { apiGet, apiPost } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface ManagerScore {
@@ -214,9 +215,9 @@ export function ManagerEffectivenessPage() {
               {dashboard.top_performers.map((s) => (
                 <li key={s.id} className="flex items-center justify-between text-sm">
                   <span className="text-gray-700">{s.manager_name || `Manager ${s.manager_user_id}`}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${scoreColor(s.overall_score)}`}>
+                  <StatusBadge colorClass={scoreColor(s.overall_score)} className="px-2">
                     {s.overall_score?.toFixed(1) ?? "—"}
-                  </span>
+                  </StatusBadge>
                 </li>
               ))}
             </ul>
@@ -230,9 +231,9 @@ export function ManagerEffectivenessPage() {
               {dashboard.bottom_performers.map((s) => (
                 <li key={s.id} className="flex items-center justify-between text-sm">
                   <span className="text-gray-700">{s.manager_name || `Manager ${s.manager_user_id}`}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${scoreColor(s.overall_score)}`}>
+                  <StatusBadge colorClass={scoreColor(s.overall_score)} className="px-2">
                     {s.overall_score?.toFixed(1) ?? "—"}
-                  </span>
+                  </StatusBadge>
                 </li>
               ))}
             </ul>
@@ -297,9 +298,9 @@ export function ManagerEffectivenessPage() {
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600">{s.team_size}</td>
                     <td className="px-6 py-3">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${scoreColor(s.overall_score)}`}>
+                      <StatusBadge colorClass={scoreColor(s.overall_score)} className="font-semibold">
                         {s.overall_score?.toFixed(1) ?? "—"}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600">
                       {s.team_performance_score?.toFixed(0) ?? "—"}
@@ -325,29 +326,14 @@ export function ManagerEffectivenessPage() {
           </div>
         )}
 
-        {pager && pager.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
-            <p className="text-sm text-gray-500">
-              Page {pager.page} of {pager.totalPages} ({pager.total} total)
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={pager.page <= 1}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={pager.page >= pager.totalPages}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-              >
-                <RefreshCw className="hidden" />
-                Next
-              </button>
-            </div>
-          </div>
+        {pager && (
+          <Pagination
+            page={pager.page}
+            totalPages={pager.totalPages}
+            total={pager.total}
+            onPageChange={setPage}
+            className="border-t border-gray-100 px-6 py-3"
+          />
         )}
       </div>
     </div>

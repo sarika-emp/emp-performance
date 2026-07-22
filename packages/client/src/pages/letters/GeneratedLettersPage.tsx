@@ -21,7 +21,11 @@ import {
   Ban,
 } from "lucide-react";
 import { apiGet, apiPost, api } from "@/api/client";
-import { cn, formatDate } from "@/lib/utils";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import type {
   GeneratedPerformanceLetter,
   PerformanceLetterTemplate,
@@ -62,6 +66,7 @@ async function downloadLetter(letter: GeneratedPerformanceLetter) {
 }
 
 export function GeneratedLettersPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState("");
@@ -174,7 +179,7 @@ export function GeneratedLettersPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            to="/letter-templates"
+            to="/letters/templates"
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <Settings className="h-4 w-4" />
@@ -323,7 +328,7 @@ export function GeneratedLettersPage() {
                 {visibleTemplates.length === 0 && (
                   <p className="mt-1 text-xs text-gray-500">
                     <Link
-                      to="/letter-templates"
+                      to="/letters/templates"
                       className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700"
                     >
                       <Settings className="h-3 w-3" />
@@ -386,14 +391,12 @@ export function GeneratedLettersPage() {
             </button>
             <h2 className="text-lg font-semibold text-gray-900 mb-1">Letter Preview</h2>
             <div className="flex items-center gap-2 mb-4">
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                  TYPE_COLORS[viewingLetter.type] ?? "bg-gray-100 text-gray-700",
-                )}
+              <StatusBadge
+                colorClass={TYPE_COLORS[viewingLetter.type] ?? "bg-gray-100 text-gray-700"}
+                className="px-2"
               >
                 {TYPE_LABELS[viewingLetter.type] ?? viewingLetter.type}
-              </span>
+              </StatusBadge>
               <span className="text-xs text-gray-400">
                 Employee #{viewingLetter.employee_id}
               </span>
@@ -426,8 +429,15 @@ export function GeneratedLettersPage() {
               )}
               {!viewingLetter.voided_at && (
                 <button
-                  onClick={() => {
-                    if (confirm("Void this letter? This cannot be undone.")) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: "Void letter?",
+                        message: "Void this letter? This cannot be undone.",
+                        confirmLabel: "Void",
+                        variant: "danger",
+                      })
+                    ) {
                       voidMutation.mutate(viewingLetter.id);
                     }
                   }}
@@ -464,12 +474,11 @@ export function GeneratedLettersPage() {
         )}
 
         {!isLoading && letters.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No generated letters yet. Generate your first letter using a template.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No generated letters yet. Generate your first letter using a template."
+            className=""
+          />
         )}
 
         {letters.map((letter) => (
@@ -480,31 +489,27 @@ export function GeneratedLettersPage() {
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                      TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-700",
-                    )}
+                  <StatusBadge
+                    colorClass={TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-700"}
+                    className="px-2"
                   >
                     {TYPE_LABELS[letter.type] ?? letter.type}
-                  </span>
+                  </StatusBadge>
                   <span className="text-sm font-medium text-gray-900">
                     Employee #{letter.employee_id}
                   </span>
                   {letter.voided_at ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                      <Ban className="h-3 w-3" />
+                    <StatusBadge colorClass="bg-gray-100 text-gray-600" className="px-2" icon={<Ban className="h-3 w-3" />}>
                       Voided
-                    </span>
+                    </StatusBadge>
                   ) : letter.sent_at ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                      <Mail className="h-3 w-3" />
+                    <StatusBadge colorClass="bg-green-50 text-green-700" className="px-2" icon={<Mail className="h-3 w-3" />}>
                       Sent {formatDate(letter.sent_at)}
-                    </span>
+                    </StatusBadge>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
+                    <StatusBadge colorClass="bg-yellow-50 text-yellow-700" className="px-2">
                       Draft
-                    </span>
+                    </StatusBadge>
                   )}
                 </div>
                 <p className="mt-1 text-xs text-gray-400">
@@ -545,28 +550,13 @@ export function GeneratedLettersPage() {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

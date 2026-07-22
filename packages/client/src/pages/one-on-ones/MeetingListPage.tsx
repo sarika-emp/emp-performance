@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { apiGet } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Meeting {
   id: string;
@@ -125,13 +128,11 @@ export function MeetingListPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : meetings.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Users className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No meetings found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Try adjusting your filters or schedule a new 1-on-1 meeting.
-          </p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No meetings found"
+          description="Try adjusting your filters or schedule a new 1-on-1 meeting."
+        />
       ) : (
         <div className="mt-6 space-y-3">
           {meetings.map((meeting) => (
@@ -141,28 +142,13 @@ export function MeetingListPage() {
       )}
 
       {/* Pager */}
-      {pager && pager.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pager.page} of {pager.totalPages} · {pager.total} total
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pager.totalPages}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pager && (
+        <Pagination
+          page={pager.page}
+          totalPages={pager.totalPages}
+          total={pager.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );
@@ -207,17 +193,17 @@ function MeetingCard({ meeting }: { meeting: Meeting }) {
           </span>
         </div>
       </div>
-      <span
-        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      <StatusBadge
+        colorClass={
           isCompleted
             ? "bg-green-50 text-green-700"
             : isCancelled
               ? "bg-gray-100 text-gray-500"
               : "bg-blue-50 text-blue-700"
-        }`}
+        }
       >
         {meeting.status}
-      </span>
+      </StatusBadge>
     </Link>
   );
 }

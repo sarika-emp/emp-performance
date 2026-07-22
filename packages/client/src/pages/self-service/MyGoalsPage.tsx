@@ -9,6 +9,9 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type {
@@ -96,14 +99,9 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
             >
               {goal.title}
             </Link>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
               {STATUS_LABELS[goal.status]}
-            </span>
+            </StatusBadge>
           </div>
 
           <div className="mt-2 flex items-center gap-3">
@@ -271,19 +269,20 @@ export function MyGoalsPage() {
         )}
 
         {!isLoading && goals.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <Target className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm font-medium text-gray-700">No goals yet</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Create your first goal to start tracking progress.
-            </p>
-            <Link
-              to="/goals/new"
-              className="mt-4 inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
-            >
-              Create a goal <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="No goals yet"
+            description="Create your first goal to start tracking progress."
+            className=""
+            action={
+              <Link
+                to="/goals/new"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
+              >
+                Create a goal <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          />
         )}
 
         {goals.map((goal) => (
@@ -291,28 +290,12 @@ export function MyGoalsPage() {
         ))}
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

@@ -10,6 +10,9 @@ import {
   Search,
 } from "lucide-react";
 import { apiGet, apiDelete } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   Goal,
@@ -89,14 +92,9 @@ function GoalCard({ goal, expanded, onToggle }: { goal: GoalWithKRs; expanded: b
             >
               {goal.title}
             </Link>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status] ?? "bg-gray-100 text-gray-700",
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status] ?? "bg-gray-100 text-gray-700"}>
               {STATUS_LABELS[goal.status] ?? goal.status}
-            </span>
+            </StatusBadge>
             <span className="text-xs text-gray-500">
               {CATEGORY_LABELS[goal.category] ?? goal.category}
             </span>
@@ -296,12 +294,11 @@ export function GoalListPage() {
         )}
 
         {!isLoading && goals.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <Target className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              No goals found. Create your first goal to get started.
-            </p>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="No goals found. Create your first goal to get started."
+            className=""
+          />
         )}
 
         {goals.map((goal) => (
@@ -315,28 +312,13 @@ export function GoalListPage() {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );
