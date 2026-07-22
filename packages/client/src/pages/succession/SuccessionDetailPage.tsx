@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface OrgUser {
   id: number;
@@ -93,6 +94,7 @@ const NINE_BOX_COLORS: Record<string, string> = {
 };
 
 export function SuccessionDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -277,8 +279,15 @@ export function SuccessionDetailPage() {
             Edit Plan
           </button>
           <button
-            onClick={() => {
-              if (confirm("Delete this succession plan and all its candidates?")) {
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Delete succession plan?",
+                  message: "Delete this succession plan and all its candidates?",
+                  confirmLabel: "Delete",
+                  variant: "danger",
+                })
+              ) {
                 deletePlanMutation.mutate();
               }
             }}
@@ -564,8 +573,15 @@ export function SuccessionDetailPage() {
                         <Pencil className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Remove ${candName} from this plan?`)) {
+                        onClick={async () => {
+                          if (
+                            await confirm({
+                              title: "Remove candidate?",
+                              message: `Remove ${candName} from this plan?`,
+                              confirmLabel: "Remove",
+                              variant: "danger",
+                            })
+                          ) {
                             deleteCandidateMutation.mutate(candidate.id);
                           }
                         }}

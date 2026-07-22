@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { apiGet, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -47,6 +48,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function MyFeedbackPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"received" | "given">("received");
   const [search, setSearch] = useState("");
@@ -83,8 +85,16 @@ export function MyFeedbackPage() {
     setPage(1);
   }
 
-  function handleDelete(id: string) {
-    if (!window.confirm("Delete this feedback? This cannot be undone.")) return;
+  async function handleDelete(id: string) {
+    if (
+      !(await confirm({
+        title: "Delete feedback?",
+        message: "Delete this feedback? This cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "danger",
+      }))
+    )
+      return;
     deleteMutation.mutate(id);
   }
 

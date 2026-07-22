@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { useConfirm } from "@/components/ConfirmDialog";
 import toast from "react-hot-toast";
 
 interface AgendaItem {
@@ -63,6 +64,7 @@ interface MeetingDetail {
 const ACTION_STATUSES = ["open", "in_progress", "done", "cancelled"];
 
 export function MeetingDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -213,6 +215,7 @@ export function MeetingDetailPage() {
   const currentNotes = notes ?? meeting?.meeting_notes ?? "";
   const isCompleted = meeting?.status === "completed";
   const isCancelled = meeting?.status === "cancelled";
+  const isScheduled = meeting?.status === "scheduled";
   const locked = isCompleted || isCancelled;
 
   if (isLoading) {
@@ -297,10 +300,17 @@ export function MeetingDetailPage() {
             Reopen
           </button>
         )}
-        {!isCancelled && (
+        {isScheduled && (
           <button
-            onClick={() => {
-              if (window.confirm("Cancel this meeting? It can be reopened later.")) {
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Cancel meeting?",
+                  message: "Cancel this meeting? It can be reopened later.",
+                  confirmLabel: "Cancel meeting",
+                  variant: "default",
+                })
+              ) {
                 cancelMutation.mutate();
               }
             }}
@@ -312,8 +322,15 @@ export function MeetingDetailPage() {
           </button>
         )}
         <button
-          onClick={() => {
-            if (window.confirm("Permanently delete this meeting and all its items?")) {
+          onClick={async () => {
+            if (
+              await confirm({
+                title: "Delete meeting?",
+                message: "Permanently delete this meeting and all its items?",
+                confirmLabel: "Delete",
+                variant: "danger",
+              })
+            ) {
               deleteMeetingMutation.mutate();
             }
           }}
@@ -412,8 +429,15 @@ export function MeetingDetailPage() {
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => {
-                          if (window.confirm("Remove this agenda item?"))
+                        onClick={async () => {
+                          if (
+                            await confirm({
+                              title: "Remove agenda item?",
+                              message: "Remove this agenda item?",
+                              confirmLabel: "Remove",
+                              variant: "danger",
+                            })
+                          )
                             deleteAgendaMutation.mutate(item.id);
                         }}
                         className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600"
@@ -533,8 +557,16 @@ export function MeetingDetailPage() {
               </select>
               {!locked && (
                 <button
-                  onClick={() => {
-                    if (window.confirm("Remove this action item?")) deleteActionMutation.mutate(a.id);
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: "Remove action item?",
+                        message: "Remove this action item?",
+                        confirmLabel: "Remove",
+                        variant: "danger",
+                      })
+                    )
+                      deleteActionMutation.mutate(a.id);
                   }}
                   className="rounded p-1 text-gray-400 hover:bg-red-100 hover:text-red-600"
                   title="Delete"

@@ -21,6 +21,7 @@ import {
   Ban,
 } from "lucide-react";
 import { apiGet, apiPost, api } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   GeneratedPerformanceLetter,
@@ -62,6 +63,7 @@ async function downloadLetter(letter: GeneratedPerformanceLetter) {
 }
 
 export function GeneratedLettersPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState("");
@@ -426,8 +428,15 @@ export function GeneratedLettersPage() {
               )}
               {!viewingLetter.voided_at && (
                 <button
-                  onClick={() => {
-                    if (confirm("Void this letter? This cannot be undone.")) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: "Void letter?",
+                        message: "Void this letter? This cannot be undone.",
+                        confirmLabel: "Void",
+                        variant: "danger",
+                      })
+                    ) {
                       voidMutation.mutate(viewingLetter.id);
                     }
                   }}

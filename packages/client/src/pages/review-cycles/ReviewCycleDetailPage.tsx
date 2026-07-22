@@ -15,6 +15,7 @@ import {
   Save,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type {
   ReviewCycle,
   ReviewCycleParticipant,
@@ -54,6 +55,7 @@ const TABS = ["participants", "ratings", "settings"] as const;
 type Tab = (typeof TABS)[number];
 
 export function ReviewCycleDetailPage() {
+  const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -446,11 +448,14 @@ export function ReviewCycleDetailPage() {
                       {cycle.status === "draft" && (
                         <td className="px-6 py-4 text-right">
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (
-                                window.confirm(
-                                  `Remove ${p.employee_name ?? `employee #${p.employee_id}`} from this cycle?`,
-                                )
+                                await confirm({
+                                  title: "Remove participant?",
+                                  message: `Remove ${p.employee_name ?? `employee #${p.employee_id}`} from this cycle?`,
+                                  confirmLabel: "Remove",
+                                  variant: "danger",
+                                })
                               ) {
                                 removeParticipantMutation.mutate(p.id);
                               }

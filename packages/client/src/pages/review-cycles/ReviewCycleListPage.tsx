@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { apiGet, apiDelete, apiPost } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import toast from "react-hot-toast";
 import type {
   ReviewCycle,
@@ -50,6 +51,7 @@ const STATUS_TABS = [
 type CycleWithCount = ReviewCycle & { participant_count: number };
 
 export function ReviewCycleListPage() {
+  const confirm = useConfirm();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -344,9 +346,16 @@ export function ReviewCycleListPage() {
                         {cycle.status === "draft" && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                               setOpenMenuId(null);
-                              if (window.confirm(`Delete cycle "${cycle.name}"? This cannot be undone.`)) {
+                              if (
+                                await confirm({
+                                  title: "Delete cycle?",
+                                  message: `Delete cycle "${cycle.name}"? This cannot be undone.`,
+                                  confirmLabel: "Delete",
+                                  variant: "danger",
+                                })
+                              ) {
                                 deleteMutation.mutate(cycle.id);
                               }
                             }}

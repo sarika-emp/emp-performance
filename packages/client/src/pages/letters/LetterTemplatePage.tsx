@@ -17,6 +17,7 @@ import {
   Search,
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { cn, formatDate } from "@/lib/utils";
 import type {
   PerformanceLetterTemplate,
@@ -160,6 +161,7 @@ function TemplateForm({
 }
 
 export function LetterTemplatePage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PerformanceLetterTemplate | null>(null);
@@ -400,8 +402,15 @@ export function LetterTemplatePage() {
                   <Pencil className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm("Delete this template? Issued letters will be preserved.")) {
+                  onClick={async () => {
+                    if (
+                      await confirm({
+                        title: "Delete template?",
+                        message: "Delete this template? Issued letters will be preserved.",
+                        confirmLabel: "Delete",
+                        variant: "danger",
+                      })
+                    ) {
                       deleteMutation.mutate(template.id);
                     }
                   }}

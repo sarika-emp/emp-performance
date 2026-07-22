@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { apiGet, apiDelete } from "@/api/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
@@ -56,6 +57,7 @@ function parseTags(tags: string | string[] | null): string[] {
 }
 
 export function FeedbackListPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
   const canManageAny = ADMIN_ROLES.has(currentUser?.role ?? "");
@@ -88,8 +90,16 @@ export function FeedbackListPage() {
   const feedbackList = data?.data?.data ?? [];
   const pagination = data?.data;
 
-  function handleDelete(id: string) {
-    if (!window.confirm("Delete this feedback? This cannot be undone.")) return;
+  async function handleDelete(id: string) {
+    if (
+      !(await confirm({
+        title: "Delete feedback?",
+        message: "Delete this feedback? This cannot be undone.",
+        confirmLabel: "Delete",
+        variant: "danger",
+      }))
+    )
+      return;
     deleteMutation.mutate(id);
   }
 
