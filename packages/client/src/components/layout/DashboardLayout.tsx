@@ -29,6 +29,7 @@ import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
 import { BackToDashboard } from "@/components/BackToDashboard";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Role = "org_admin" | "hr_admin" | "hr_manager" | "employee";
 
@@ -227,6 +228,7 @@ export function DashboardLayout() {
             </button>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <NotificationBell />
             <NavLink
               to="/profile"
