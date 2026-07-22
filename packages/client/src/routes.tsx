@@ -113,9 +113,8 @@ const MyOneOnOneDetailPage = lazy(() =>
 const MySkillsGapPage = lazy(() =>
   import("@/pages/self-service/MySkillsGapPage").then((m) => ({ default: m.MySkillsGapPage })),
 );
-const MySelfServiceReviewsPage = lazy(() =>
-  import("@/pages/self-service/MyReviewsPage").then((m) => ({ default: m.MyReviewsPage })),
-);
+// /my/reviews and /reviews/my render the same self-service reviews page.
+const MySelfServiceReviewsPage = MyReviewsPage;
 const MyLettersPage = lazy(() =>
   import("@/pages/self-service/MyLettersPage").then((m) => ({ default: m.MyLettersPage })),
 );
