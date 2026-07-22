@@ -23,6 +23,8 @@ import type {
   PaginatedResponse,
 } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -194,11 +196,12 @@ export function ReviewCycleDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">{cycle.name}</h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}`}
+            <StatusBadge
+              colorClass={STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}
+              className="capitalize"
             >
               {cycle.status.replace(/_/g, " ")}
-            </span>
+            </StatusBadge>
           </div>
           {cycle.description && (
             <p className="mt-1 text-sm text-gray-500">{cycle.description}</p>
@@ -438,9 +441,9 @@ export function ReviewCycleDetailPage() {
                         {p.manager_name ?? (p.manager_id ? `Manager #${p.manager_id}` : "--")}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 capitalize">
+                        <StatusBadge colorClass="bg-gray-100 text-gray-700" className="capitalize">
                           {p.status}
-                        </span>
+                        </StatusBadge>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {formatDate(p.created_at)}
@@ -474,29 +477,12 @@ export function ReviewCycleDetailPage() {
           )}
 
           {/* Participant pagination */}
-          {participantTotalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
-                Page {participantPage} of {participantTotalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  disabled={participantPage <= 1}
-                  onClick={() => setParticipantPage((p) => p - 1)}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  disabled={participantPage >= participantTotalPages}
-                  onClick={() => setParticipantPage((p) => p + 1)}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={participantPage}
+            totalPages={participantTotalPages}
+            onPageChange={setParticipantPage}
+            className=""
+          />
         </div>
       )}
 

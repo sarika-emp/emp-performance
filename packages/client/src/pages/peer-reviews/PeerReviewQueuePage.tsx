@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X, Clock, ShieldCheck } from "lucide-react";
 import { apiGet, apiPut } from "@/api/client";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface ReviewCycle {
@@ -138,25 +141,23 @@ export function PeerReviewQueuePage() {
       </div>
 
       {!cycleId ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <ShieldCheck className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">Select a review cycle</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Choose a cycle above to see its peer nominations.
-          </p>
-        </div>
+        <EmptyState
+          icon={ShieldCheck}
+          title="Select a review cycle"
+          description="Choose a cycle above to see its peer nominations."
+          className="mt-8"
+        />
       ) : isLoading ? (
         <div className="mt-8 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : nominations.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Clock className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No nominations</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            There are no {statusFilter || ""} nominations for this cycle.
-          </p>
-        </div>
+        <EmptyState
+          icon={Clock}
+          title="No nominations"
+          description={<>There are no {statusFilter || ""} nominations for this cycle.</>}
+          className="mt-8"
+        />
       ) : (
         <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
@@ -180,12 +181,13 @@ export function PeerReviewQueuePage() {
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">User #{n.nominee_id}</td>
                     <td className="px-4 py-3 text-xs text-gray-400">{formatDate(n.created_at)}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badge.className}`}
+                      <StatusBadge
+                        colorClass={badge.className}
+                        icon={<BadgeIcon className="h-3 w-3" />}
+                        className="capitalize"
                       >
-                        <BadgeIcon className="h-3 w-3" />
                         {n.status}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {pending ? (
@@ -219,28 +221,13 @@ export function PeerReviewQueuePage() {
         </div>
       )}
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

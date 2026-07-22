@@ -14,6 +14,8 @@ import {
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
 import { cn, formatDate } from "@/lib/utils";
 import type { Goal, KeyResult, GoalCheckIn } from "@emp-performance/shared";
 
@@ -336,14 +338,9 @@ export function GoalDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{goal.title}</h1>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                STATUS_COLORS[goal.status],
-              )}
-            >
+            <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
               {STATUS_LABELS[goal.status]}
-            </span>
+            </StatusBadge>
             <span
               className={cn(
                 "text-xs font-medium capitalize",
@@ -864,28 +861,13 @@ export function GoalDetailPage() {
                   </li>
                 ))}
               </ol>
-              {historyPager && historyPager.totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-gray-100 px-5 py-2">
-                  <span className="text-xs text-gray-500">
-                    Page {historyPager.page} of {historyPager.totalPages}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      disabled={historyPage <= 1}
-                      onClick={() => setHistoryPage((p) => p - 1)}
-                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      disabled={historyPage >= historyPager.totalPages}
-                      onClick={() => setHistoryPage((p) => p + 1)}
-                      className="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
+              {historyPager && (
+                <Pagination
+                  page={historyPager.page}
+                  totalPages={historyPager.totalPages}
+                  onPageChange={setHistoryPage}
+                  className="border-t border-gray-100 px-5 py-2"
+                />
               )}
             </div>
           )}

@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useAuthStore } from "@/lib/auth-store";
 
 export function MyPerformancePage() {
@@ -149,9 +150,9 @@ export function MyPerformancePage() {
                   {recentFeedback.map((f: any) => (
                     <div key={f.id} className="rounded-lg px-3 py-2 hover:bg-gray-50">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-pink-50 px-2 py-0.5 text-xs font-medium text-pink-600">
+                        <StatusBadge colorClass="bg-pink-50 text-pink-600" className="px-2">
                           {f.type}
-                        </span>
+                        </StatusBadge>
                         <span className="text-xs text-gray-400">
                           from {f.is_anonymous ? "Anonymous" : `User #${f.from_user_id}`}
                         </span>

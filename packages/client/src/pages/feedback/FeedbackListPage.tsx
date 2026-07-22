@@ -14,6 +14,9 @@ import { apiGet, apiDelete } from "@/api/client";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -168,11 +171,12 @@ export function FeedbackListPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : feedbackList.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No feedback found</h3>
-          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No feedback found"
+          description="Try adjusting your search or filters."
+          className="mt-8"
+        />
       ) : (
         <div className="mt-4 space-y-4">
           {feedbackList.map((item) => {
@@ -200,9 +204,9 @@ export function FeedbackListPage() {
                       <span className="text-sm font-medium text-gray-900">
                         User #{item.to_user_id}
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cfg.color}`}>
+                      <StatusBadge colorClass={cfg.color} className="px-2">
                         {cfg.label}
-                      </span>
+                      </StatusBadge>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
                         {VISIBILITY_LABELS[item.visibility] || item.visibility}
                       </span>
@@ -242,28 +246,13 @@ export function FeedbackListPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

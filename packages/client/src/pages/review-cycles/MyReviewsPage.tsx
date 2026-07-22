@@ -5,6 +5,7 @@ import { apiGet } from "@/api/client";
 import { getUser } from "@/lib/auth-store";
 import type { Review, PaginatedResponse } from "@emp-performance/shared";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 
 const STATUS_BADGE: Record<string, { class: string; icon: typeof Clock }> = {
   pending: { class: "bg-gray-100 text-gray-700", icon: Clock },
@@ -113,12 +114,13 @@ export function MyReviewsPage() {
                       {review.overall_rating}
                     </div>
                   )}
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badge.class}`}
+                  <StatusBadge
+                    colorClass={badge.class}
+                    icon={<Icon className="h-3 w-3" />}
+                    className="capitalize"
                   >
-                    <Icon className="h-3 w-3" />
                     {review.status}
-                  </span>
+                  </StatusBadge>
                 </Link>
               );
             })}
@@ -173,12 +175,13 @@ export function MyReviewsPage() {
                       {review.overall_rating}/5
                     </div>
                   )}
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badge.class}`}
+                  <StatusBadge
+                    colorClass={badge.class}
+                    icon={<Icon className="h-3 w-3" />}
+                    className="capitalize"
                   >
-                    <Icon className="h-3 w-3" />
                     {review.status}
-                  </span>
+                  </StatusBadge>
                 </div>
               );
             })}

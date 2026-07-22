@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, Route, ChevronRight, Loader2, Search, Users } from "lucide-react";
 import { apiGet } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import type { PaginatedResponse } from "@emp-performance/shared";
 
 interface CareerPath {
@@ -120,20 +123,20 @@ export function CareerPathListPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : paths.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <Route className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No career paths found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Create your first career path to define progression tracks.
-          </p>
-          <Link
-            to="/career-paths/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-          >
-            <Plus className="h-4 w-4" />
-            Create Path
-          </Link>
-        </div>
+        <EmptyState
+          icon={Route}
+          title="No career paths found"
+          description="Create your first career path to define progression tracks."
+          action={
+            <Link
+              to="/career-paths/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              <Plus className="h-4 w-4" />
+              Create Path
+            </Link>
+          }
+        />
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {paths.map((path) => (
@@ -154,19 +157,19 @@ export function CareerPathListPage() {
               )}
               <div className="mt-3 flex items-center gap-3">
                 {path.department && (
-                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                  <StatusBadge colorClass="bg-gray-100 text-gray-600">
                     {path.department}
-                  </span>
+                  </StatusBadge>
                 )}
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                <StatusBadge
+                  colorClass={
                     path.is_active
                       ? "bg-green-50 text-green-700"
                       : "bg-gray-100 text-gray-500"
-                  }`}
+                  }
                 >
                   {path.is_active ? "Active" : "Inactive"}
-                </span>
+                </StatusBadge>
               </div>
             </Link>
           ))}
@@ -174,28 +177,13 @@ export function CareerPathListPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

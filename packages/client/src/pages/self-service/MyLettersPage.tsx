@@ -3,7 +3,10 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { FileText, Download, Loader2, Mail, Search } from "lucide-react";
 import { apiGet, api } from "@/api/client";
 import { getUser } from "@/lib/auth-store";
-import { formatDate, cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 
 interface PerformanceLetter {
   id: string;
@@ -131,14 +134,14 @@ export function MyLettersPage() {
       )}
 
       {!isLoading && !error && letters.length === 0 && (
-        <div className="mt-6 rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
-          <FileText className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-2 text-sm text-gray-500">
-            {search || filterType
+        <EmptyState
+          icon={FileText}
+          title={
+            search || filterType
               ? "No letters match your filters."
-              : "No performance letters have been issued to you yet."}
-          </p>
-        </div>
+              : "No performance letters have been issued to you yet."
+          }
+        />
       )}
 
       {letters.length > 0 && (
@@ -162,14 +165,12 @@ export function MyLettersPage() {
                     <span className="text-sm font-medium text-gray-900">
                       {TYPE_LABELS[letter.type] ?? letter.type}
                     </span>
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                        TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-800",
-                      )}
+                    <StatusBadge
+                      colorClass={TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-800"}
+                      className="px-2"
                     >
                       {letter.type}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-500">
                     Issued on {formatDate(letter.created_at)}
@@ -209,28 +210,13 @@ export function MyLettersPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/api/client";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { StatusBadge } from "@/components/StatusBadge";
 
 interface OrgUser {
   id: number;
@@ -254,12 +255,12 @@ export function SuccessionDetailPage() {
             {plan.department && (
               <span className="text-sm text-gray-500">{plan.department}</span>
             )}
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${CRITICALITY_COLORS[plan.criticality]}`}>
+            <StatusBadge colorClass={CRITICALITY_COLORS[plan.criticality]}>
               {plan.criticality}
-            </span>
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[plan.status]}`}>
+            </StatusBadge>
+            <StatusBadge colorClass={STATUS_COLORS[plan.status]}>
               {plan.status}
-            </span>
+            </StatusBadge>
           </div>
           {plan.current_holder_id && (
             <p className="mt-1 text-sm text-gray-500">
@@ -547,13 +548,13 @@ export function SuccessionDetailPage() {
                         <div>
                           <p className="text-sm font-semibold text-gray-900">{candName}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${READINESS_COLORS[candidate.readiness] || "bg-gray-100 text-gray-600"}`}>
+                            <StatusBadge colorClass={READINESS_COLORS[candidate.readiness] || "bg-gray-100 text-gray-600"}>
                               {READINESS_LABELS[candidate.readiness] || candidate.readiness}
-                            </span>
+                            </StatusBadge>
                             {candidate.nine_box_position && (
-                              <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${NINE_BOX_COLORS[candidate.nine_box_position] || "bg-gray-100 text-gray-600"}`}>
+                              <StatusBadge colorClass={NINE_BOX_COLORS[candidate.nine_box_position] || "bg-gray-100 text-gray-600"}>
                                 {candidate.nine_box_position}
-                              </span>
+                              </StatusBadge>
                             )}
                           </div>
                         </div>

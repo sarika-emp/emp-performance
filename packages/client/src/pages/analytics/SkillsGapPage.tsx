@@ -21,6 +21,8 @@ import {
 } from "recharts";
 import { apiGet } from "@/api/client";
 import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import type {
   SkillsGapResult,
   CompetencyGap,
@@ -93,12 +95,11 @@ function IndividualView({ employeeId }: { employeeId: string }) {
 
   if (!result || result.competencies.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-        <TrendingDown className="mx-auto h-10 w-10 text-gray-300" />
-        <p className="mt-2 text-sm text-gray-500">
-          No competency data found for this employee. Ensure they have completed reviews and are assigned to a career path.
-        </p>
-      </div>
+      <EmptyState
+        icon={TrendingDown}
+        title="No competency data found for this employee. Ensure they have completed reviews and are assigned to a career path."
+        className=""
+      />
     );
   }
 
@@ -210,14 +211,9 @@ function IndividualView({ employeeId }: { employeeId: string }) {
                       {comp.gap > 0 ? `-${comp.gap}` : comp.gap === 0 ? "0" : `+${Math.abs(comp.gap)}`}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          STATUS_COLORS[comp.status],
-                        )}
-                      >
+                      <StatusBadge colorClass={STATUS_COLORS[comp.status]} className="px-2">
                         {STATUS_LABELS[comp.status]}
-                      </span>
+                      </StatusBadge>
                     </td>
                   </tr>
                 ))}
@@ -368,12 +364,11 @@ export function SkillsGapPage() {
           employeeId ? (
             <IndividualView employeeId={employeeId} />
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-              <User className="mx-auto h-10 w-10 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">
-                Pick an employee to view their skills gap analysis.
-              </p>
-            </div>
+            <EmptyState
+              icon={User}
+              title="Pick an employee to view their skills gap analysis."
+              className=""
+            />
           )
         ) : departmentId ? (
           deptLoading ? (
@@ -462,14 +457,9 @@ export function SkillsGapPage() {
                                     : `+${Math.abs(gap.gap)}`}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                                    STATUS_COLORS[gap.status],
-                                  )}
-                                >
+                                <StatusBadge colorClass={STATUS_COLORS[gap.status]} className="px-2">
                                   {STATUS_LABELS[gap.status]}
-                                </span>
+                                </StatusBadge>
                               </td>
                             </tr>
                           ))}
@@ -519,20 +509,18 @@ export function SkillsGapPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-              <Users className="mx-auto h-10 w-10 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">
-                No data found for this department.
-              </p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No data found for this department."
+              className=""
+            />
           )
         ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <Users className="mx-auto h-10 w-10 text-gray-300" />
-            <p className="mt-2 text-sm text-gray-500">
-              Pick a department to view its aggregated skills gap analysis.
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Pick a department to view its aggregated skills gap analysis."
+            className=""
+          />
         )}
       </div>
     </div>

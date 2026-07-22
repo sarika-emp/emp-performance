@@ -4,6 +4,7 @@ import { UserPlus, Loader2, Search, Check, X, Clock } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
 import { useAuthStore } from "@/lib/auth-store";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
 
 interface ReviewCycle {
@@ -207,12 +208,13 @@ export function PeerReviewNominatePage() {
                       Peer reviewer: <span className="font-medium">User #{n.nominee_id}</span>
                       <span className="ml-3 text-xs text-gray-400">{formatDate(n.created_at)}</span>
                     </div>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${badge.className}`}
+                    <StatusBadge
+                      colorClass={badge.className}
+                      icon={<BadgeIcon className="h-3 w-3" />}
+                      className="capitalize"
                     >
-                      <BadgeIcon className="h-3 w-3" />
                       {n.status}
-                    </span>
+                    </StatusBadge>
                   </div>
                 );
               })}

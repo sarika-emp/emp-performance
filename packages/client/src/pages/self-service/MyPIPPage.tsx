@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiGet, apiPost } from "@/api/client";
+import { StatusBadge } from "@/components/StatusBadge";
 import { cn, formatDate } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import type {
@@ -174,14 +175,9 @@ export function MyPIPPage() {
             Your performance improvement plan details and progress.
           </p>
         </div>
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
-            STATUS_COLORS[pip.status],
-          )}
-        >
+        <StatusBadge colorClass={STATUS_COLORS[pip.status]} className="px-3 py-1">
           {STATUS_LABELS[pip.status]}
-        </span>
+        </StatusBadge>
       </div>
 
       {/* Info Card */}

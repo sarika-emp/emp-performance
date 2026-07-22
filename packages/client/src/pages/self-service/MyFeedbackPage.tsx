@@ -13,6 +13,9 @@ import {
 import { apiGet, apiDelete } from "@/api/client";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate } from "@/lib/utils";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Pagination } from "@/components/Pagination";
+import { EmptyState } from "@/components/EmptyState";
 import toast from "react-hot-toast";
 
 interface FeedbackItem {
@@ -159,17 +162,15 @@ export function MyFeedbackPage() {
           <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
         </div>
       ) : feedbackList.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-12 text-center">
-          <MessageSquare className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No feedback {tab} {search ? "matches your search" : "yet"}
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {tab === "received"
+        <EmptyState
+          icon={MessageSquare}
+          title={`No feedback ${tab} ${search ? "matches your search" : "yet"}`}
+          description={
+            tab === "received"
               ? "Feedback from colleagues will appear here."
-              : "Feedback you give will appear here."}
-          </p>
-        </div>
+              : "Feedback you give will appear here."
+          }
+        />
       ) : (
         <div className="mt-4 space-y-3">
           {feedbackList.map((item) => {
@@ -190,9 +191,9 @@ export function MyFeedbackPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+                      <StatusBadge colorClass={colorClass} className="px-2">
                         {item.type}
-                      </span>
+                      </StatusBadge>
                       <span className="text-xs text-gray-400">
                         {tab === "received"
                           ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : `User #${item.from_user_id}`}`
@@ -234,28 +235,13 @@ export function MyFeedbackPage() {
       )}
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-          </p>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              disabled={page >= pagination.totalPages}
-              onClick={() => setPage(page + 1)}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {pagination && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );
