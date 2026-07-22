@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { User, Lock, Loader2, Save } from "lucide-react";
 import { apiGet, apiPost } from "@/api/client";
-import { getInitials } from "@/lib/utils";
+import { getInitials, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 interface Profile {
@@ -64,7 +64,10 @@ export function ProfilePage() {
           <Detail label="Employee code" value={profile?.emp_code} />
           <Detail label="Designation" value={profile?.designation} />
           <Detail label="Contact number" value={profile?.contact_number} />
-          <Detail label="Date of joining" value={profile?.date_of_joining} />
+          <Detail
+            label="Date of joining"
+            value={profile?.date_of_joining ? formatDate(profile.date_of_joining) : null}
+          />
         </dl>
       </div>
 

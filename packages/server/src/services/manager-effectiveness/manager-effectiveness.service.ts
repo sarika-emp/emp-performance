@@ -9,6 +9,37 @@ import { getDB } from "../../db/adapters";
 import { logger } from "../../utils/logger";
 import { NotFoundError, ValidationError } from "../../utils/errors";
 
+// MySQL returns DECIMAL columns as strings (e.g. "80.00"), so a stored score
+// row read back from the table has string values where the type says number.
+// Callers do things like `score.overall_score?.toFixed(1)`, which throws on a
+// string. Coerce every numeric column back to a real number (or null) before
+// returning stored rows so the API contract matches the declared types.
+const NUMERIC_SCORE_FIELDS = [
+  "overall_score",
+  "team_performance_score",
+  "review_quality_score",
+  "engagement_score",
+  "team_size",
+  "avg_team_rating",
+  "reviews_completed_on_time_pct",
+  "rating_variance",
+  "one_on_one_frequency",
+  "goal_completion_rate",
+  "feedback_given_count",
+] as const;
+
+function coerceScore<T extends Record<string, any>>(row: T): T {
+  if (!row) return row;
+  for (const f of NUMERIC_SCORE_FIELDS) {
+    const v = (row as any)[f];
+    if (v !== null && v !== undefined && typeof v !== "number") {
+      const n = Number(v);
+      (row as any)[f] = Number.isNaN(n) ? null : n;
+    }
+  }
+  return row;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -367,7 +398,7 @@ export async function listManagerScores(
   });
 
   return {
-    data: result.data,
+    data: result.data.map(coerceScore),
     total: result.total,
     page: result.page,
     perPage: result.limit,
@@ -403,13 +434,14 @@ export async function getManagerDetail(
 ): Promise<ManagerScoreDetail> {
   const db = getDB();
 
-  const score = await db.findOne<ManagerEffectivenessScore>("manager_effectiveness_scores", {
+  const scoreRow = await db.findOne<ManagerEffectivenessScore>("manager_effectiveness_scores", {
     organization_id: orgId,
     manager_user_id: managerUserId,
     period,
   });
 
-  if (!score) throw new NotFoundError("ManagerEffectivenessScore", `${managerUserId}/${period}`);
+  if (!scoreRow) throw new NotFoundError("ManagerEffectivenessScore", `${managerUserId}/${period}`);
+  const score = coerceScore(scoreRow);
 
   // Build detailed breakdown descriptions
   const teamPerfDesc =
@@ -531,8 +563,8 @@ export async function getDashboard(orgId: number): Promise<DashboardStats> {
 
   return {
     org_average: orgAvg,
-    top_performers: topResult.data,
-    bottom_performers: bottomResult.data,
+    top_performers: topResult.data.map(coerceScore),
+    bottom_performers: bottomResult.data.map(coerceScore),
     total_managers: totalManagers,
     period,
     score_distribution: distribution,
