@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- EMP Performance mark: brand-600 green tile + trending-up arrow,
+       matching the in-app logo (bg-brand-600 + lucide TrendingUp). -->
+  <rect width="64" height="64" rx="14" fill="#16A34A"/>
+  <g transform="translate(8 8) scale(2)" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+    <polyline points="16 7 22 7 22 13"/>
+  </g>
+</svg>
