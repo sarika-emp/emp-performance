@@ -128,7 +128,9 @@ export async function deleteFramework(orgId: number, id: string): Promise<void> 
   });
   if (!existing) throw new NotFoundError("CompetencyFramework", id);
 
-  await db.update("competency_frameworks", id, { deleted_at: new Date().toISOString() } as any);
+  // MySQL datetime rejects the ISO-8601 string (T/Z/millis); pass a Date
+  // object like deletePIP does, or the delete 500s (audit H8).
+  await db.update("competency_frameworks", id, { deleted_at: new Date() } as any);
 }
 
 // ---------------------------------------------------------------------------
@@ -216,8 +218,10 @@ export async function removeCompetency(
   // C4: review_competency_ratings.competency_id is ON DELETE CASCADE, so a hard
   // delete would silently erase historical review scores. Soft-delete instead so
   // the competency stops appearing in the framework but its ratings are kept.
+  // Pass a Date object — the ISO string is rejected by the MySQL datetime
+  // column and 500s the delete (audit H8).
   await db.update("competencies", compId, {
-    deleted_at: new Date().toISOString(),
+    deleted_at: new Date(),
   } as any);
 }
 
