@@ -22,7 +22,9 @@ import toast from "react-hot-toast";
 interface FeedbackItem {
   id: string;
   from_user_id: number | null;
+  from_user_name: string | null;
   to_user_id: number;
+  to_user_name: string | null;
   type: string;
   visibility: string;
   message: string;
@@ -198,11 +200,11 @@ export function FeedbackListPage() {
                       <span className="text-sm font-medium text-gray-900">
                         {item.is_anonymous || item.from_user_id == null
                           ? "Anonymous"
-                          : `User #${item.from_user_id}`}
+                          : item.from_user_name || `User #${item.from_user_id}`}
                       </span>
                       <span className="text-gray-300">-&gt;</span>
                       <span className="text-sm font-medium text-gray-900">
-                        User #{item.to_user_id}
+                        {item.to_user_name || `User #${item.to_user_id}`}
                       </span>
                       <StatusBadge colorClass={cfg.color} className="px-2">
                         {cfg.label}

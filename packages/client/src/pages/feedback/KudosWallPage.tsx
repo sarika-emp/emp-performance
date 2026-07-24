@@ -11,7 +11,9 @@ import { EmptyState } from "@/components/EmptyState";
 interface FeedbackItem {
   id: string;
   from_user_id: number | null;
+  from_user_name: string | null;
   to_user_id: number;
+  to_user_name: string | null;
   type: string;
   visibility: string;
   message: string;
@@ -129,10 +131,12 @@ export function KudosWallPage() {
                   <span className="font-medium text-gray-700">
                     {item.is_anonymous || item.from_user_id == null
                       ? "Anonymous"
-                      : `User #${item.from_user_id}`}
+                      : item.from_user_name || `User #${item.from_user_id}`}
                   </span>
                   <span className="text-gray-300">-&gt;</span>
-                  <span className="font-medium text-gray-700">User #{item.to_user_id}</span>
+                  <span className="font-medium text-gray-700">
+                    {item.to_user_name || `User #${item.to_user_id}`}
+                  </span>
                 </div>
                 {tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
