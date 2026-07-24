@@ -450,6 +450,12 @@ export async function completeMeeting(orgId: number, id: string, actor: Actor): 
   if (existing.status === "completed") {
     throw new ValidationError("Meeting is already completed");
   }
+  // A cancelled meeting didn't happen, so completing it isn't a valid
+  // transition — mirror the cancel-completed guard (audit M6). Reopen it first
+  // if it needs to be completed.
+  if (existing.status === "cancelled") {
+    throw new ValidationError("A cancelled meeting can't be completed. Reopen it first.");
+  }
 
   logger.info(`1-on-1 meeting completed: ${id} by ${actor.userId} (org: ${orgId})`);
   return db.update<Meeting>("one_on_one_meetings", id, {
