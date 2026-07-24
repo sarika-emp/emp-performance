@@ -48,6 +48,32 @@ const DEFAULTS: Omit<NotificationSettings, "id" | "organization_id" | "created_a
 };
 
 // ---------------------------------------------------------------------------
+// Row normalisation
+// ---------------------------------------------------------------------------
+
+/** MySQL stores booleans as tinyint(1) and mysql2 hands them back as 0/1. */
+function toBool(v: unknown): boolean {
+  return v === true || v === 1 || v === "1";
+}
+
+/**
+ * Coerce a stored row into the declared types. Without this the API returns
+ * 0/1 where it promises booleans, which breaks clients that read the settings
+ * and write them back (z.boolean() rejects a number).
+ */
+function normalize(row: NotificationSettings): NotificationSettings {
+  return {
+    ...row,
+    review_reminders_enabled: toBool(row.review_reminders_enabled),
+    pip_reminders_enabled: toBool(row.pip_reminders_enabled),
+    meeting_reminders_enabled: toBool(row.meeting_reminders_enabled),
+    goal_reminders_enabled: toBool(row.goal_reminders_enabled),
+    reminder_days_before_deadline: Number(row.reminder_days_before_deadline),
+    rating_scale: Number(row.rating_scale),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
@@ -63,7 +89,7 @@ export async function getNotificationSettings(orgId: number): Promise<Notificati
       organization_id: orgId,
     });
 
-    if (existing) return existing;
+    if (existing) return normalize(existing);
   } catch {
     // Table might not exist yet — return defaults
     logger.debug(`notification_settings table not found or query failed for org ${orgId}, using defaults`);
@@ -108,7 +134,12 @@ export async function updateNotificationSettings(
   if (data.default_framework !== undefined) updates.default_framework = data.default_framework;
 
   if (existing) {
-    return db.update<NotificationSettings>("notification_settings", existing.id, updates);
+    const updated = await db.update<NotificationSettings>(
+      "notification_settings",
+      existing.id,
+      updates,
+    );
+    return normalize(updated);
   }
 
   // Create new settings row with defaults + overrides
@@ -119,5 +150,9 @@ export async function updateNotificationSettings(
     ...updates,
   };
 
-  return db.create<NotificationSettings>("notification_settings", newSettings as any);
+  const created = await db.create<NotificationSettings>(
+    "notification_settings",
+    newSettings as any,
+  );
+  return normalize(created);
 }
