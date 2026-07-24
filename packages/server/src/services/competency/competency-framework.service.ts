@@ -128,7 +128,9 @@ export async function deleteFramework(orgId: number, id: string): Promise<void> 
   });
   if (!existing) throw new NotFoundError("CompetencyFramework", id);
 
-  await db.update("competency_frameworks", id, { deleted_at: new Date().toISOString() } as any);
+  // MySQL datetime rejects the ISO-8601 string (T/Z/millis); pass a Date
+  // object like deletePIP does, or the delete 500s (audit H8).
+  await db.update("competency_frameworks", id, { deleted_at: new Date() } as any);
 }
 
 // ---------------------------------------------------------------------------
@@ -216,8 +218,10 @@ export async function removeCompetency(
   // C4: review_competency_ratings.competency_id is ON DELETE CASCADE, so a hard
   // delete would silently erase historical review scores. Soft-delete instead so
   // the competency stops appearing in the framework but its ratings are kept.
+  // Pass a Date object — the ISO string is rejected by the MySQL datetime
+  // column and 500s the delete (audit H8).
   await db.update("competencies", compId, {
-    deleted_at: new Date().toISOString(),
+    deleted_at: new Date(),
   } as any);
 }
 
@@ -289,6 +293,18 @@ function normalizeAnchors(anchors?: string[] | null): string[] | null {
   return cleaned.length > 0 ? cleaned : null;
 }
 
+/**
+ * Serialize behavioral anchors for the JSON column. The DB adapter does NOT
+ * JSON.stringify array values, so persisting a raw string[] made knex/mysql2
+ * expand it into multiple positional bindings and corrupt the SQL (500 on any
+ * level with anchors — audit H7). Store a JSON string (mysql2 parses the JSON
+ * column back to an array on read), matching the seed.
+ */
+function anchorsForDb(anchors?: string[] | null): string | null {
+  const norm = normalizeAnchors(anchors);
+  return norm ? JSON.stringify(norm) : null;
+}
+
 export async function listLevels(
   orgId: number,
   competencyId: string,
@@ -335,7 +351,7 @@ export async function createLevel(
     level: data.level,
     name: data.name,
     description: data.description ?? null,
-    behavioral_anchors: normalizeAnchors(data.behavioral_anchors),
+    behavioral_anchors: anchorsForDb(data.behavioral_anchors),
     sort_order: data.sort_order ?? data.level,
   };
 
@@ -380,7 +396,7 @@ export async function updateLevel(
   if (data.name !== undefined) patch.name = data.name;
   if (data.description !== undefined) patch.description = data.description;
   if (data.behavioral_anchors !== undefined) {
-    patch.behavioral_anchors = normalizeAnchors(data.behavioral_anchors);
+    patch.behavioral_anchors = anchorsForDb(data.behavioral_anchors);
   }
   if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
 

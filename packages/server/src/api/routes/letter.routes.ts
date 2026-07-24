@@ -15,6 +15,9 @@ import {
   previewLetterTemplateSchema,
 } from "@emp-performance/shared";
 import * as letterService from "../../services/letter/performance-letter.service";
+import { NotFoundError } from "../../utils/errors";
+
+const LETTER_ADMIN_ROLES = ["super_admin", "org_admin", "hr_admin", "hr_manager"];
 
 const router = Router();
 router.use(authenticate);
@@ -37,6 +40,29 @@ router.get("/my", async (req: Request, res: Response, next: NextFunction) => {
       perPage: pagination.perPage,
     });
     return sendPaginated(res, result.data, result.total, result.page, result.perPage);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /letters/:id/download — download the rendered letter document (L4).
+// Registered ABOVE the admin gate so the recipient can download their OWN
+// letter (audit H11): the whole My Letters page is for employees, but its
+// Download button hit an admin-only route and 403'd for every non-admin.
+// Scoped — an employee may only download a letter addressed to them.
+router.get("/:id/download", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = req.user!.empcloudOrgId;
+    const { id } = idParamSchema.parse(req.params);
+    const letter = await letterService.getLetter(orgId, id);
+    const isAdmin = LETTER_ADMIN_ROLES.includes(req.user!.role);
+    if (!isAdmin && letter.employee_id !== req.user!.empcloudUserId) {
+      throw new NotFoundError("PerformanceLetter", id);
+    }
+    const { filename, html } = await letterService.getLetterDocument(orgId, id);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(html);
   } catch (err) {
     next(err);
   }
@@ -189,19 +215,8 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /letters/:id/download — download the rendered letter document (L4)
-router.get("/:id/download", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = req.user!.empcloudOrgId;
-    const { id } = idParamSchema.parse(req.params);
-    const { filename, html } = await letterService.getLetterDocument(orgId, id);
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    return res.send(html);
-  } catch (err) {
-    next(err);
-  }
-});
+// (GET /letters/:id/download is registered above the admin gate — see there —
+// so recipients can download their own letter.)
 
 // POST /letters/:id/send — deliver the letter (email + audit)
 router.post("/:id/send", async (req: Request, res: Response, next: NextFunction) => {

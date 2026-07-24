@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { Router, Request, Response, NextFunction } from "express";
-import { authenticate } from "../middleware/auth.middleware";
+import { authenticate, authorize } from "../middleware/auth.middleware";
 import * as feedbackService from "../../services/feedback/feedback.service";
 import { sendSuccess, sendPaginated } from "../../utils/response";
 import {
@@ -17,8 +17,10 @@ import {
 const router = Router();
 router.use(authenticate);
 
-// GET /feedback — list all feedback for the organization (admin view)
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+// GET /feedback — list ALL feedback in the org (includes private / manager-only
+// items), so it must be admin-only. Without this gate any authenticated
+// employee could read every colleague's confidential feedback.
+router.get("/", authorize("super_admin", "org_admin", "hr_admin", "hr_manager"), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const pagination = paginationSchema.parse(req.query);
@@ -99,12 +101,13 @@ router.get("/wall", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// GET /feedback/:id — single feedback (anonymity-respecting)
+// GET /feedback/:id — single feedback (anonymity-respecting + access-scoped:
+// only the sender, recipient, or an admin may read a non-public item).
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = req.user!.empcloudOrgId;
     const { id } = idParamSchema.parse(req.params);
-    const result = await feedbackService.getFeedback(orgId, id);
+    const result = await feedbackService.getFeedback(orgId, id, req.user!.empcloudUserId, req.user!.role);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

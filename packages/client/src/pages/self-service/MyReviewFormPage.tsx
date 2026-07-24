@@ -90,7 +90,11 @@ export function MyReviewFormPage() {
   // Initialize form with existing data
   useEffect(() => {
     if (review) {
-      setOverallRating(review.overall_rating ?? 0);
+      // overall_rating is a DECIMAL that the API returns as a string ('4.0').
+      // Without Number() the state becomes a string, and after Save Draft (which
+      // refetches and re-runs this effect) Submit/Save then POST a string, which
+      // the z.number() schema rejects with 400 'Invalid review data' (audit H6).
+      setOverallRating(review.overall_rating != null ? Number(review.overall_rating) : 0);
       setSummary(review.summary ?? "");
       setStrengths(review.strengths ?? "");
       setImprovements(review.improvements ?? "");
@@ -118,7 +122,7 @@ export function MyReviewFormPage() {
   const saveDraftMutation = useMutation({
     mutationFn: () =>
       apiPut(`/reviews/${id}`, {
-        overall_rating: overallRating || undefined,
+        overall_rating: overallRating ? Number(overallRating) : undefined,
         summary: summary || undefined,
         strengths: strengths || undefined,
         improvements: improvements || undefined,
@@ -132,7 +136,7 @@ export function MyReviewFormPage() {
   const submitMutation = useMutation({
     mutationFn: () =>
       apiPost(`/reviews/${id}/submit`, {
-        overall_rating: overallRating,
+        overall_rating: Number(overallRating),
         summary,
         strengths: strengths || undefined,
         improvements: improvements || undefined,

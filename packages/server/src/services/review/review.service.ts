@@ -86,6 +86,10 @@ export type ReviewCompetencyRatingWithName = ReviewCompetencyRating & {
 export async function getReview(
   orgId: number,
   id: string,
+  // When set (non-admin caller), the review is only returned if the caller is
+  // its reviewer or its subject employee — otherwise it's a confidential review
+  // about someone else and we 404 (audit H2). Admins pass undefined.
+  restrictToUserId?: number,
 ): Promise<Review & { competency_ratings: ReviewCompetencyRatingWithName[] }> {
   const db = getDB();
   const review = await db.findOne<Review>("reviews", {
@@ -93,6 +97,14 @@ export async function getReview(
     organization_id: orgId,
   });
   if (!review) throw new NotFoundError("Review", id);
+
+  if (
+    restrictToUserId !== undefined &&
+    review.reviewer_id !== restrictToUserId &&
+    review.employee_id !== restrictToUserId
+  ) {
+    throw new NotFoundError("Review", id);
+  }
 
   const ratings = await db.findMany<ReviewCompetencyRating>("review_competency_ratings", {
     filters: { review_id: id },
@@ -128,6 +140,10 @@ export async function listReviews(
     search?: string;
     sort?: string;
     order?: "asc" | "desc";
+    // When set (non-admin caller), results are scoped to reviews the caller
+    // authored or is the subject of — a plain employee must never list other
+    // people's confidential reviews (audit H2). Admins pass undefined.
+    restrictToUserId?: number;
   },
 ): Promise<{ data: Review[]; total: number; page: number; perPage: number }> {
   const db = getDB();
@@ -158,6 +174,10 @@ export async function listReviews(
     if (params.employee_id) { where.push("employee_id = ?"); args.push(params.employee_id); }
     if (params.type) { where.push("type = ?"); args.push(params.type); }
     if (params.status) { where.push("status = ?"); args.push(params.status); }
+    if (params.restrictToUserId !== undefined) {
+      where.push("(reviewer_id = ? OR employee_id = ?)");
+      args.push(params.restrictToUserId, params.restrictToUserId);
+    }
     where.push("(summary LIKE ? OR strengths LIKE ? OR improvements LIKE ?)");
     const term = `%${search}%`;
     args.push(term, term, term);
@@ -175,6 +195,34 @@ export async function listReviews(
     const totalRows = (Array.isArray(totalRes) ? totalRes[0] || totalRes : []) as any[];
     const total = Number(totalRows?.[0]?.c ?? 0);
     return { data: rows, total, page, perPage };
+  }
+
+  // Non-admin callers need the (reviewer OR subject) scope, which findMany's
+  // equality filters can't express — use a raw query for that case.
+  if (params.restrictToUserId !== undefined) {
+    const offset = (page - 1) * perPage;
+    const where: string[] = ["organization_id = ?"];
+    const args: any[] = [orgId];
+    if (params.cycle_id) { where.push("cycle_id = ?"); args.push(params.cycle_id); }
+    if (params.reviewer_id) { where.push("reviewer_id = ?"); args.push(params.reviewer_id); }
+    if (params.employee_id) { where.push("employee_id = ?"); args.push(params.employee_id); }
+    if (params.type) { where.push("type = ?"); args.push(params.type); }
+    if (params.status) { where.push("status = ?"); args.push(params.status); }
+    where.push("(reviewer_id = ? OR employee_id = ?)");
+    args.push(params.restrictToUserId, params.restrictToUserId);
+
+    const orderDir = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
+    const rowsRes = await db.raw<any>(
+      `SELECT * FROM reviews WHERE ${where.join(" AND ")} ORDER BY ${sortField} ${orderDir} LIMIT ? OFFSET ?`,
+      [...args, perPage, offset],
+    );
+    const totalRes = await db.raw<any>(
+      `SELECT COUNT(*) AS c FROM reviews WHERE ${where.join(" AND ")}`,
+      args,
+    );
+    const rows = (Array.isArray(rowsRes) ? rowsRes[0] || rowsRes : []) as Review[];
+    const totalRows = (Array.isArray(totalRes) ? totalRes[0] || totalRes : []) as any[];
+    return { data: rows, total: Number(totalRows?.[0]?.c ?? 0), page, perPage };
   }
 
   const result = await db.findMany<Review>("reviews", {

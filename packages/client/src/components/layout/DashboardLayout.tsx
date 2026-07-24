@@ -25,6 +25,8 @@ import {
   ShieldCheck,
   Gauge,
   ClipboardCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
@@ -107,6 +109,9 @@ const EXACT_MATCH = new Set(["/my", "/goals", "/feedback", "/letters", "/analyti
 
 export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("sidebar-collapsed") === "true"
+  );
   const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
 
@@ -116,6 +121,14 @@ export function DashboardLayout() {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  function toggleCollapsed() {
+    setCollapsed((c) => {
+      const next = !c;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  }
 
   const user = getUser();
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
@@ -128,47 +141,65 @@ export function DashboardLayout() {
           ? "HR Manager"
           : "Employee";
 
-  function SidebarContent() {
+  function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
     return (
-      <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
+      <div
+        className={cn(
+          "flex h-full flex-col bg-white border-r border-gray-200 transition-[width] duration-200",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 px-6 border-b border-gray-100">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
+        <div
+          className={cn(
+            "flex h-16 items-center gap-3 border-b border-gray-100",
+            collapsed ? "justify-center px-2" : "px-6"
+          )}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-600">
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-bold text-gray-900">EMP Performance</span>
+          {!collapsed && (
+            <span className="text-lg font-bold text-gray-900 truncate">EMP Performance</span>
+          )}
         </div>
 
-        {/* Nav — grouped into sections with uppercase headers */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
+        {/* Nav — grouped into sections; headers collapse to dividers on the
+            icon-only rail */}
+        <nav className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
           {NAV_SECTIONS.map((section, si) => {
             const isAdmin = ADMIN_ROLES.includes((user?.role || "employee") as Role);
             const visibleItems = section.items.filter((item) => !item.adminOnly || isAdmin);
             if (visibleItems.length === 0) return null;
             return (
-              <div key={section.title ?? `section-${si}`} className={si > 0 ? "mt-5" : ""}>
-                {section.title && (
-                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                    {section.title}
-                  </p>
-                )}
+              <div key={section.title ?? `section-${si}`} className={si > 0 ? (collapsed ? "mt-3" : "mt-5") : ""}>
+                {section.title &&
+                  (collapsed ? (
+                    si > 0 && <div className="mx-2 mb-2 border-t border-gray-100" />
+                  ) : (
+                    <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                      {section.title}
+                    </p>
+                  ))}
                 <div className="space-y-1">
                   {visibleItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       end={EXACT_MATCH.has(item.to)}
+                      title={collapsed ? item.label : undefined}
                       className={({ isActive }) =>
                         cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          "flex items-center rounded-lg text-sm font-medium transition-colors",
+                          collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2",
                           isActive
                             ? "bg-brand-50 text-brand-700"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         )
                       }
                     >
-                      <item.icon className="h-5 w-5" />
-                      {item.label}
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {!collapsed && item.label}
                     </NavLink>
                   ))}
                 </div>
@@ -178,23 +209,33 @@ export function DashboardLayout() {
         </nav>
 
         {/* User card */}
-        <div className="border-t border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-sm font-semibold">
-              {getInitials(displayName)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
-              <p className="text-xs text-gray-500">{roleLabel}</p>
-            </div>
+        <div className={cn("border-t border-gray-200", collapsed ? "p-2" : "p-4")}>
+          {collapsed ? (
             <button
               onClick={logout}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-              title="Logout"
+              title={`${displayName} — Sign out`}
+              className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-sm font-semibold hover:bg-brand-200"
             >
-              <LogOut className="h-4 w-4" />
+              {getInitials(displayName)}
             </button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-sm font-semibold">
+                {getInitials(displayName)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
+                <p className="text-xs text-gray-500">{roleLabel}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -203,11 +244,24 @@ export function DashboardLayout() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Desktop sidebar */}
-      <div className="hidden lg:block">
-        <SidebarContent />
+      <div className="relative hidden lg:block">
+        <SidebarContent collapsed={collapsed} />
+        {/* Collapse / expand toggle, centred on the sidebar edge (EmpCloud style) */}
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="absolute top-1/2 -right-3 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-700"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
-      {/* Mobile sidebar overlay */}
+      {/* Mobile sidebar overlay (always full width) */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />

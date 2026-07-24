@@ -9,9 +9,14 @@ import {
   ClipboardCheck,
   TrendingUp,
   Loader2,
+  Heart,
+  UserPlus,
+  Users,
+  Sparkles,
 } from "lucide-react";
 import { apiGet } from "@/api/client";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
+import { getUser } from "@/lib/auth-store";
 
 interface OverviewData {
   activeCycles: number;
@@ -25,12 +30,33 @@ interface OverviewData {
 
 // #1: link each stat card to its detail page so users can drill in.
 const STAT_CARDS = [
-  { key: "activeCycles", label: "Active Cycles", icon: RefreshCw, color: "bg-blue-50 text-blue-600", href: "/review-cycles" },
-  { key: "pendingReviews", label: "Pending Reviews", icon: ClipboardCheck, color: "bg-amber-50 text-amber-600", href: "/reviews/my" },
-  { key: "goalCompletionRate", label: "Goal Completion", icon: Target, color: "bg-green-50 text-green-600", suffix: "%", href: "/goals" },
-  { key: "pipCount", label: "Active PIPs", icon: AlertTriangle, color: "bg-red-50 text-red-600", href: "/pips" },
-  { key: "feedbackCount", label: "Total Feedback", icon: MessageSquare, color: "bg-purple-50 text-purple-600", href: "/feedback" },
+  { key: "activeCycles", label: "Active Cycles", icon: RefreshCw, color: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400", href: "/review-cycles" },
+  { key: "pendingReviews", label: "Pending Reviews", icon: ClipboardCheck, color: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400", href: "/reviews/my" },
+  { key: "goalCompletionRate", label: "Goal Completion", icon: Target, color: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400", suffix: "%", href: "/goals" },
+  { key: "pipCount", label: "Active PIPs", icon: AlertTriangle, color: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400", href: "/pips" },
+  { key: "feedbackCount", label: "Total Feedback", icon: MessageSquare, color: "bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400", href: "/feedback" },
 ] as const;
+
+// Quick actions — the everyday self-service tasks, visible to every role.
+const QUICK_ACTIONS = [
+  { label: "My Performance", icon: TrendingUp, to: "/my", tone: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400" },
+  { label: "My Goals", icon: Target, to: "/my/goals", tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400" },
+  { label: "My Reviews", icon: ClipboardCheck, to: "/my/reviews", tone: "bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400" },
+  { label: "My 1-on-1s", icon: Users, to: "/my/one-on-ones", tone: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400" },
+  { label: "Kudos Wall", icon: Heart, to: "/feedback/wall", tone: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400" },
+  { label: "Nominate Peers", icon: UserPlus, to: "/peer-reviews/nominate", tone: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" },
+];
+
+// Goal status → badge + dot styling for the activity feed and the progress
+// breakdown. Raw "— in_progress" text reads like a debug dump; a colored
+// badge carries the same info at a glance.
+const GOAL_STATUS: Record<string, { label: string; badge: string; dot: string }> = {
+  completed: { label: "Completed", badge: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400", dot: "bg-green-500" },
+  in_progress: { label: "In Progress", badge: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400", dot: "bg-blue-500" },
+  at_risk: { label: "At Risk", badge: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", dot: "bg-amber-500" },
+  not_started: { label: "Not Started", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300", dot: "bg-gray-400" },
+  cancelled: { label: "Cancelled", badge: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400", dot: "bg-red-500" },
+};
 
 interface RecentGoal {
   id: string;
@@ -62,8 +88,27 @@ const RANGE_OPTIONS = [
   { label: "Last 90 days", days: 90 },
 ] as const;
 
+type ActivityEntry = {
+  id: string;
+  to: string;
+  text: string;
+  time: string;
+  kind: "notification" | "goal";
+  status?: string;
+};
+
 export function DashboardPage() {
   const [rangeDays, setRangeDays] = useState<number>(30);
+  const user = getUser();
+  const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
+  const roleLabel =
+    user?.role === "org_admin"
+      ? "Org Admin"
+      : user?.role === "hr_admin"
+        ? "HR Admin"
+        : user?.role === "hr_manager"
+          ? "HR Manager"
+          : "Employee";
 
   const { data, isLoading } = useQuery({
     queryKey: ["analytics", "overview"],
@@ -86,7 +131,7 @@ export function DashboardPage() {
 
   const since = Date.now() - rangeDays * 24 * 60 * 60 * 1000;
 
-  const activity: { id: string; to: string; text: string; time: string; kind: "notification" | "goal" }[] = [];
+  const activity: ActivityEntry[] = [];
   for (const n of notifData?.data?.data ?? []) {
     if (new Date(n.created_at).getTime() < since) continue;
     activity.push({
@@ -103,22 +148,41 @@ export function DashboardPage() {
     activity.push({
       id: `g-${g.id}`,
       to: `/goals/${g.id}`,
-      text: `Goal "${g.title}" — ${g.status}`,
+      text: g.title,
       time: ts,
       kind: "goal",
+      status: g.status,
     });
   }
   activity.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   const recentActivity = activity.slice(0, 8);
 
+  // Status breakdown of the recently-updated goals — fills the Goals Progress
+  // card with a real distribution instead of a lone progress bar.
+  const statusCounts: Record<string, number> = {};
+  for (const g of goalsData?.data?.data ?? []) {
+    statusCounts[g.status] = (statusCounts[g.status] || 0) + 1;
+  }
+
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-500">Performance management overview and key metrics.</p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="space-y-4">
+      {/* ── Hero ───────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-brand-50 via-white to-white px-5 py-4 dark:border-gray-800 dark:from-brand-500/10 dark:via-transparent">
+        <Sparkles className="pointer-events-none absolute -right-4 -top-4 h-24 w-24 text-brand-500/10" />
+        <div className="relative flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-base font-bold text-white shadow-sm shadow-brand-500/30">
+              {getInitials(displayName)}
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-gray-900">
+                Welcome back, {user?.firstName || "there"}!
+              </h1>
+              <p className="text-sm text-gray-500">
+                {roleLabel} · Performance overview and key metrics.
+              </p>
+            </div>
+          </div>
           <select
             value={rangeDays}
             onChange={(e) => setRangeDays(Number(e.target.value))}
@@ -130,15 +194,11 @@ export function DashboardPage() {
               </option>
             ))}
           </select>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <TrendingUp className="h-4 w-4" />
-            <span>EMP Performance</span>
-          </div>
         </div>
       </div>
 
       {/* Stat Cards — #1: clickable, each redirects to its detail page */}
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {STAT_CARDS.map((card) => {
           const Icon = card.icon;
           const value = overview ? (overview as any)[card.key] : null;
@@ -146,22 +206,22 @@ export function DashboardPage() {
             <Link
               key={card.key}
               to={card.href}
-              className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-brand-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="group block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
             >
               <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.color}`}>
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${card.color}`}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500">{card.label}</p>
+                <div className="min-w-0">
                   {isLoading ? (
-                    <Loader2 className="mt-1 h-5 w-5 animate-spin text-gray-300" />
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-300" />
                   ) : (
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold tracking-tight text-gray-900">
                       {value ?? 0}
                       {"suffix" in card ? card.suffix : ""}
                     </p>
                   )}
+                  <p className="truncate text-sm text-gray-500">{card.label}</p>
                 </div>
               </div>
             </Link>
@@ -169,72 +229,135 @@ export function DashboardPage() {
         })}
       </div>
 
+      {/* ── Quick Actions ──────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">Quick Actions</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {QUICK_ACTIONS.map((a) => (
+            <Link
+              key={a.label}
+              to={a.to}
+              className="group flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 text-center transition hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+            >
+              <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition group-hover:scale-105 ${a.tone}`}>
+                <a.icon className="h-[18px] w-[18px]" />
+              </span>
+              <span className="text-xs font-medium text-gray-700">{a.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Quick Insights Row */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Goals Progress */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Goals Progress</h2>
-          <p className="mt-1 text-sm text-gray-500">Organization-wide goal completion</p>
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Goals Progress</h2>
+              <p className="mt-0.5 text-sm text-gray-500">Organization-wide goal completion</p>
+            </div>
+            <Link to="/goals" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              View all
+            </Link>
+          </div>
           <div className="mt-4">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-end justify-between text-sm">
               <span className="text-gray-600">Completed</span>
-              <span className="font-medium text-gray-900">
-                {overview?.completedGoals ?? 0} / {overview?.totalGoals ?? 0}
+              <span className="font-semibold text-gray-900">
+                {overview?.completedGoals ?? 0}
+                <span className="font-normal text-gray-400"> / {overview?.totalGoals ?? 0} goals</span>
               </span>
             </div>
-            <div className="mt-2 h-3 w-full rounded-full bg-gray-100">
+            <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-3 rounded-full bg-green-500 transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all"
                 style={{ width: `${overview?.goalCompletionRate ?? 0}%` }}
               />
             </div>
+            <p className="mt-1.5 text-right text-xs font-semibold text-brand-700">
+              {overview?.goalCompletionRate ?? 0}%
+            </p>
           </div>
+          {/* Status distribution of recently-updated goals */}
+          {Object.keys(statusCounts).length > 0 && (
+            <div className="mt-3 border-t border-gray-100 pt-3">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                Recently updated
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(statusCounts).map(([status, count]) => {
+                  const s = GOAL_STATUS[status] ?? GOAL_STATUS.not_started;
+                  return (
+                    <span
+                      key={status}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${s.badge}`}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+                      {s.label}
+                      <span className="font-bold">{count}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity — real notification + goal feed (PL8) */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          <p className="mt-1 text-sm text-gray-500">Latest performance events</p>
-          <div className="mt-4 space-y-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
+              <p className="mt-0.5 text-sm text-gray-500">Latest performance events</p>
+            </div>
+            <Link to="/notifications" className="text-sm font-medium text-brand-600 hover:text-brand-700">
+              View all
+            </Link>
+          </div>
+          <div className="mt-3 space-y-1">
             {recentActivity.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-gray-400">
                 No activity in the selected range.
               </p>
             ) : (
-              recentActivity.map((a) => (
-                <ActivityItem
-                  key={a.id}
-                  to={a.to}
-                  icon={
-                    a.kind === "goal" ? (
-                      <Target className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <MessageSquare className="h-4 w-4 text-purple-500" />
-                    )
-                  }
-                  text={a.text}
-                  time={formatDate(a.time)}
-                />
-              ))
+              recentActivity.map((a) => {
+                const s = a.kind === "goal" ? GOAL_STATUS[a.status ?? ""] ?? GOAL_STATUS.not_started : null;
+                return (
+                  <Link
+                    key={a.id}
+                    to={a.to}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+                  >
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        a.kind === "goal"
+                          ? "bg-green-50 dark:bg-green-500/15"
+                          : "bg-purple-50 dark:bg-purple-500/15"
+                      }`}
+                    >
+                      {a.kind === "goal" ? (
+                        <Target className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-gray-700">{a.text}</p>
+                      <p className="text-xs text-gray-400">{formatDate(a.time)}</p>
+                    </div>
+                    {s && (
+                      <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.badge}`}>
+                        {s.label}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>
       </div>
     </div>
-  );
-}
-
-function ActivityItem({ to, icon, text, time }: { to: string; icon: React.ReactNode; text: string; time: string }) {
-  return (
-    <Link
-      to={to}
-      className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500"
-    >
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm text-gray-700">{text}</p>
-      </div>
-      <span className="flex-shrink-0 text-xs text-gray-400">{time}</span>
-    </Link>
   );
 }
