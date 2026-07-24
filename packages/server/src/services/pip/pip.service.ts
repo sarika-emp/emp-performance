@@ -174,6 +174,13 @@ export async function createPIP(
 ): Promise<PerformanceImprovementPlan> {
   const db = getDB();
 
+  // End date must not precede start date. updatePIP and extendPIP already
+  // validate this, but createPIP didn't — so an inverted range could be stored
+  // via a direct API call (audit M5). Mirror the update-path check.
+  if (data.start_date && data.end_date && new Date(data.end_date) < new Date(data.start_date)) {
+    throw new AppError(400, "VALIDATION_ERROR", "end_date cannot be before start_date");
+  }
+
   // Check if employee already has an active/extended (open) PIP
   const existing = await db.findOne<PerformanceImprovementPlan>("performance_improvement_plans", {
     organization_id: orgId,
