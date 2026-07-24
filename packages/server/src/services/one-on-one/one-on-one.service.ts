@@ -274,14 +274,21 @@ export async function listMeetings(orgId: number, actor: Actor, params?: ListMee
     const whereSql = where.join(" AND ");
     const offset = (page - 1) * perPage;
 
-    const rows = await db.raw<Meeting[]>(
+    // mysql2 .raw() returns the [rows, fields] tuple — unwrap element 0 or the
+    // rows array is treated as a single garbage record (undefined id/title/
+    // scheduled_at) and the count reads the rows array instead of the COUNT
+    // row, so total is always 0. Downstream formatDate(undefined) then throws
+    // and white-screens the whole list for every non-admin / any title search.
+    const rowsRes = await db.raw<any>(
       `SELECT * FROM one_on_one_meetings WHERE ${whereSql} ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`,
       [...bindings, perPage, offset],
     );
-    const countRows = await db.raw<{ c: number }[]>(
+    const rows = (Array.isArray(rowsRes) ? rowsRes[0] || rowsRes : []) as Meeting[];
+    const countRes = await db.raw<any>(
       `SELECT COUNT(*) AS c FROM one_on_one_meetings WHERE ${whereSql}`,
       bindings,
     );
+    const countRows = (Array.isArray(countRes) ? countRes[0] || countRes : []) as { c: number }[];
     const total = Number(countRows?.[0]?.c ?? 0);
 
     const ids = rows.flatMap((m) => [m.employee_id, m.manager_id]);
