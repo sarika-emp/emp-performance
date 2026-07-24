@@ -24,6 +24,7 @@ import {
   UserPlus,
   ShieldCheck,
   Gauge,
+  ClipboardCheck,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -66,6 +67,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: "/my/letters", label: "My Letters", icon: FileText },
       { to: "/feedback/wall", label: "Kudos Wall", icon: Heart },
       { to: "/peer-reviews/nominate", label: "Nominate Peers", icon: UserPlus },
+      { to: "/peer-reviews/submit", label: "Submit Peer Review", icon: ClipboardCheck },
     ],
   },
   {
