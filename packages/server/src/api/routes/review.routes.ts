@@ -33,10 +33,15 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // GET / — list reviews (filter by cycle, reviewer, reviewee, type, status)
+// Roles that may read any review in the org (HR/admin). Everyone else is
+// scoped to reviews they authored or are the subject of (audit H2).
+const REVIEW_ADMIN_ROLES = ["super_admin", "org_admin", "hr_admin", "hr_manager"];
+
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query = paginationSchema.parse(req.query);
     const orgId = req.user!.empcloudOrgId;
+    const isAdmin = REVIEW_ADMIN_ROLES.includes(req.user!.role);
 
     const result = await reviewService.listReviews(orgId, {
       page: query.page,
@@ -49,6 +54,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       search: query.search,
       sort: query.sort,
       order: query.order,
+      restrictToUserId: isAdmin ? undefined : req.user!.empcloudUserId,
     });
 
     return sendPaginated(res, result.data, result.total, result.page, result.perPage);
@@ -62,7 +68,12 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = idParamSchema.parse(req.params);
     const orgId = req.user!.empcloudOrgId;
-    const review = await reviewService.getReview(orgId, id);
+    const isAdmin = REVIEW_ADMIN_ROLES.includes(req.user!.role);
+    const review = await reviewService.getReview(
+      orgId,
+      id,
+      isAdmin ? undefined : req.user!.empcloudUserId,
+    );
     return sendSuccess(res, review);
   } catch (err) {
     next(err);
