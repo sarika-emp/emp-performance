@@ -146,7 +146,11 @@ export async function getNineBoxData(
   const identities = await resolveEmployees(orgId, mappedIds);
 
   for (const p of participants.data) {
-    const performance = p.final_rating;
+    // final_rating is DECIMAL(3,1) → mysql2 returns it as a STRING. Coerce to a
+    // real number here: the client renders it as rating.toFixed(1), and a
+    // string has no .toFixed, which throws and (no ErrorBoundary) white-screens
+    // the whole app when the 9-Box detail panel opens (audit H4).
+    const performance = p.final_rating == null ? null : Number(p.final_rating);
     const potential = potentialMap.get(p.employee_id);
 
     if (performance == null || potential == null) continue;
