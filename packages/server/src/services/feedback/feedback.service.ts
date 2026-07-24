@@ -204,7 +204,12 @@ export async function getPublicWall(
   return { ...result, data: sanitizeMany(result.data) };
 }
 
-export async function getFeedback(orgId: number, id: string): Promise<Feedback> {
+export async function getFeedback(
+  orgId: number,
+  id: string,
+  actorUserId?: number,
+  actorRole?: string,
+): Promise<Feedback> {
   const db = getDB();
   const feedback = await db.findOne<Feedback>("continuous_feedback", {
     id,
@@ -213,6 +218,20 @@ export async function getFeedback(orgId: number, id: string): Promise<Feedback> 
   if (!feedback) {
     throw new NotFoundError("Feedback", id);
   }
+
+  // Access scope: a non-public feedback item is only visible to the sender,
+  // the recipient, or an admin. Anyone else gets a 404 (don't reveal it exists).
+  // Callers that pass no actor (internal/trusted) keep the old behaviour.
+  if (actorRole !== undefined) {
+    const isAdmin = FEEDBACK_ADMIN_ROLES.has(actorRole);
+    const isParticipant =
+      feedback.from_user_id === actorUserId || feedback.to_user_id === actorUserId;
+    const isPublic = feedback.visibility === "public";
+    if (!isAdmin && !isParticipant && !isPublic) {
+      throw new NotFoundError("Feedback", id);
+    }
+  }
+
   return sanitizeAnonymous(feedback);
 }
 
