@@ -115,8 +115,13 @@ export function PeerReviewSubmitPage() {
     queryKey: ["review-cycles", "for-peer-submit"],
     queryFn: () => apiGet<Paginated<ReviewCycle>>("/review-cycles", { page: 1, perPage: 100 }),
   });
-  const cycles = (cyclesData?.data?.data ?? []).filter(
-    (c) => c.status === "active" || c.status === "draft",
+  // Peer nomination and submission happen while a cycle is being conducted,
+  // which spans active -> in_review -> calibration (matching the states the
+  // cycle detail page enables review actions for). Omitting in_review/
+  // calibration hid the only live cycle, making the whole flow unusable
+  // (audit H9).
+  const cycles = (cyclesData?.data?.data ?? []).filter((c) =>
+    ["active", "draft", "in_review", "calibration"].includes(c.status),
   );
 
   // My approved nominations for the selected cycle (where I am the nominee/reviewer).
