@@ -289,6 +289,18 @@ function normalizeAnchors(anchors?: string[] | null): string[] | null {
   return cleaned.length > 0 ? cleaned : null;
 }
 
+/**
+ * Serialize behavioral anchors for the JSON column. The DB adapter does NOT
+ * JSON.stringify array values, so persisting a raw string[] made knex/mysql2
+ * expand it into multiple positional bindings and corrupt the SQL (500 on any
+ * level with anchors — audit H7). Store a JSON string (mysql2 parses the JSON
+ * column back to an array on read), matching the seed.
+ */
+function anchorsForDb(anchors?: string[] | null): string | null {
+  const norm = normalizeAnchors(anchors);
+  return norm ? JSON.stringify(norm) : null;
+}
+
 export async function listLevels(
   orgId: number,
   competencyId: string,
@@ -335,7 +347,7 @@ export async function createLevel(
     level: data.level,
     name: data.name,
     description: data.description ?? null,
-    behavioral_anchors: normalizeAnchors(data.behavioral_anchors),
+    behavioral_anchors: anchorsForDb(data.behavioral_anchors),
     sort_order: data.sort_order ?? data.level,
   };
 
@@ -380,7 +392,7 @@ export async function updateLevel(
   if (data.name !== undefined) patch.name = data.name;
   if (data.description !== undefined) patch.description = data.description;
   if (data.behavioral_anchors !== undefined) {
-    patch.behavioral_anchors = normalizeAnchors(data.behavioral_anchors);
+    patch.behavioral_anchors = anchorsForDb(data.behavioral_anchors);
   }
   if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
 
