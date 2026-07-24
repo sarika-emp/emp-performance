@@ -174,19 +174,27 @@ export async function createPIP(
 ): Promise<PerformanceImprovementPlan> {
   const db = getDB();
 
-  // Check if employee already has an active/extended (open) PIP
-  const existing = await db.findOne<PerformanceImprovementPlan>("performance_improvement_plans", {
-    organization_id: orgId,
-    employee_id: data.employee_id,
-    status: "active",
-    deleted_at: null,
+  // Block a second PIP while the employee has any OPEN one. The guard only
+  // checked status='active', so an employee whose PIP was 'extended' (or still
+  // 'draft') could be given a second concurrent PIP (audit M4). findOne can't
+  // express IN, so fetch the employee's non-deleted PIPs and look for any open
+  // one.
+  const OPEN_PIP_STATUSES: string[] = ["draft", "active", "extended"];
+  const existingPips = await db.findMany<PerformanceImprovementPlan>("performance_improvement_plans", {
+    filters: {
+      organization_id: orgId,
+      employee_id: data.employee_id,
+      deleted_at: null,
+    },
+    limit: 100,
   });
+  const openPip = existingPips.data.find((p) => OPEN_PIP_STATUSES.includes(p.status));
 
-  if (existing) {
+  if (openPip) {
     throw new AppError(
       409,
       "CONFLICT",
-      "Employee already has an active Performance Improvement Plan",
+      "Employee already has an open Performance Improvement Plan",
     );
   }
 
