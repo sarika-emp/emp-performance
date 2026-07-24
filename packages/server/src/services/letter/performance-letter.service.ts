@@ -257,6 +257,37 @@ export async function deleteTemplate(orgId: number, id: string): Promise<void> {
 // Variable resolution (L5)
 // ---------------------------------------------------------------------------
 
+/**
+ * Format a date for letter copy ("01 March 2022"). Every date substituted into
+ * a letter goes through here so the body never shows a raw JS Date.
+ *
+ * DATE columns come back as a Date at local midnight from mysql2, but as a
+ * plain 'YYYY-MM-DD' string from other adapters. Build the string form from its
+ * parts rather than through Date(), which would read it as UTC midnight and
+ * render the previous day for anyone west of Greenwich.
+ */
+function formatLetterDate(value: unknown): string | null {
+  if (value == null) return null;
+
+  let d: Date;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const s = String(value).trim();
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    d = ymd
+      ? new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]))
+      : new Date(s);
+  }
+  if (Number.isNaN(d.getTime())) return null;
+
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 async function buildVariables(
   orgId: number,
   employeeId: number,
@@ -265,11 +296,7 @@ async function buildVariables(
 ): Promise<Record<string, string>> {
   const db = getDB();
 
-  const today = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  const today = formatLetterDate(new Date())!;
 
   const variables: Record<string, string> = {
     employee_id: String(employeeId),
@@ -291,7 +318,8 @@ async function buildVariables(
       variables.employee_email = user.email ?? "";
       variables.designation = user.designation ?? "";
       variables.emp_code = user.emp_code ?? "";
-      if (user.date_of_joining) variables.date_of_joining = String(user.date_of_joining);
+      const dateOfJoining = formatLetterDate(user.date_of_joining);
+      if (dateOfJoining) variables.date_of_joining = dateOfJoining;
 
       if (user.reporting_manager_id) {
         const manager = await findUserById(user.reporting_manager_id);
