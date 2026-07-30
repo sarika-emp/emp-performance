@@ -76,6 +76,50 @@ function sanitizeMany<T extends { is_anonymous?: boolean | number; from_user_id?
   return rows.map(sanitizeAnonymous);
 }
 
+/**
+ * Best-effort EmpCloud lookup of display names for a set of user ids.
+ * Degrades to an empty map so a master-DB hiccup never fails a feedback list.
+ */
+async function resolveUserNames(orgId: number, ids: (number | null | undefined)[]) {
+  const map = new Map<number, string>();
+  const unique = [...new Set(ids.filter((id): id is number => !!id && id > 0))];
+  await Promise.all(
+    unique.map(async (id) => {
+      try {
+        const user = await findUserById(id);
+        if (user && user.organization_id === orgId) {
+          const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
+          if (name) map.set(id, name);
+        }
+      } catch {
+        // ignore — the client falls back to the id
+      }
+    }),
+  );
+  return map;
+}
+
+/**
+ * Attach giver/recipient display names to feedback rows.
+ *
+ * Must run on rows that have already been through sanitizeMany: that nulls
+ * from_user_id for anonymous feedback, so resolving names afterwards can never
+ * put an anonymous author's name back on the wire.
+ */
+async function withUserNames<
+  T extends { from_user_id?: number | null; to_user_id?: number | null },
+>(orgId: number, rows: T[]): Promise<(T & { from_user_name: string | null; to_user_name: string | null })[]> {
+  const names = await resolveUserNames(orgId, [
+    ...rows.map((r) => r.from_user_id),
+    ...rows.map((r) => r.to_user_id),
+  ]);
+  return rows.map((r) => ({
+    ...r,
+    from_user_name: r.from_user_id != null ? names.get(r.from_user_id) ?? null : null,
+    to_user_name: r.to_user_id != null ? names.get(r.to_user_id) ?? null : null,
+  }));
+}
+
 /** Verify a target user exists and belongs to the same org. */
 async function assertOrgMember(orgId: number, userId: number): Promise<void> {
   const user = await findUserById(userId);
@@ -137,7 +181,7 @@ export async function listReceived(
     searchFields: FEEDBACK_SEARCH_FIELDS,
   });
   // Even on the "received" list the giver may be anonymous (#F2).
-  return { ...result, data: sanitizeMany(result.data) };
+  return { ...result, data: await withUserNames(orgId, sanitizeMany(result.data)) };
 }
 
 export async function listGiven(
@@ -153,7 +197,7 @@ export async function listGiven(
   if (params?.type) filters.type = params.type;
 
   // The author is viewing their own outgoing feedback, so identity is theirs to see.
-  return db.findMany<Feedback>("continuous_feedback", {
+  const result = await db.findMany<Feedback>("continuous_feedback", {
     page: params?.page || 1,
     limit: params?.limit || 20,
     filters,
@@ -161,6 +205,7 @@ export async function listGiven(
     search: params?.search,
     searchFields: FEEDBACK_SEARCH_FIELDS,
   });
+  return { ...result, data: await withUserNames(orgId, result.data) };
 }
 
 export async function listAll(
@@ -181,7 +226,7 @@ export async function listAll(
     search: params?.search,
     searchFields: FEEDBACK_SEARCH_FIELDS,
   });
-  return { ...result, data: sanitizeMany(result.data) };
+  return { ...result, data: await withUserNames(orgId, sanitizeMany(result.data)) };
 }
 
 export async function getPublicWall(
@@ -201,7 +246,7 @@ export async function getPublicWall(
     searchFields: FEEDBACK_SEARCH_FIELDS,
   });
   // Never expose the giver for anonymous kudos on the public wall (#F2).
-  return { ...result, data: sanitizeMany(result.data) };
+  return { ...result, data: await withUserNames(orgId, sanitizeMany(result.data)) };
 }
 
 export async function getFeedback(
