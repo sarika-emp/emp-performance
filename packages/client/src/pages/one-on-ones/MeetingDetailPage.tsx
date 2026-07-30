@@ -658,8 +658,13 @@ function EditMeetingForm({
   onCancel: () => void;
   onSave: (body: any) => void;
 }) {
-  const initialDate = meeting.scheduled_at.slice(0, 10);
-  const initialTime = new Date(meeting.scheduled_at).toISOString().slice(11, 16);
+  // Seed the form from the meeting's LOCAL date/time. Submit re-parses
+  // `${date}T${time}` as local before converting back to UTC, so reading the
+  // UTC parts here would shift the meeting by the tz offset on every save.
+  const scheduledLocal = new Date(meeting.scheduled_at);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const initialDate = `${scheduledLocal.getFullYear()}-${pad(scheduledLocal.getMonth() + 1)}-${pad(scheduledLocal.getDate())}`;
+  const initialTime = `${pad(scheduledLocal.getHours())}:${pad(scheduledLocal.getMinutes())}`;
   const [title, setTitle] = useState(meeting.title);
   const [date, setDate] = useState(initialDate);
   const [time, setTime] = useState(initialTime);
