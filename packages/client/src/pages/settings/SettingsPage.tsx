@@ -249,7 +249,17 @@ function NotificationSettingsPanel() {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiPut("/notifications/settings", settings);
+      // Send only the fields this tab owns. `settings` is seeded from the GET
+      // response, which also carries server-owned columns (id, organization_id,
+      // timestamps) that the endpoint's strict schema rejects — posting it back
+      // verbatim always failed validation.
+      await apiPut("/notifications/settings", {
+        review_reminders_enabled: settings.review_reminders_enabled,
+        pip_reminders_enabled: settings.pip_reminders_enabled,
+        meeting_reminders_enabled: settings.meeting_reminders_enabled,
+        goal_reminders_enabled: settings.goal_reminders_enabled,
+        reminder_days_before_deadline: settings.reminder_days_before_deadline,
+      });
       toast.success("Notification settings saved");
     } catch {
       toast.error("Failed to save notification settings");
