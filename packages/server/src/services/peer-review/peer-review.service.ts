@@ -129,14 +129,30 @@ export async function nominate(
   await assertOrgMember(orgId, employeeId, "Employee");
   await assertOrgMember(orgId, peerId, "Nominated peer");
 
-  // Check for duplicate nomination
+  // Block only an OPEN duplicate (pending/approved). A previously DECLINED
+  // nomination shouldn't lock the pair out for the rest of the cycle — the old
+  // guard matched any status, so once HR declined a peer (even by mistake) they
+  // could never be re-nominated, and the "already nominated" error contradicted
+  // the visible "declined" state (audit M3). Re-open the declined row instead of
+  // creating a duplicate.
   const existing = await db.findOne<PeerNomination>("peer_review_nominations", {
     cycle_id: cycleId,
     employee_id: employeeId,
     nominee_id: peerId,
   });
-  if (existing) {
+  if (existing && existing.status !== "declined") {
     throw new ConflictError("This peer has already been nominated for this employee in this cycle");
+  }
+
+  if (existing) {
+    // existing.status === "declined" — reuse the row for a fresh nomination.
+    const reopened = await db.update<PeerNomination>("peer_review_nominations", existing.id, {
+      status: "pending",
+      nominated_by: nominatedBy,
+      approved_by: null,
+    } as any);
+    logger.info(`Peer nomination re-opened: employee=${employeeId}, peer=${peerId}, cycle=${cycleId}`);
+    return reopened;
   }
 
   const nomination = await db.create<PeerNomination>("peer_review_nominations", {

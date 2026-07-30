@@ -11,7 +11,24 @@
   .dark {
     @apply bg-gray-950 text-gray-100;
   }
+  /* Tell the browser to paint native UI (scrollbars, form widgets) to
+     match the active theme — otherwise dark mode gets light scrollbars. */
+  :root { color-scheme: light; }
+  :root.dark { color-scheme: dark; }
 }
+
+/* Themed scrollbars in dark mode (WebKit/Chromium). color-scheme above
+   already fixes the native light-scrollbar-on-dark issue; this refines
+   the look so the track blends with the dark surfaces. */
+.dark ::-webkit-scrollbar { width: 12px; height: 12px; }
+.dark ::-webkit-scrollbar-track { background: #0b1120; }
+.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+  border: 3px solid #0b1120;
+  border-radius: 8px;
+}
+.dark ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+.dark ::-webkit-scrollbar-corner { background: #0b1120; }
 
 /* ------------------------------------------------------------------ *
  * Dark mode

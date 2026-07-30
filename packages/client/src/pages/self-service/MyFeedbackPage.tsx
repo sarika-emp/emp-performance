@@ -21,7 +21,9 @@ import toast from "react-hot-toast";
 interface FeedbackItem {
   id: string;
   from_user_id: number | null;
+  from_user_name: string | null;
   to_user_id: number;
+  to_user_name: string | null;
   type: string;
   visibility: string;
   message: string;
@@ -196,8 +198,8 @@ export function MyFeedbackPage() {
                       </StatusBadge>
                       <span className="text-xs text-gray-400">
                         {tab === "received"
-                          ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : `User #${item.from_user_id}`}`
-                          : `to User #${item.to_user_id}`}
+                          ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : item.from_user_name || `User #${item.from_user_id}`}`
+                          : `to ${item.to_user_name || `User #${item.to_user_id}`}`}
                       </span>
                       <span className="ml-auto text-xs text-gray-400">
                         {formatDate(item.created_at)}

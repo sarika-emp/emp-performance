@@ -175,6 +175,24 @@ async function resolveUserNames(orgId: number, ids: number[]): Promise<Map<numbe
   return map;
 }
 
+/**
+ * Render a DATE column as a plain 'YYYY-MM-DD' string. mysql2 reads a DATE as a
+ * JS Date at the server's local midnight, and Express then serializes it via
+ * toISOString() to UTC — shifting the calendar day back for any timezone behind
+ * UTC (IST -> the previous day) and leaking an ugly full ISO timestamp into the
+ * UI (audit M8). Formatting from the Date's LOCAL components (which are the
+ * date as stored) gives a stable date string the client shows verbatim.
+ */
+function toDateOnly(v: unknown): string | null {
+  if (v == null) return null;
+  const d = v instanceof Date ? v : new Date(v as string);
+  if (Number.isNaN(d.getTime())) return typeof v === "string" ? v : null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function withParticipantNames<T extends { employee_id?: number; manager_id?: number }>(
   rows: T[],
   names: Map<number, string>,
@@ -274,14 +292,21 @@ export async function listMeetings(orgId: number, actor: Actor, params?: ListMee
     const whereSql = where.join(" AND ");
     const offset = (page - 1) * perPage;
 
-    const rows = await db.raw<Meeting[]>(
+    // mysql2 .raw() returns the [rows, fields] tuple — unwrap element 0 or the
+    // rows array is treated as a single garbage record (undefined id/title/
+    // scheduled_at) and the count reads the rows array instead of the COUNT
+    // row, so total is always 0. Downstream formatDate(undefined) then throws
+    // and white-screens the whole list for every non-admin / any title search.
+    const rowsRes = await db.raw<any>(
       `SELECT * FROM one_on_one_meetings WHERE ${whereSql} ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`,
       [...bindings, perPage, offset],
     );
-    const countRows = await db.raw<{ c: number }[]>(
+    const rows = (Array.isArray(rowsRes) ? rowsRes[0] || rowsRes : []) as Meeting[];
+    const countRes = await db.raw<any>(
       `SELECT COUNT(*) AS c FROM one_on_one_meetings WHERE ${whereSql}`,
       bindings,
     );
+    const countRows = (Array.isArray(countRes) ? countRes[0] || countRes : []) as { c: number }[];
     const total = Number(countRows?.[0]?.c ?? 0);
 
     const ids = rows.flatMap((m) => [m.employee_id, m.manager_id]);
@@ -372,6 +397,7 @@ export async function getMeeting(
     agendaTotalPages: agenda.totalPages,
     actionItems: actions.data.map((a) => ({
       ...a,
+      due_date: toDateOnly(a.due_date),
       assignee_name: a.assignee_id ? names.get(a.assignee_id) ?? null : null,
     })),
   };
@@ -449,6 +475,12 @@ export async function completeMeeting(orgId: number, id: string, actor: Actor): 
 
   if (existing.status === "completed") {
     throw new ValidationError("Meeting is already completed");
+  }
+  // A cancelled meeting didn't happen, so completing it isn't a valid
+  // transition — mirror the cancel-completed guard (audit M6). Reopen it first
+  // if it needs to be completed.
+  if (existing.status === "cancelled") {
+    throw new ValidationError("A cancelled meeting can't be completed. Reopen it first.");
   }
 
   logger.info(`1-on-1 meeting completed: ${id} by ${actor.userId} (org: ${orgId})`);
@@ -584,6 +616,7 @@ export async function listActionItems(orgId: number, meetingId: string, actor: A
   );
   return result.data.map((a) => ({
     ...a,
+    due_date: toDateOnly(a.due_date),
     assignee_name: a.assignee_id ? names.get(a.assignee_id) ?? null : null,
   }));
 }

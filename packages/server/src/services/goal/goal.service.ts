@@ -806,17 +806,23 @@ export async function computeGoalProgress(
     return progress;
   }
 
-  // Weighted average of key result progress
+  // Weighted average of key result progress.
+  // target_value / current_value / weight are DECIMAL columns that mysql2
+  // returns as STRINGS. `*` and `/` coerce, but `totalWeight += kr.weight`
+  // would string-CONCATENATE ('0' + '1.00' + '1.00' -> '01.001.00'), making
+  // totalWeight NaN for any goal with 2+ key results and zeroing its progress
+  // (which also re-opened completed goals). Coerce every decimal up front.
   let totalWeight = 0;
   let weightedProgress = 0;
 
   for (const kr of keyResults) {
+    const target = Number(kr.target_value);
+    const current = Number(kr.current_value);
+    const weight = Number(kr.weight);
     const krProgress =
-      kr.target_value > 0
-        ? Math.min(100, Math.round((kr.current_value / kr.target_value) * 100))
-        : 0;
-    weightedProgress += krProgress * kr.weight;
-    totalWeight += kr.weight;
+      target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+    weightedProgress += krProgress * weight;
+    totalWeight += weight;
   }
 
   const progress = totalWeight > 0 ? Math.round(weightedProgress / totalWeight) : 0;

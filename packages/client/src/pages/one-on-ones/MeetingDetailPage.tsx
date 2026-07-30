@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUser } from "@/lib/auth-store";
 import {
   ArrowLeft,
   Plus,
@@ -217,6 +218,15 @@ export function MeetingDetailPage() {
   const isCancelled = meeting?.status === "cancelled";
   const isScheduled = meeting?.status === "scheduled";
   const locked = isCompleted || isCancelled;
+  // Notes are manager/admin-only server-side (assertCanEditNotes). Gate the
+  // editor to match — an employee shown a Save Notes button only got a 403 and
+  // lost their input (audit M7).
+  const currentUser = getUser();
+  const MEETING_ADMIN_ROLES = ["super_admin", "org_admin", "hr_admin", "hr_manager"];
+  const canEditNotes =
+    !!currentUser &&
+    (MEETING_ADMIN_ROLES.includes(currentUser.role) ||
+      currentUser.empcloudUserId === meeting?.manager_id);
 
   if (isLoading) {
     return (
@@ -487,21 +497,25 @@ export function MeetingDetailPage() {
           <textarea
             value={currentNotes}
             onChange={(e) => setNotes(e.target.value)}
-            disabled={locked}
+            disabled={locked || !canEditNotes}
             rows={10}
             className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50"
-            placeholder="Take notes during the meeting..."
+            placeholder={canEditNotes ? "Take notes during the meeting..." : "Only the meeting manager can edit notes."}
           />
           {!locked && (
             <div className="mt-3 flex justify-between">
-              <button
-                onClick={() => saveNotesMutation.mutate(currentNotes)}
-                disabled={saveNotesMutation.isPending}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <Save className="h-4 w-4" />
-                {saveNotesMutation.isPending ? "Saving..." : "Save Notes"}
-              </button>
+              {canEditNotes ? (
+                <button
+                  onClick={() => saveNotesMutation.mutate(currentNotes)}
+                  disabled={saveNotesMutation.isPending}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                  {saveNotesMutation.isPending ? "Saving..." : "Save Notes"}
+                </button>
+              ) : (
+                <div />
+              )}
               <button
                 onClick={() => completeMeetingMutation.mutate()}
                 disabled={completeMeetingMutation.isPending}
@@ -644,8 +658,13 @@ function EditMeetingForm({
   onCancel: () => void;
   onSave: (body: any) => void;
 }) {
-  const initialDate = meeting.scheduled_at.slice(0, 10);
-  const initialTime = new Date(meeting.scheduled_at).toISOString().slice(11, 16);
+  // Seed the form from the meeting's LOCAL date/time. Submit re-parses
+  // `${date}T${time}` as local before converting back to UTC, so reading the
+  // UTC parts here would shift the meeting by the tz offset on every save.
+  const scheduledLocal = new Date(meeting.scheduled_at);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const initialDate = `${scheduledLocal.getFullYear()}-${pad(scheduledLocal.getMonth() + 1)}-${pad(scheduledLocal.getDate())}`;
+  const initialTime = `${pad(scheduledLocal.getHours())}:${pad(scheduledLocal.getMinutes())}`;
   const [title, setTitle] = useState(meeting.title);
   const [date, setDate] = useState(initialDate);
   const [time, setTime] = useState(initialTime);
