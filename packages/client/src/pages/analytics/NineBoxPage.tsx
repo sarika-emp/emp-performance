@@ -76,9 +76,12 @@ export function NineBoxPage() {
   const { data: cyclesData } = useQuery({
     queryKey: ["review-cycles-list"],
     queryFn: () =>
+      // List all cycles (like the Analytics distribution selector). Nine-box
+      // data is driven by final_rating, which is finalized while a cycle is
+      // in_review — filtering to status='completed' hid the only live cycle and
+      // made the whole 9-Box view unreachable (audit M1).
       apiGet<{ data: ReviewCycle[]; total: number }>("/review-cycles", {
         perPage: 100,
-        status: "completed",
       }),
   });
 
