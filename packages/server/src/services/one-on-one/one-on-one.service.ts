@@ -175,6 +175,24 @@ async function resolveUserNames(orgId: number, ids: number[]): Promise<Map<numbe
   return map;
 }
 
+/**
+ * Render a DATE column as a plain 'YYYY-MM-DD' string. mysql2 reads a DATE as a
+ * JS Date at the server's local midnight, and Express then serializes it via
+ * toISOString() to UTC — shifting the calendar day back for any timezone behind
+ * UTC (IST -> the previous day) and leaking an ugly full ISO timestamp into the
+ * UI (audit M8). Formatting from the Date's LOCAL components (which are the
+ * date as stored) gives a stable date string the client shows verbatim.
+ */
+function toDateOnly(v: unknown): string | null {
+  if (v == null) return null;
+  const d = v instanceof Date ? v : new Date(v as string);
+  if (Number.isNaN(d.getTime())) return typeof v === "string" ? v : null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function withParticipantNames<T extends { employee_id?: number; manager_id?: number }>(
   rows: T[],
   names: Map<number, string>,
@@ -379,6 +397,7 @@ export async function getMeeting(
     agendaTotalPages: agenda.totalPages,
     actionItems: actions.data.map((a) => ({
       ...a,
+      due_date: toDateOnly(a.due_date),
       assignee_name: a.assignee_id ? names.get(a.assignee_id) ?? null : null,
     })),
   };
@@ -597,6 +616,7 @@ export async function listActionItems(orgId: number, meetingId: string, actor: A
   );
   return result.data.map((a) => ({
     ...a,
+    due_date: toDateOnly(a.due_date),
     assignee_name: a.assignee_id ? names.get(a.assignee_id) ?? null : null,
   }));
 }
