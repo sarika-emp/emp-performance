@@ -478,6 +478,15 @@ export async function addParticipants(
     created.push(participant);
   }
 
+  // If the cycle is already launched, generate the review rows for the newly
+  // added participants too — otherwise reviews only ever get created by
+  // launchCycle, so someone added to an active cycle got a participant row but
+  // zero self/manager/peer reviews and could never be reviewed (audit M2).
+  // generateReviewsForCycle is idempotent (skips existing tuples).
+  if (cycle.status === "active" && created.length > 0) {
+    await generateReviewsForCycle(orgId, cycleId);
+  }
+
   return created;
 }
 
