@@ -5,6 +5,7 @@ import { apiGet, apiPost } from "@/api/client";
 import { EmptyState } from "@/components/EmptyState";
 import { useAuthStore } from "@/lib/auth-store";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface ReviewCycle {
   id: string;
@@ -96,6 +97,7 @@ function StarInput({
 }
 
 export function PeerReviewSubmitPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -200,10 +202,10 @@ export function PeerReviewSubmitPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["peer-review-response"] });
       queryClient.invalidateQueries({ queryKey: ["peer-nominations"] });
-      toast.success("Peer review submitted");
+      toast.success(t("peerReviewSubmit.toastSubmitted"));
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to submit peer review"),
+      toast.error(err.response?.data?.error?.message || t("peerReviewSubmit.toastSubmitFailed")),
   });
 
   function setCompetencyRating(competencyId: string, rating: number) {
@@ -223,11 +225,11 @@ export function PeerReviewSubmitPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nominationId) {
-      toast.error("Select a nomination to review");
+      toast.error(t("peerReviewSubmit.toastSelectNomination"));
       return;
     }
     if (overallRating === 0) {
-      toast.error("Provide an overall rating");
+      toast.error(t("peerReviewSubmit.toastProvideRating"));
       return;
     }
     submitMutation.mutate();
@@ -238,9 +240,9 @@ export function PeerReviewSubmitPage() {
       <div className="flex items-center gap-2">
         <ClipboardCheck className="h-6 w-6 text-brand-600" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Submit Peer Review</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("peerReviewSubmit.pageTitle")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Complete a peer review for a colleague you were approved to review.
+            {t("peerReviewSubmit.pageSubtitle")}
           </p>
         </div>
       </div>
@@ -254,7 +256,7 @@ export function PeerReviewSubmitPage() {
           }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">— Select a cycle —</option>
+          <option value="">{t("peerReviewSubmit.selectCyclePlaceholder")}</option>
           {cycles.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name} ({c.status})
@@ -269,10 +271,10 @@ export function PeerReviewSubmitPage() {
             disabled={nomLoading}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
           >
-            <option value="">— Select a colleague to review —</option>
+            <option value="">{t("peerReviewSubmit.selectColleaguePlaceholder")}</option>
             {nominations.map((n) => (
               <option key={n.id} value={n.id}>
-                Review of User #{n.employee_id}
+                {t("peerReviewSubmit.reviewOfUser", { id: n.employee_id })}
               </option>
             ))}
           </select>
@@ -282,8 +284,8 @@ export function PeerReviewSubmitPage() {
       {cycleId && !nomLoading && nominations.length === 0 && (
         <EmptyState
           icon={ClipboardCheck}
-          title="No approved nominations"
-          description="You have no approved peer reviews to complete in this cycle."
+          title={t("peerReviewSubmit.noNominationsTitle")}
+          description={t("peerReviewSubmit.noNominationsDescription")}
           className="mt-8"
         />
       )}
@@ -299,13 +301,13 @@ export function PeerReviewSubmitPage() {
           {isSubmitted && (
             <div className="flex items-center gap-2 rounded-lg bg-green-50 p-4 text-sm text-green-700">
               <CheckCircle2 className="h-5 w-5" />
-              This peer review has been submitted and can no longer be edited.
+              {t("peerReviewSubmit.submittedBanner")}
             </div>
           )}
 
           {competencies.length > 0 && (
             <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Competency Ratings</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t("peerReviewSubmit.competencyRatings")}</h2>
               <div className="space-y-5">
                 {competencies.map((comp) => {
                   const cr = competencyRatings[comp.id];
@@ -334,7 +336,7 @@ export function PeerReviewSubmitPage() {
                         value={cr?.comments ?? ""}
                         disabled={isSubmitted}
                         onChange={(e) => setCompetencyComment(comp.id, e.target.value)}
-                        placeholder="Add a comment (optional)"
+                        placeholder={t("peerReviewSubmit.commentPlaceholder")}
                         className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50"
                       />
                     </div>
@@ -345,11 +347,11 @@ export function PeerReviewSubmitPage() {
           )}
 
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900">Overall Assessment</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("peerReviewSubmit.overallAssessment")}</h2>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Overall Rating <span className="text-red-500">*</span>
+                {t("peerReviewSubmit.overallRating")} <span className="text-red-500">*</span>
               </label>
               <StarInput
                 value={overallRating}
@@ -359,41 +361,41 @@ export function PeerReviewSubmitPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Key Strengths</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t("peerReviewSubmit.keyStrengths")}</label>
               <textarea
                 value={strengths}
                 onChange={(e) => setStrengths(e.target.value)}
                 disabled={isSubmitted}
                 rows={2}
-                placeholder="What are the key strengths demonstrated?"
+                placeholder={t("peerReviewSubmit.strengthsPlaceholder")}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Areas for Improvement
+                {t("peerReviewSubmit.areasForImprovement")}
               </label>
               <textarea
                 value={improvements}
                 onChange={(e) => setImprovements(e.target.value)}
                 disabled={isSubmitted}
                 rows={2}
-                placeholder="What areas need improvement?"
+                placeholder={t("peerReviewSubmit.improvementsPlaceholder")}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Additional Comments
+                {t("peerReviewSubmit.additionalComments")}
               </label>
               <textarea
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 disabled={isSubmitted}
                 rows={3}
-                placeholder="Any other feedback for this colleague..."
+                placeholder={t("peerReviewSubmit.commentsPlaceholder")}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-50"
               />
             </div>
@@ -406,7 +408,9 @@ export function PeerReviewSubmitPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
             >
               <Send className="h-4 w-4" />
-              {submitMutation.isPending ? "Submitting..." : "Submit Peer Review"}
+              {submitMutation.isPending
+                ? t("peerReviewSubmit.submitting")
+                : t("peerReviewSubmit.submitButton")}
             </button>
           )}
         </form>

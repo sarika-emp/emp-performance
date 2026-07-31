@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Save } from "lucide-react";
 import { apiPost, apiGet } from "@/api/client";
 import type { CompetencyFramework, ReviewCycle } from "@emp-performance/shared";
 
 const CYCLE_TYPES = [
-  { value: "quarterly", label: "Quarterly" },
-  { value: "annual", label: "Annual" },
-  { value: "mid_year", label: "Mid-Year" },
-  { value: "360_degree", label: "360-Degree" },
-  { value: "probation", label: "Probation" },
+  { value: "quarterly", labelKey: "typeQuarterly" },
+  { value: "annual", labelKey: "typeAnnual" },
+  { value: "mid_year", labelKey: "typeMidYear" },
+  { value: "360_degree", labelKey: "type360Degree" },
+  { value: "probation", labelKey: "typeProbation" },
 ];
 
 export function ReviewCycleCreatePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
@@ -51,9 +53,9 @@ export function ReviewCycleCreatePage() {
 
   const dateError =
     form.start_date && form.end_date && form.end_date < form.start_date
-      ? "End date cannot be before start date"
+      ? t("reviewCycleCreate.endBeforeStartError")
       : form.start_date && form.review_deadline && form.review_deadline < form.start_date
-        ? "Review deadline cannot be before start date"
+        ? t("reviewCycleCreate.deadlineBeforeStartError")
         : null;
 
   function handleSubmit(e: React.FormEvent) {
@@ -73,9 +75,9 @@ export function ReviewCycleCreatePage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Review Cycle</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("reviewCycleCreate.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Set up a new performance review cycle.
+            {t("reviewCycleCreate.subtitle")}
           </p>
         </div>
       </div>
@@ -85,7 +87,7 @@ export function ReviewCycleCreatePage() {
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cycle Name <span className="text-red-500">*</span>
+              {t("reviewCycleCreate.cycleName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -93,7 +95,7 @@ export function ReviewCycleCreatePage() {
               value={form.name}
               onChange={handleChange}
               required
-              placeholder="e.g. Q1 2026 Performance Review"
+              placeholder={t("reviewCycleCreate.namePlaceholder")}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -101,7 +103,7 @@ export function ReviewCycleCreatePage() {
           {/* Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cycle Type <span className="text-red-500">*</span>
+              {t("reviewCycleCreate.cycleType")} <span className="text-red-500">*</span>
             </label>
             <select
               name="type"
@@ -109,9 +111,9 @@ export function ReviewCycleCreatePage() {
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
-              {CYCLE_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {CYCLE_TYPES.map((ct) => (
+                <option key={ct.value} value={ct.value}>
+                  {t(`reviewCycleCreate.${ct.labelKey}`)}
                 </option>
               ))}
             </select>
@@ -121,7 +123,7 @@ export function ReviewCycleCreatePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date <span className="text-red-500">*</span>
+                {t("reviewCycleCreate.startDate")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -134,7 +136,7 @@ export function ReviewCycleCreatePage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date <span className="text-red-500">*</span>
+                {t("reviewCycleCreate.endDate")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -157,7 +159,7 @@ export function ReviewCycleCreatePage() {
           {/* Review deadline */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Review Deadline
+              {t("reviewCycleCreate.reviewDeadline")}
             </label>
             <input
               type="date"
@@ -168,14 +170,14 @@ export function ReviewCycleCreatePage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Optional deadline for review submissions.
+              {t("reviewCycleCreate.reviewDeadlineHint")}
             </p>
           </div>
 
           {/* Framework selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Competency Framework
+              {t("reviewCycleCreate.competencyFramework")}
             </label>
             <select
               name="framework_id"
@@ -183,7 +185,7 @@ export function ReviewCycleCreatePage() {
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
-              <option value="">No framework</option>
+              <option value="">{t("reviewCycleCreate.noFramework")}</option>
               {frameworks.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name}
@@ -195,14 +197,14 @@ export function ReviewCycleCreatePage() {
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              {t("reviewCycleCreate.description")}
             </label>
             <textarea
               name="description"
               value={form.description}
               onChange={handleChange}
               rows={3}
-              placeholder="Optional description or instructions for this cycle..."
+              placeholder={t("reviewCycleCreate.descriptionPlaceholder")}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -212,7 +214,7 @@ export function ReviewCycleCreatePage() {
         {createMutation.isError && (
           <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
             {(createMutation.error as any)?.response?.data?.error?.message ??
-              "Failed to create cycle. Please try again."}
+              t("reviewCycleCreate.createError")}
           </div>
         )}
 
@@ -224,14 +226,16 @@ export function ReviewCycleCreatePage() {
             className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4" />
-            {createMutation.isPending ? "Creating..." : "Create Cycle"}
+            {createMutation.isPending
+              ? t("reviewCycleCreate.creating")
+              : t("reviewCycleCreate.createCycle")}
           </button>
           <button
             type="button"
             onClick={() => navigate("/review-cycles")}
             className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
         </div>
       </form>
