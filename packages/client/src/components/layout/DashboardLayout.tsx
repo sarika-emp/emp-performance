@@ -30,21 +30,23 @@ import {
 } from "lucide-react";
 import { isLoggedIn, getUser, useAuthStore } from "@/lib/auth-store";
 import { cn, getInitials } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { BackToDashboard } from "@/components/BackToDashboard";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 type Role = "org_admin" | "hr_admin" | "hr_manager" | "employee";
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   icon: any;
   adminOnly?: boolean; // if true, hidden from employee role
 }
 
 interface NavSection {
-  title?: string; // uppercase section header; omitted for the top (Dashboard) group
+  titleKey?: string; // i18n key for the uppercase section header; omitted for the top (Dashboard) group
   items: NavItem[];
 }
 
@@ -53,51 +55,51 @@ interface NavSection {
 // role. A section renders only if at least one of its items is visible.
 const NAV_SECTIONS: NavSection[] = [
   {
-    items: [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    items: [{ to: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard }],
   },
   {
-    title: "My Work",
+    titleKey: "nav.sections.myWork",
     items: [
-      { to: "/my", label: "My Performance", icon: TrendingUp },
-      { to: "/my/reviews", label: "My Reviews", icon: RefreshCw },
-      { to: "/my/goals", label: "My Goals", icon: Target },
-      { to: "/my/feedback", label: "My Feedback", icon: MessageSquare },
-      { to: "/my/one-on-ones", label: "My 1-on-1s", icon: Users },
-      { to: "/my/skills", label: "My Skills", icon: Radar },
-      { to: "/my/letters", label: "My Letters", icon: FileText },
-      { to: "/feedback/wall", label: "Kudos Wall", icon: Heart },
-      { to: "/peer-reviews/nominate", label: "Nominate Peers", icon: UserPlus },
-      { to: "/peer-reviews/submit", label: "Submit Peer Review", icon: ClipboardCheck },
+      { to: "/my", labelKey: "nav.myPerformance", icon: TrendingUp },
+      { to: "/my/reviews", labelKey: "nav.myReviews", icon: RefreshCw },
+      { to: "/my/goals", labelKey: "nav.myGoals", icon: Target },
+      { to: "/my/feedback", labelKey: "nav.myFeedback", icon: MessageSquare },
+      { to: "/my/one-on-ones", labelKey: "nav.myOneOnOnes", icon: Users },
+      { to: "/my/skills", labelKey: "nav.mySkills", icon: Radar },
+      { to: "/my/letters", labelKey: "nav.myLetters", icon: FileText },
+      { to: "/feedback/wall", labelKey: "nav.kudosWall", icon: Heart },
+      { to: "/peer-reviews/nominate", labelKey: "nav.nominatePeers", icon: UserPlus },
+      { to: "/peer-reviews/submit", labelKey: "nav.submitPeerReview", icon: ClipboardCheck },
     ],
   },
   {
-    title: "Manage",
+    titleKey: "nav.sections.manage",
     items: [
-      { to: "/review-cycles", label: "Review Cycles", icon: RefreshCw, adminOnly: true },
-      { to: "/goals", label: "All Goals", icon: Target, adminOnly: true },
-      { to: "/goals/alignment", label: "Goal Alignment", icon: GitBranch, adminOnly: true },
-      { to: "/competencies", label: "Competencies", icon: Award, adminOnly: true },
-      { to: "/pips", label: "PIPs", icon: AlertTriangle, adminOnly: true },
-      { to: "/career-paths", label: "Career Paths", icon: Route, adminOnly: true },
-      { to: "/one-on-ones", label: "All 1-on-1s", icon: Users, adminOnly: true },
-      { to: "/feedback", label: "All Feedback", icon: MessageSquare, adminOnly: true },
-      { to: "/peer-reviews/queue", label: "Peer Approvals", icon: ShieldCheck, adminOnly: true },
-      { to: "/letters", label: "Letters", icon: FileText, adminOnly: true },
+      { to: "/review-cycles", labelKey: "nav.reviewCycles", icon: RefreshCw, adminOnly: true },
+      { to: "/goals", labelKey: "nav.allGoals", icon: Target, adminOnly: true },
+      { to: "/goals/alignment", labelKey: "nav.goalAlignment", icon: GitBranch, adminOnly: true },
+      { to: "/competencies", labelKey: "nav.competencies", icon: Award, adminOnly: true },
+      { to: "/pips", labelKey: "nav.pips", icon: AlertTriangle, adminOnly: true },
+      { to: "/career-paths", labelKey: "nav.careerPaths", icon: Route, adminOnly: true },
+      { to: "/one-on-ones", labelKey: "nav.allOneOnOnes", icon: Users, adminOnly: true },
+      { to: "/feedback", labelKey: "nav.allFeedback", icon: MessageSquare, adminOnly: true },
+      { to: "/peer-reviews/queue", labelKey: "nav.peerApprovals", icon: ShieldCheck, adminOnly: true },
+      { to: "/letters", labelKey: "nav.letters", icon: FileText, adminOnly: true },
     ],
   },
   {
-    title: "Insights",
+    titleKey: "nav.sections.insights",
     items: [
-      { to: "/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
-      { to: "/analytics/nine-box", label: "9-Box Grid", icon: Grid3X3, adminOnly: true },
-      { to: "/analytics/skills-gap", label: "Skills Gap", icon: Radar, adminOnly: true },
-      { to: "/manager-effectiveness", label: "Manager Effectiveness", icon: Gauge, adminOnly: true },
-      { to: "/succession", label: "Succession", icon: Shield, adminOnly: true },
+      { to: "/analytics", labelKey: "nav.analytics", icon: BarChart3, adminOnly: true },
+      { to: "/analytics/nine-box", labelKey: "nav.nineBox", icon: Grid3X3, adminOnly: true },
+      { to: "/analytics/skills-gap", labelKey: "nav.skillsGap", icon: Radar, adminOnly: true },
+      { to: "/manager-effectiveness", labelKey: "nav.managerEffectiveness", icon: Gauge, adminOnly: true },
+      { to: "/succession", labelKey: "nav.succession", icon: Shield, adminOnly: true },
     ],
   },
   {
-    title: "Admin",
-    items: [{ to: "/settings", label: "Settings", icon: Settings, adminOnly: true }],
+    titleKey: "nav.sections.admin",
+    items: [{ to: "/settings", labelKey: "nav.settings", icon: Settings, adminOnly: true }],
   },
 ];
 
@@ -114,6 +116,7 @@ export function DashboardLayout() {
   );
   const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
+  const { t } = useTranslation();
 
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
 
@@ -132,14 +135,7 @@ export function DashboardLayout() {
 
   const user = getUser();
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
-  const roleLabel =
-    user?.role === "org_admin"
-      ? "Org Admin"
-      : user?.role === "hr_admin"
-        ? "HR Admin"
-        : user?.role === "hr_manager"
-          ? "HR Manager"
-          : "Employee";
+  const roleLabel = t(`roles.${user?.role ?? "employee"}`, { defaultValue: t("roles.employee") });
 
   function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
     return (
@@ -160,7 +156,7 @@ export function DashboardLayout() {
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-gray-900 truncate">EMP Performance</span>
+            <span className="text-lg font-bold text-gray-900 truncate">{t("brand")}</span>
           )}
         </div>
 
@@ -172,13 +168,13 @@ export function DashboardLayout() {
             const visibleItems = section.items.filter((item) => !item.adminOnly || isAdmin);
             if (visibleItems.length === 0) return null;
             return (
-              <div key={section.title ?? `section-${si}`} className={si > 0 ? (collapsed ? "mt-3" : "mt-5") : ""}>
-                {section.title &&
+              <div key={section.titleKey ?? `section-${si}`} className={si > 0 ? (collapsed ? "mt-3" : "mt-5") : ""}>
+                {section.titleKey &&
                   (collapsed ? (
                     si > 0 && <div className="mx-2 mb-2 border-t border-gray-100" />
                   ) : (
                     <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                      {section.title}
+                      {t(section.titleKey)}
                     </p>
                   ))}
                 <div className="space-y-1">
@@ -187,7 +183,7 @@ export function DashboardLayout() {
                       key={item.to}
                       to={item.to}
                       end={EXACT_MATCH.has(item.to)}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? t(item.labelKey) : undefined}
                       className={({ isActive }) =>
                         cn(
                           "flex items-center rounded-lg text-sm font-medium transition-colors",
@@ -199,7 +195,7 @@ export function DashboardLayout() {
                       }
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && item.label}
+                      {!collapsed && t(item.labelKey)}
                     </NavLink>
                   ))}
                 </div>
@@ -213,7 +209,7 @@ export function DashboardLayout() {
           {collapsed ? (
             <button
               onClick={logout}
-              title={`${displayName} — Sign out`}
+              title={`${displayName} — ${t("nav.logout")}`}
               className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-sm font-semibold hover:bg-brand-200"
             >
               {getInitials(displayName)}
@@ -230,7 +226,7 @@ export function DashboardLayout() {
               <button
                 onClick={logout}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                title="Logout"
+                title={t("nav.logout")}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -249,8 +245,8 @@ export function DashboardLayout() {
         {/* Collapse / expand toggle, centred on the sidebar edge (EmpCloud style) */}
         <button
           onClick={toggleCollapsed}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+          aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
           className="absolute top-1/2 -right-3 z-10 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-700"
         >
           {collapsed ? (
@@ -284,12 +280,13 @@ export function DashboardLayout() {
             </button>
           </div>
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <ThemeToggle />
             <NotificationBell />
             <NavLink
               to="/profile"
               className="flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-gray-50"
-              title="My profile"
+              title={t("nav.myProfile")}
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 text-xs font-semibold">
                 {getInitials(displayName)}
