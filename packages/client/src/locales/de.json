@@ -70,6 +70,19 @@
     "status": "Status",
     "noData": "Keine Daten verfügbar"
   },
+  "mySkillsGap": {
+    "title": "Meine Kompetenzlücken", "subtitle": "Vergleichen Sie Ihre Kompetenzen mit den Anforderungen Ihres Karrierewegs.", "loadError": "Die Daten zu Ihren Kompetenzlücken konnten nicht geladen werden.", "emptyTitle": "Noch keine Kompetenzdaten verfügbar. Schließen Sie eine Leistungsbeurteilung ab und stellen Sie sicher, dass Ihnen ein Karriereweg zugewiesen ist.",
+    "yourReadiness": "Ihre Bereitschaft", "developmentSummary_one": "{{count}} Bereich muss von insgesamt {{total}} Kompetenzen entwickelt werden.", "developmentSummary_other": "{{count}} Bereiche müssen von insgesamt {{total}} Kompetenzen entwickelt werden.",
+    "skillsRadar": "Ihr Kompetenzradar", "skillsRadarSubtitle": "Aktuelle Bewertungen im Vergleich zu erforderlichen Stufen", "yourRating": "Ihre Bewertung", "required": "Erforderlich", "requiredValue": "Erforderlich: {{value}}",
+    "competencyDetails": "Kompetenzdetails", "competency": "Kompetenz", "current": "Aktuell", "progress": "Fortschritt", "gap": "Lücke", "statusLabel": "Status", "recommendedLearning": "Empfohlenes Lernen", "gapValue": "Lücke: {{value}}",
+    "status": { "exceeds": "Übertroffen", "meets": "Erfüllt", "gap": "Lücke" }
+  },
+  "myOneOnOnes": {
+    "title": "Meine Einzelgespräche", "subtitle": "Ihre bevorstehenden und vergangenen Einzelgespräche.", "requestOneOnOne": "Einzelgespräch anfragen", "emptyTitle": "Noch keine Gespräche", "emptyDescription": "Fragen Sie ein Einzelgespräch mit Ihrer Führungskraft an.",
+    "upcoming": "Bevorstehend ({{count}})", "past": "Vergangen ({{count}})", "defaultRequestTitle": "Anfrage für ein Einzelgespräch", "requestSuccess": "Einzelgespräch angefragt", "requestError": "Gespräch konnte nicht angefragt werden",
+    "selectManagerError": "Führungskraft auswählen", "pickDateError": "Datum auswählen", "manager": "Führungskraft", "selectManager": "— Führungskraft auswählen —", "topicTitle": "Thema / Titel", "date": "Datum", "time": "Uhrzeit", "durationMinutes": "Dauer (Min.)", "requesting": "Wird angefragt...", "sendRequest": "Anfrage senden",
+    "withManager": "mit {{name}}", "minutes": "{{count}} Min.", "status": { "scheduled": "Geplant", "requested": "Angefragt", "completed": "Abgeschlossen", "cancelled": "Abgesagt" }
+  },
   "myFeedback": {
     "title": "Mein Feedback", "subtitle": "Feedback, das Sie erhalten und gegeben haben.", "giveFeedback": "Feedback geben", "received": "Erhalten", "given": "Gegeben", "searchPlaceholder": "Feedback suchen...",
     "types": { "kudos": "Anerkennung", "constructive": "Konstruktiv", "general": "Allgemein" },

@@ -70,6 +70,19 @@
     "status": "Status",
     "noData": "Nenhum dado disponível"
   },
+  "mySkillsGap": {
+    "title": "Minha lacuna de habilidades", "subtitle": "Veja como suas habilidades se comparam aos requisitos da sua trajetória profissional.", "loadError": "Não foi possível carregar os dados da sua lacuna de habilidades.", "emptyTitle": "Ainda não há dados de competências. Conclua uma avaliação de desempenho e confirme que uma trajetória profissional foi atribuída a você.",
+    "yourReadiness": "Sua preparação", "developmentSummary_one": "{{count}} área precisa de desenvolvimento entre {{total}} competências no total.", "developmentSummary_other": "{{count}} áreas precisam de desenvolvimento entre {{total}} competências no total.",
+    "skillsRadar": "Radar das suas habilidades", "skillsRadarSubtitle": "Avaliações atuais versus níveis necessários", "yourRating": "Sua avaliação", "required": "Necessário", "requiredValue": "Necessário: {{value}}",
+    "competencyDetails": "Detalhes das competências", "competency": "Competência", "current": "Atual", "progress": "Progresso", "gap": "Lacuna", "statusLabel": "Status", "recommendedLearning": "Aprendizado recomendado", "gapValue": "Lacuna: {{value}}",
+    "status": { "exceeds": "Supera", "meets": "Atende", "gap": "Lacuna" }
+  },
+  "myOneOnOnes": {
+    "title": "Minhas reuniões individuais", "subtitle": "Suas próximas reuniões individuais e as anteriores.", "requestOneOnOne": "Solicitar reunião individual", "emptyTitle": "Ainda não há reuniões", "emptyDescription": "Solicite uma reunião individual com seu gestor para começar.",
+    "upcoming": "Próximas ({{count}})", "past": "Anteriores ({{count}})", "defaultRequestTitle": "Solicitação de reunião individual", "requestSuccess": "Reunião individual solicitada", "requestError": "Não foi possível solicitar a reunião",
+    "selectManagerError": "Selecione um gestor", "pickDateError": "Escolha uma data", "manager": "Gestor", "selectManager": "— Selecione um gestor —", "topicTitle": "Assunto / Título", "date": "Data", "time": "Hora", "durationMinutes": "Duração (min)", "requesting": "Solicitando...", "sendRequest": "Enviar solicitação",
+    "withManager": "com {{name}}", "minutes": "{{count}} min", "status": { "scheduled": "Agendada", "requested": "Solicitada", "completed": "Concluída", "cancelled": "Cancelada" }
+  },
   "myFeedback": {
     "title": "Meu feedback", "subtitle": "Feedback que você recebeu e forneceu.", "giveFeedback": "Dar feedback", "received": "Recebidos", "given": "Enviados", "searchPlaceholder": "Pesquisar feedback...",
     "types": { "kudos": "Reconhecimento", "constructive": "Construtivo", "general": "Geral" },

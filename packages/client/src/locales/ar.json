@@ -70,6 +70,19 @@
     "status": "الحالة",
     "noData": "لا توجد بيانات متاحة"
   },
+  "mySkillsGap": {
+    "title": "فجوة مهاراتي", "subtitle": "تعرف على مدى توافق مهاراتك مع متطلبات مسارك المهني.", "loadError": "تعذر تحميل بيانات فجوة مهاراتك.", "emptyTitle": "لا تتوفر بيانات للكفاءات بعد. أكمل مراجعة أداء وتأكد من تعيينك إلى مسار مهني.",
+    "yourReadiness": "جاهزيتك", "developmentSummary_one": "مجال واحد يحتاج إلى تطوير من إجمالي {{total}} كفاءة.", "developmentSummary_other": "{{count}} مجالات تحتاج إلى تطوير من إجمالي {{total}} كفاءة.",
+    "skillsRadar": "رادار مهاراتك", "skillsRadarSubtitle": "التقييمات الحالية مقارنة بالمستويات المطلوبة", "yourRating": "تقييمك", "required": "المطلوب", "requiredValue": "المطلوب: {{value}}",
+    "competencyDetails": "تفاصيل الكفاءات", "competency": "الكفاءة", "current": "الحالي", "progress": "التقدم", "gap": "الفجوة", "statusLabel": "الحالة", "recommendedLearning": "التعلم الموصى به", "gapValue": "الفجوة: {{value}}",
+    "status": { "exceeds": "يتجاوز", "meets": "يلبي", "gap": "فجوة" }
+  },
+  "myOneOnOnes": {
+    "title": "اجتماعاتي الفردية", "subtitle": "اجتماعاتك الفردية القادمة والسابقة.", "requestOneOnOne": "طلب اجتماع فردي", "emptyTitle": "لا توجد اجتماعات بعد", "emptyDescription": "اطلب اجتماعًا فرديًا مع مديرك للبدء.",
+    "upcoming": "القادمة ({{count}})", "past": "السابقة ({{count}})", "defaultRequestTitle": "طلب اجتماع فردي", "requestSuccess": "تم طلب الاجتماع الفردي", "requestError": "تعذر طلب الاجتماع",
+    "selectManagerError": "اختر مديرًا", "pickDateError": "اختر تاريخًا", "manager": "المدير", "selectManager": "— اختر مديرًا —", "topicTitle": "الموضوع / العنوان", "date": "التاريخ", "time": "الوقت", "durationMinutes": "المدة (دقيقة)", "requesting": "جارٍ الطلب...", "sendRequest": "إرسال الطلب",
+    "withManager": "مع {{name}}", "minutes": "{{count}} دقيقة", "status": { "scheduled": "مجدول", "requested": "مطلوب", "completed": "مكتمل", "cancelled": "ملغى" }
+  },
   "myFeedback": {
     "title": "ملاحظاتي", "subtitle": "الملاحظات التي تلقيتها وقدمتها.", "giveFeedback": "تقديم ملاحظات", "received": "المستلمة", "given": "المقدمة", "searchPlaceholder": "البحث في الملاحظات...",
     "types": { "kudos": "إشادة", "constructive": "بنّاءة", "general": "عامة" },

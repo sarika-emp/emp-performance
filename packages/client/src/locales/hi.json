@@ -70,6 +70,19 @@
     "status": "स्थिति",
     "noData": "कोई डेटा उपलब्ध नहीं"
   },
+  "mySkillsGap": {
+    "title": "मेरी कौशल कमी", "subtitle": "देखें कि आपके कौशल आपकी करियर पथ आवश्यकताओं से कैसे तुलना करते हैं।", "loadError": "आपके कौशल अंतर का डेटा लोड नहीं किया जा सका।", "emptyTitle": "अभी कोई योग्यता डेटा उपलब्ध नहीं है। प्रदर्शन समीक्षा पूरी करें और सुनिश्चित करें कि आपको करियर पथ सौंपा गया है।",
+    "yourReadiness": "आपकी तैयारी", "developmentSummary_one": "कुल {{total}} योग्यताओं में से {{count}} क्षेत्र में विकास की आवश्यकता है।", "developmentSummary_other": "कुल {{total}} योग्यताओं में से {{count}} क्षेत्रों में विकास की आवश्यकता है।",
+    "skillsRadar": "आपका कौशल रडार", "skillsRadarSubtitle": "वर्तमान रेटिंग बनाम आवश्यक स्तर", "yourRating": "आपकी रेटिंग", "required": "आवश्यक", "requiredValue": "आवश्यक: {{value}}",
+    "competencyDetails": "योग्यता विवरण", "competency": "योग्यता", "current": "वर्तमान", "progress": "प्रगति", "gap": "अंतर", "statusLabel": "स्थिति", "recommendedLearning": "अनुशंसित अध्ययन", "gapValue": "अंतर: {{value}}",
+    "status": { "exceeds": "अपेक्षा से अधिक", "meets": "पूरा करता है", "gap": "अंतर" }
+  },
+  "myOneOnOnes": {
+    "title": "मेरी 1-ऑन-1 बैठकें", "subtitle": "आपकी आगामी और पिछली व्यक्तिगत बैठकें।", "requestOneOnOne": "1-ऑन-1 का अनुरोध करें", "emptyTitle": "अभी कोई बैठक नहीं", "emptyDescription": "शुरू करने के लिए अपने प्रबंधक से 1-ऑन-1 बैठक का अनुरोध करें।",
+    "upcoming": "आगामी ({{count}})", "past": "पिछली ({{count}})", "defaultRequestTitle": "1-ऑन-1 अनुरोध", "requestSuccess": "1-ऑन-1 का अनुरोध किया गया", "requestError": "बैठक का अनुरोध नहीं किया जा सका",
+    "selectManagerError": "प्रबंधक चुनें", "pickDateError": "तारीख चुनें", "manager": "प्रबंधक", "selectManager": "— प्रबंधक चुनें —", "topicTitle": "विषय / शीर्षक", "date": "तारीख", "time": "समय", "durationMinutes": "अवधि (मिनट)", "requesting": "अनुरोध किया जा रहा है...", "sendRequest": "अनुरोध भेजें",
+    "withManager": "{{name}} के साथ", "minutes": "{{count}} मिनट", "status": { "scheduled": "निर्धारित", "requested": "अनुरोधित", "completed": "पूर्ण", "cancelled": "रद्द" }
+  },
   "myFeedback": {
     "title": "मेरी प्रतिक्रिया", "subtitle": "आपके द्वारा प्राप्त और दी गई प्रतिक्रिया।", "giveFeedback": "प्रतिक्रिया दें", "received": "प्राप्त", "given": "दी गई", "searchPlaceholder": "प्रतिक्रिया खोजें...",
     "types": { "kudos": "सराहना", "constructive": "रचनात्मक", "general": "सामान्य" },

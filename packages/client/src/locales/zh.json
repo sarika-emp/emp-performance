@@ -70,6 +70,19 @@
     "status": "状态",
     "noData": "暂无数据"
   },
+  "mySkillsGap": {
+    "title": "我的技能差距", "subtitle": "查看您的技能与职业路径要求之间的差距。", "loadError": "无法加载您的技能差距数据。", "emptyTitle": "尚无能力数据。请完成绩效评估，并确保已为您分配职业路径。",
+    "yourReadiness": "您的准备度", "developmentSummary_one": "共 {{total}} 项能力中有 {{count}} 个领域需要发展。", "developmentSummary_other": "共 {{total}} 项能力中有 {{count}} 个领域需要发展。",
+    "skillsRadar": "您的技能雷达", "skillsRadarSubtitle": "当前评分与所需级别", "yourRating": "您的评分", "required": "所需", "requiredValue": "所需：{{value}}",
+    "competencyDetails": "能力详情", "competency": "能力", "current": "当前", "progress": "进度", "gap": "差距", "statusLabel": "状态", "recommendedLearning": "推荐学习", "gapValue": "差距：{{value}}",
+    "status": { "exceeds": "超出", "meets": "达到", "gap": "差距" }
+  },
+  "myOneOnOnes": {
+    "title": "我的一对一会议", "subtitle": "您即将进行和过去的一对一会议。", "requestOneOnOne": "申请一对一会议", "emptyTitle": "暂无会议", "emptyDescription": "申请与经理进行一对一会议以开始。",
+    "upcoming": "即将进行 ({{count}})", "past": "过去 ({{count}})", "defaultRequestTitle": "一对一会议申请", "requestSuccess": "已申请一对一会议", "requestError": "无法申请会议",
+    "selectManagerError": "请选择经理", "pickDateError": "请选择日期", "manager": "经理", "selectManager": "— 选择经理 —", "topicTitle": "主题 / 标题", "date": "日期", "time": "时间", "durationMinutes": "时长（分钟）", "requesting": "正在申请...", "sendRequest": "发送申请",
+    "withManager": "与 {{name}}", "minutes": "{{count}} 分钟", "status": { "scheduled": "已安排", "requested": "已申请", "completed": "已完成", "cancelled": "已取消" }
+  },
   "myFeedback": {
     "title": "我的反馈", "subtitle": "您收到和提供的反馈。", "giveFeedback": "提供反馈", "received": "收到的", "given": "提供的", "searchPlaceholder": "搜索反馈...",
     "types": { "kudos": "表扬", "constructive": "建设性", "general": "一般" },

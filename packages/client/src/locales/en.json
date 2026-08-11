@@ -70,6 +70,19 @@
     "status": "Status",
     "noData": "No data available"
   },
+  "mySkillsGap": {
+    "title": "My Skills Gap", "subtitle": "See how your skills compare to your career path requirements.", "loadError": "Failed to load your skills gap data.", "emptyTitle": "No competency data available yet. Complete a performance review and ensure you are assigned to a career path.",
+    "yourReadiness": "Your Readiness", "developmentSummary_one": "{{count}} area needs development out of {{total}} total competencies.", "developmentSummary_other": "{{count}} areas need development out of {{total}} total competencies.",
+    "skillsRadar": "Your Skills Radar", "skillsRadarSubtitle": "Current ratings vs required levels", "yourRating": "Your Rating", "required": "Required", "requiredValue": "Required: {{value}}",
+    "competencyDetails": "Competency Details", "competency": "Competency", "current": "Current", "progress": "Progress", "gap": "Gap", "statusLabel": "Status", "recommendedLearning": "Recommended Learning", "gapValue": "Gap: {{value}}",
+    "status": { "exceeds": "Exceeds", "meets": "Meets", "gap": "Gap" }
+  },
+  "myOneOnOnes": {
+    "title": "My 1-on-1s", "subtitle": "Your upcoming and past one-on-one meetings.", "requestOneOnOne": "Request 1-on-1", "emptyTitle": "No meetings yet", "emptyDescription": "Request a 1-on-1 with your manager to get started.",
+    "upcoming": "Upcoming ({{count}})", "past": "Past ({{count}})", "defaultRequestTitle": "1-on-1 request", "requestSuccess": "1-on-1 requested", "requestError": "Failed to request meeting",
+    "selectManagerError": "Select a manager", "pickDateError": "Pick a date", "manager": "Manager", "selectManager": "— Select a manager —", "topicTitle": "Topic / Title", "date": "Date", "time": "Time", "durationMinutes": "Duration (min)", "requesting": "Requesting...", "sendRequest": "Send Request",
+    "withManager": "with {{name}}", "minutes": "{{count}} min", "status": { "scheduled": "Scheduled", "requested": "Requested", "completed": "Completed", "cancelled": "Cancelled" }
+  },
   "myFeedback": {
     "title": "My Feedback", "subtitle": "Feedback you have received and given.", "giveFeedback": "Give Feedback", "received": "Received", "given": "Given", "searchPlaceholder": "Search feedback...",
     "types": { "kudos": "Kudos", "constructive": "Constructive", "general": "General" },

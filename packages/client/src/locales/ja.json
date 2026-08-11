@@ -70,6 +70,19 @@
     "status": "ステータス",
     "noData": "データがありません"
   },
+  "mySkillsGap": {
+    "title": "自分のスキルギャップ", "subtitle": "自分のスキルとキャリアパスの要件を比較します。", "loadError": "スキルギャップのデータを読み込めませんでした。", "emptyTitle": "コンピテンシーデータはまだありません。評価を完了し、キャリアパスが割り当てられていることを確認してください。",
+    "yourReadiness": "準備度", "developmentSummary_one": "全{{total}}コンピテンシーのうち{{count}}領域で育成が必要です。", "developmentSummary_other": "全{{total}}コンピテンシーのうち{{count}}領域で育成が必要です。",
+    "skillsRadar": "スキルレーダー", "skillsRadarSubtitle": "現在の評価と必要レベル", "yourRating": "自分の評価", "required": "必要レベル", "requiredValue": "必要レベル：{{value}}",
+    "competencyDetails": "コンピテンシー詳細", "competency": "コンピテンシー", "current": "現在", "progress": "進捗", "gap": "ギャップ", "statusLabel": "ステータス", "recommendedLearning": "推奨学習", "gapValue": "ギャップ：{{value}}",
+    "status": { "exceeds": "上回る", "meets": "達成", "gap": "ギャップ" }
+  },
+  "myOneOnOnes": {
+    "title": "自分の1対1ミーティング", "subtitle": "今後および過去の1対1ミーティング。", "requestOneOnOne": "1対1をリクエスト", "emptyTitle": "ミーティングはまだありません", "emptyDescription": "上司との1対1ミーティングをリクエストして始めましょう。",
+    "upcoming": "今後 ({{count}})", "past": "過去 ({{count}})", "defaultRequestTitle": "1対1ミーティングのリクエスト", "requestSuccess": "1対1をリクエストしました", "requestError": "ミーティングをリクエストできませんでした",
+    "selectManagerError": "上司を選択してください", "pickDateError": "日付を選択してください", "manager": "上司", "selectManager": "— 上司を選択 —", "topicTitle": "トピック / タイトル", "date": "日付", "time": "時刻", "durationMinutes": "時間（分）", "requesting": "リクエスト中...", "sendRequest": "リクエストを送信",
+    "withManager": "{{name}}と", "minutes": "{{count}}分", "status": { "scheduled": "予定済み", "requested": "リクエスト済み", "completed": "完了", "cancelled": "キャンセル" }
+  },
   "myFeedback": {
     "title": "自分のフィードバック", "subtitle": "受け取ったフィードバックと送ったフィードバック。", "giveFeedback": "フィードバックを送る", "received": "受信", "given": "送信", "searchPlaceholder": "フィードバックを検索...",
     "types": { "kudos": "称賛", "constructive": "建設的", "general": "一般" },
