@@ -40,6 +40,13 @@
     "expandSidebar": "Seitenleiste ausklappen",
     "collapseSidebar": "Seitenleiste einklappen"
   },
+  "dashboard": {
+    "welcomeBack": "Willkommen zurück, {{name}}!", "there": "Willkommen", "overviewSubtitle": "Leistungsübersicht und wichtige Kennzahlen.",
+    "lastDays": "Letzte {{count}} Tage", "activeCycles": "Aktive Zyklen", "pendingReviews": "Ausstehende Beurteilungen", "goalCompletion": "Zielerreichung", "activePips": "Aktive Verbesserungspläne", "totalFeedback": "Gesamtes Feedback",
+    "quickActions": "Schnellaktionen", "goalsProgress": "Zielfortschritt", "goalsProgressSubtitle": "Unternehmensweite Zielerreichung", "viewAll": "Alle anzeigen", "goalsCount_one": "{{count}} Ziel", "goalsCount_other": "{{count}} Ziele", "recentlyUpdated": "Kürzlich aktualisiert",
+    "recentActivity": "Letzte Aktivitäten", "recentActivitySubtitle": "Neueste Leistungsereignisse", "noActivity": "Keine Aktivität im ausgewählten Zeitraum.",
+    "status": { "completed": "Abgeschlossen", "inProgress": "In Bearbeitung", "atRisk": "Gefährdet", "notStarted": "Nicht begonnen", "cancelled": "Abgebrochen" }
+  },
   "roles": {
     "org_admin": "Organisations-Admin",
     "hr_admin": "HR-Admin",
@@ -62,6 +69,19 @@
     "actions": "Aktionen",
     "status": "Status",
     "noData": "Keine Daten verfügbar"
+  },
+  "myFeedback": {
+    "title": "Mein Feedback", "subtitle": "Feedback, das Sie erhalten und gegeben haben.", "giveFeedback": "Feedback geben", "received": "Erhalten", "given": "Gegeben", "searchPlaceholder": "Feedback suchen...",
+    "types": { "kudos": "Anerkennung", "constructive": "Konstruktiv", "general": "Allgemein" },
+    "fromUser": "von {{name}}", "toUser": "an {{name}}", "anonymous": "Anonym", "userNumber": "Benutzer Nr. {{id}}",
+    "deleteAction": "Feedback löschen", "deleteTitle": "Feedback löschen?", "deleteMessage": "Dieses Feedback löschen? Dies kann nicht rückgängig gemacht werden.", "deleteSuccess": "Feedback gelöscht", "deleteError": "Feedback konnte nicht gelöscht werden",
+    "empty": { "received": "Noch kein Feedback erhalten", "given": "Noch kein Feedback gegeben", "receivedSearch": "Kein erhaltenes Feedback entspricht Ihrer Suche", "givenSearch": "Kein gegebenes Feedback entspricht Ihrer Suche", "receivedDescription": "Feedback von Kollegen wird hier angezeigt.", "givenDescription": "Von Ihnen gegebenes Feedback wird hier angezeigt." }
+  },
+  "myGoals": {
+    "title": "Meine Ziele", "subtitle": "Verfolgen Sie Ihre persönlichen Ziele und Teamziele.", "createGoal": "Ziel erstellen", "dueDate": "Fällig am {{date}}",
+    "checkIn": "Fortschritt melden", "newValue": "Neuer Wert", "ofTarget": "von {{target}}", "notesOptional": "Notizen (optional)", "saving": "Wird gespeichert...",
+    "noKeyResults": "Keine Schlüsselergebnisse definiert.", "addKeyResults": "Schlüsselergebnisse hinzufügen", "loading": "Ihre Ziele werden geladen...", "loadError": "Ziele konnten nicht geladen werden.",
+    "emptyTitle": "Noch keine Ziele", "emptyDescription": "Erstellen Sie Ihr erstes Ziel, um den Fortschritt zu verfolgen.", "createAGoal": "Ziel erstellen"
   },
   "myReviews": {
     "title": "Meine Beurteilungen",

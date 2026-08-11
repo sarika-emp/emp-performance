@@ -40,6 +40,13 @@
     "expandSidebar": "Développer la barre latérale",
     "collapseSidebar": "Réduire la barre latérale"
   },
+  "dashboard": {
+    "welcomeBack": "Bon retour, {{name}} !", "there": "vous", "overviewSubtitle": "Aperçu des performances et indicateurs clés.",
+    "lastDays": "Les {{count}} derniers jours", "activeCycles": "Cycles actifs", "pendingReviews": "Évaluations en attente", "goalCompletion": "Réalisation des objectifs", "activePips": "Plans d’amélioration actifs", "totalFeedback": "Retours totaux",
+    "quickActions": "Actions rapides", "goalsProgress": "Progression des objectifs", "goalsProgressSubtitle": "Réalisation des objectifs à l’échelle de l’organisation", "viewAll": "Tout afficher", "goalsCount_one": "{{count}} objectif", "goalsCount_other": "{{count}} objectifs", "recentlyUpdated": "Mis à jour récemment",
+    "recentActivity": "Activité récente", "recentActivitySubtitle": "Derniers événements de performance", "noActivity": "Aucune activité sur la période sélectionnée.",
+    "status": { "completed": "Terminé", "inProgress": "En cours", "atRisk": "À risque", "notStarted": "Non commencé", "cancelled": "Annulé" }
+  },
   "roles": {
     "org_admin": "Administrateur de l'organisation",
     "hr_admin": "Administrateur RH",
@@ -62,6 +69,19 @@
     "actions": "Actions",
     "status": "Statut",
     "noData": "Aucune donnée disponible"
+  },
+  "myFeedback": {
+    "title": "Mes retours", "subtitle": "Retours que vous avez reçus et donnés.", "giveFeedback": "Donner un retour", "received": "Reçus", "given": "Donnés", "searchPlaceholder": "Rechercher des retours...",
+    "types": { "kudos": "Félicitations", "constructive": "Constructif", "general": "Général" },
+    "fromUser": "de {{name}}", "toUser": "à {{name}}", "anonymous": "Anonyme", "userNumber": "Utilisateur n° {{id}}",
+    "deleteAction": "Supprimer le retour", "deleteTitle": "Supprimer le retour ?", "deleteMessage": "Supprimer ce retour ? Cette action est irréversible.", "deleteSuccess": "Retour supprimé", "deleteError": "Impossible de supprimer le retour",
+    "empty": { "received": "Aucun retour reçu pour le moment", "given": "Aucun retour donné pour le moment", "receivedSearch": "Aucun retour reçu ne correspond à votre recherche", "givenSearch": "Aucun retour donné ne correspond à votre recherche", "receivedDescription": "Les retours de vos collègues apparaîtront ici.", "givenDescription": "Les retours que vous donnez apparaîtront ici." }
+  },
+  "myGoals": {
+    "title": "Mes objectifs", "subtitle": "Suivez vos objectifs personnels et ceux de votre équipe.", "createGoal": "Créer un objectif", "dueDate": "Échéance : {{date}}",
+    "checkIn": "Mettre à jour", "newValue": "Nouvelle valeur", "ofTarget": "sur {{target}}", "notesOptional": "Notes (facultatif)", "saving": "Enregistrement...",
+    "noKeyResults": "Aucun résultat clé défini.", "addKeyResults": "Ajouter des résultats clés", "loading": "Chargement de vos objectifs...", "loadError": "Impossible de charger les objectifs.",
+    "emptyTitle": "Aucun objectif pour le moment", "emptyDescription": "Créez votre premier objectif pour commencer à suivre votre progression.", "createAGoal": "Créer un objectif"
   },
   "myReviews": {
     "title": "Mes évaluations",

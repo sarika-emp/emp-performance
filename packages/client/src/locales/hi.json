@@ -40,6 +40,13 @@
     "expandSidebar": "साइडबार विस्तृत करें",
     "collapseSidebar": "साइडबार संक्षिप्त करें"
   },
+  "dashboard": {
+    "welcomeBack": "वापसी पर स्वागत है, {{name}}!", "there": "दोस्त", "overviewSubtitle": "प्रदर्शन का अवलोकन और प्रमुख मेट्रिक्स।",
+    "lastDays": "पिछले {{count}} दिन", "activeCycles": "सक्रिय चक्र", "pendingReviews": "लंबित समीक्षाएँ", "goalCompletion": "लक्ष्य पूर्णता", "activePips": "सक्रिय सुधार योजनाएँ", "totalFeedback": "कुल फ़ीडबैक",
+    "quickActions": "त्वरित कार्रवाइयाँ", "goalsProgress": "लक्ष्यों की प्रगति", "goalsProgressSubtitle": "पूरे संगठन के लक्ष्यों की पूर्णता", "viewAll": "सभी देखें", "goalsCount_one": "{{count}} लक्ष्य", "goalsCount_other": "{{count}} लक्ष्य", "recentlyUpdated": "हाल ही में अपडेट किए गए",
+    "recentActivity": "हाल की गतिविधि", "recentActivitySubtitle": "नवीनतम प्रदर्शन घटनाएँ", "noActivity": "चुनी गई अवधि में कोई गतिविधि नहीं है।",
+    "status": { "completed": "पूर्ण", "inProgress": "प्रगति पर", "atRisk": "जोखिम में", "notStarted": "शुरू नहीं हुआ", "cancelled": "रद्द" }
+  },
   "roles": {
     "org_admin": "संगठन एडमिन",
     "hr_admin": "एचआर एडमिन",
@@ -62,6 +69,19 @@
     "actions": "कार्रवाइयाँ",
     "status": "स्थिति",
     "noData": "कोई डेटा उपलब्ध नहीं"
+  },
+  "myFeedback": {
+    "title": "मेरी प्रतिक्रिया", "subtitle": "आपके द्वारा प्राप्त और दी गई प्रतिक्रिया।", "giveFeedback": "प्रतिक्रिया दें", "received": "प्राप्त", "given": "दी गई", "searchPlaceholder": "प्रतिक्रिया खोजें...",
+    "types": { "kudos": "सराहना", "constructive": "रचनात्मक", "general": "सामान्य" },
+    "fromUser": "{{name}} से", "toUser": "{{name}} को", "anonymous": "गुमनाम", "userNumber": "उपयोगकर्ता #{{id}}",
+    "deleteAction": "प्रतिक्रिया हटाएँ", "deleteTitle": "प्रतिक्रिया हटाएँ?", "deleteMessage": "क्या यह प्रतिक्रिया हटानी है? इसे वापस नहीं किया जा सकता।", "deleteSuccess": "प्रतिक्रिया हटा दी गई", "deleteError": "प्रतिक्रिया हटाई नहीं जा सकी",
+    "empty": { "received": "अभी कोई प्रतिक्रिया प्राप्त नहीं हुई", "given": "अभी कोई प्रतिक्रिया नहीं दी गई", "receivedSearch": "कोई प्राप्त प्रतिक्रिया आपकी खोज से मेल नहीं खाती", "givenSearch": "कोई दी गई प्रतिक्रिया आपकी खोज से मेल नहीं खाती", "receivedDescription": "सहकर्मियों की प्रतिक्रिया यहाँ दिखाई देगी।", "givenDescription": "आपकी दी गई प्रतिक्रिया यहाँ दिखाई देगी।" }
+  },
+  "myGoals": {
+    "title": "मेरे लक्ष्य", "subtitle": "अपने व्यक्तिगत और टीम के लक्ष्यों की प्रगति देखें।", "createGoal": "लक्ष्य बनाएँ", "dueDate": "नियत तिथि {{date}}",
+    "checkIn": "प्रगति दर्ज करें", "newValue": "नया मान", "ofTarget": "{{target}} में से", "notesOptional": "नोट्स (वैकल्पिक)", "saving": "सहेजा जा रहा है...",
+    "noKeyResults": "कोई मुख्य परिणाम निर्धारित नहीं है।", "addKeyResults": "मुख्य परिणाम जोड़ें", "loading": "आपके लक्ष्य लोड हो रहे हैं...", "loadError": "लक्ष्य लोड नहीं किए जा सके।",
+    "emptyTitle": "अभी कोई लक्ष्य नहीं", "emptyDescription": "प्रगति ट्रैक करना शुरू करने के लिए अपना पहला लक्ष्य बनाएँ।", "createAGoal": "एक लक्ष्य बनाएँ"
   },
   "myReviews": {
     "title": "मेरी समीक्षाएँ",

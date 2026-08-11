@@ -40,6 +40,13 @@
     "expandSidebar": "Expandir barra lateral",
     "collapseSidebar": "Contraer barra lateral"
   },
+  "dashboard": {
+    "welcomeBack": "¡Bienvenido de nuevo, {{name}}!", "there": "amigo", "overviewSubtitle": "Resumen del desempeño y métricas clave.",
+    "lastDays": "Últimos {{count}} días", "activeCycles": "Ciclos activos", "pendingReviews": "Evaluaciones pendientes", "goalCompletion": "Cumplimiento de objetivos", "activePips": "Planes de mejora activos", "totalFeedback": "Comentarios totales",
+    "quickActions": "Acciones rápidas", "goalsProgress": "Progreso de objetivos", "goalsProgressSubtitle": "Cumplimiento de objetivos de toda la organización", "viewAll": "Ver todo", "goalsCount_one": "{{count}} objetivo", "goalsCount_other": "{{count}} objetivos", "recentlyUpdated": "Actualizados recientemente",
+    "recentActivity": "Actividad reciente", "recentActivitySubtitle": "Últimos eventos de desempeño", "noActivity": "No hay actividad en el intervalo seleccionado.",
+    "status": { "completed": "Completado", "inProgress": "En progreso", "atRisk": "En riesgo", "notStarted": "No iniciado", "cancelled": "Cancelado" }
+  },
   "roles": {
     "org_admin": "Administrador de la organización",
     "hr_admin": "Administrador de RR. HH.",
@@ -62,6 +69,19 @@
     "actions": "Acciones",
     "status": "Estado",
     "noData": "No hay datos disponibles"
+  },
+  "myFeedback": {
+    "title": "Mis comentarios", "subtitle": "Comentarios que has recibido y enviado.", "giveFeedback": "Dar comentarios", "received": "Recibidos", "given": "Enviados", "searchPlaceholder": "Buscar comentarios...",
+    "types": { "kudos": "Reconocimiento", "constructive": "Constructivo", "general": "General" },
+    "fromUser": "de {{name}}", "toUser": "para {{name}}", "anonymous": "Anónimo", "userNumber": "Usuario n.º {{id}}",
+    "deleteAction": "Eliminar comentario", "deleteTitle": "¿Eliminar comentario?", "deleteMessage": "¿Eliminar este comentario? Esta acción no se puede deshacer.", "deleteSuccess": "Comentario eliminado", "deleteError": "No se pudo eliminar el comentario",
+    "empty": { "received": "Aún no has recibido comentarios", "given": "Aún no has enviado comentarios", "receivedSearch": "Ningún comentario recibido coincide con tu búsqueda", "givenSearch": "Ningún comentario enviado coincide con tu búsqueda", "receivedDescription": "Los comentarios de tus colegas aparecerán aquí.", "givenDescription": "Los comentarios que envíes aparecerán aquí." }
+  },
+  "myGoals": {
+    "title": "Mis objetivos", "subtitle": "Haz seguimiento de tus objetivos personales y de equipo.", "createGoal": "Crear objetivo", "dueDate": "Vence el {{date}}",
+    "checkIn": "Registrar avance", "newValue": "Nuevo valor", "ofTarget": "de {{target}}", "notesOptional": "Notas (opcional)", "saving": "Guardando...",
+    "noKeyResults": "No hay resultados clave definidos.", "addKeyResults": "Agregar resultados clave", "loading": "Cargando tus objetivos...", "loadError": "No se pudieron cargar los objetivos.",
+    "emptyTitle": "Aún no hay objetivos", "emptyDescription": "Crea tu primer objetivo para comenzar a registrar el progreso.", "createAGoal": "Crear un objetivo"
   },
   "myReviews": {
     "title": "Mis evaluaciones",

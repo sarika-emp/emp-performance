@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Target,
   AlertTriangle,
@@ -30,32 +31,32 @@ interface OverviewData {
 
 // #1: link each stat card to its detail page so users can drill in.
 const STAT_CARDS = [
-  { key: "activeCycles", label: "Active Cycles", icon: RefreshCw, color: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400", href: "/review-cycles" },
-  { key: "pendingReviews", label: "Pending Reviews", icon: ClipboardCheck, color: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400", href: "/reviews/my" },
-  { key: "goalCompletionRate", label: "Goal Completion", icon: Target, color: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400", suffix: "%", href: "/goals" },
-  { key: "pipCount", label: "Active PIPs", icon: AlertTriangle, color: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400", href: "/pips" },
-  { key: "feedbackCount", label: "Total Feedback", icon: MessageSquare, color: "bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400", href: "/feedback" },
+  { key: "activeCycles", labelKey: "dashboard.activeCycles", icon: RefreshCw, color: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400", href: "/review-cycles" },
+  { key: "pendingReviews", labelKey: "dashboard.pendingReviews", icon: ClipboardCheck, color: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400", href: "/reviews/my" },
+  { key: "goalCompletionRate", labelKey: "dashboard.goalCompletion", icon: Target, color: "bg-green-50 text-green-600 dark:bg-green-500/15 dark:text-green-400", suffix: "%", href: "/goals" },
+  { key: "pipCount", labelKey: "dashboard.activePips", icon: AlertTriangle, color: "bg-red-50 text-red-600 dark:bg-red-500/15 dark:text-red-400", href: "/pips" },
+  { key: "feedbackCount", labelKey: "dashboard.totalFeedback", icon: MessageSquare, color: "bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400", href: "/feedback" },
 ] as const;
 
 // Quick actions — the everyday self-service tasks, visible to every role.
 const QUICK_ACTIONS = [
-  { label: "My Performance", icon: TrendingUp, to: "/my", tone: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400" },
-  { label: "My Goals", icon: Target, to: "/my/goals", tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400" },
-  { label: "My Reviews", icon: ClipboardCheck, to: "/my/reviews", tone: "bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400" },
-  { label: "My 1-on-1s", icon: Users, to: "/my/one-on-ones", tone: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400" },
-  { label: "Kudos Wall", icon: Heart, to: "/feedback/wall", tone: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400" },
-  { label: "Nominate Peers", icon: UserPlus, to: "/peer-reviews/nominate", tone: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" },
+  { labelKey: "nav.myPerformance", icon: TrendingUp, to: "/my", tone: "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400" },
+  { labelKey: "nav.myGoals", icon: Target, to: "/my/goals", tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400" },
+  { labelKey: "nav.myReviews", icon: ClipboardCheck, to: "/my/reviews", tone: "bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400" },
+  { labelKey: "nav.myOneOnOnes", icon: Users, to: "/my/one-on-ones", tone: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400" },
+  { labelKey: "nav.kudosWall", icon: Heart, to: "/feedback/wall", tone: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400" },
+  { labelKey: "nav.nominatePeers", icon: UserPlus, to: "/peer-reviews/nominate", tone: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400" },
 ];
 
 // Goal status → badge + dot styling for the activity feed and the progress
 // breakdown. Raw "— in_progress" text reads like a debug dump; a colored
 // badge carries the same info at a glance.
-const GOAL_STATUS: Record<string, { label: string; badge: string; dot: string }> = {
-  completed: { label: "Completed", badge: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400", dot: "bg-green-500" },
-  in_progress: { label: "In Progress", badge: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400", dot: "bg-blue-500" },
-  at_risk: { label: "At Risk", badge: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", dot: "bg-amber-500" },
-  not_started: { label: "Not Started", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300", dot: "bg-gray-400" },
-  cancelled: { label: "Cancelled", badge: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400", dot: "bg-red-500" },
+const GOAL_STATUS: Record<string, { labelKey: string; badge: string; dot: string }> = {
+  completed: { labelKey: "dashboard.status.completed", badge: "bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400", dot: "bg-green-500" },
+  in_progress: { labelKey: "dashboard.status.inProgress", badge: "bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400", dot: "bg-blue-500" },
+  at_risk: { labelKey: "dashboard.status.atRisk", badge: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400", dot: "bg-amber-500" },
+  not_started: { labelKey: "dashboard.status.notStarted", badge: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300", dot: "bg-gray-400" },
+  cancelled: { labelKey: "dashboard.status.cancelled", badge: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400", dot: "bg-red-500" },
 };
 
 interface RecentGoal {
@@ -83,9 +84,9 @@ interface PaginatedResp<T> {
 }
 
 const RANGE_OPTIONS = [
-  { label: "Last 7 days", days: 7 },
-  { label: "Last 30 days", days: 30 },
-  { label: "Last 90 days", days: 90 },
+  { labelKey: "dashboard.lastDays", days: 7 },
+  { labelKey: "dashboard.lastDays", days: 30 },
+  { labelKey: "dashboard.lastDays", days: 90 },
 ] as const;
 
 type ActivityEntry = {
@@ -98,17 +99,11 @@ type ActivityEntry = {
 };
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation();
   const [rangeDays, setRangeDays] = useState<number>(30);
   const user = getUser();
   const displayName = user ? `${user.firstName} ${user.lastName}` : "User";
-  const roleLabel =
-    user?.role === "org_admin"
-      ? "Org Admin"
-      : user?.role === "hr_admin"
-        ? "HR Admin"
-        : user?.role === "hr_manager"
-          ? "HR Manager"
-          : "Employee";
+  const roleLabel = t(`roles.${user?.role ?? "employee"}`, { defaultValue: t("roles.employee") });
 
   const { data, isLoading } = useQuery({
     queryKey: ["analytics", "overview"],
@@ -176,10 +171,10 @@ export function DashboardPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-gray-900">
-                Welcome back, {user?.firstName || "there"}!
+                {t("dashboard.welcomeBack", { name: user?.firstName || t("dashboard.there") })}
               </h1>
               <p className="text-sm text-gray-500">
-                {roleLabel} · Performance overview and key metrics.
+                {roleLabel} · {t("dashboard.overviewSubtitle")}
               </p>
             </div>
           </div>
@@ -190,7 +185,7 @@ export function DashboardPage() {
           >
             {RANGE_OPTIONS.map((r) => (
               <option key={r.days} value={r.days}>
-                {r.label}
+                {t(r.labelKey, { count: r.days })}
               </option>
             ))}
           </select>
@@ -221,7 +216,7 @@ export function DashboardPage() {
                       {"suffix" in card ? card.suffix : ""}
                     </p>
                   )}
-                  <p className="truncate text-sm text-gray-500">{card.label}</p>
+                  <p className="truncate text-sm text-gray-500">{t(card.labelKey)}</p>
                 </div>
               </div>
             </Link>
@@ -231,18 +226,18 @@ export function DashboardPage() {
 
       {/* ── Quick Actions ──────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-gray-900">Quick Actions</h2>
+        <h2 className="mb-3 text-sm font-semibold text-gray-900">{t("dashboard.quickActions")}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {QUICK_ACTIONS.map((a) => (
             <Link
-              key={a.label}
+              key={a.labelKey}
               to={a.to}
               className="group flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 text-center transition hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
             >
               <span className={`flex h-9 w-9 items-center justify-center rounded-xl transition group-hover:scale-105 ${a.tone}`}>
                 <a.icon className="h-[18px] w-[18px]" />
               </span>
-              <span className="text-xs font-medium text-gray-700">{a.label}</span>
+              <span className="text-xs font-medium text-gray-700">{t(a.labelKey)}</span>
             </Link>
           ))}
         </div>
@@ -254,19 +249,19 @@ export function DashboardPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Goals Progress</h2>
-              <p className="mt-0.5 text-sm text-gray-500">Organization-wide goal completion</p>
+              <h2 className="text-base font-semibold text-gray-900">{t("dashboard.goalsProgress")}</h2>
+              <p className="mt-0.5 text-sm text-gray-500">{t("dashboard.goalsProgressSubtitle")}</p>
             </div>
             <Link to="/goals" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-              View all
+              {t("dashboard.viewAll")}
             </Link>
           </div>
           <div className="mt-4">
             <div className="flex items-end justify-between text-sm">
-              <span className="text-gray-600">Completed</span>
+              <span className="text-gray-600">{t("dashboard.status.completed")}</span>
               <span className="font-semibold text-gray-900">
                 {overview?.completedGoals ?? 0}
-                <span className="font-normal text-gray-400"> / {overview?.totalGoals ?? 0} goals</span>
+                <span className="font-normal text-gray-400"> / {t("dashboard.goalsCount", { count: overview?.totalGoals ?? 0 })}</span>
               </span>
             </div>
             <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
@@ -283,7 +278,7 @@ export function DashboardPage() {
           {Object.keys(statusCounts).length > 0 && (
             <div className="mt-3 border-t border-gray-100 pt-3">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                Recently updated
+                {t("dashboard.recentlyUpdated")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(statusCounts).map(([status, count]) => {
@@ -294,7 +289,7 @@ export function DashboardPage() {
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${s.badge}`}
                     >
                       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-                      {s.label}
+                      {t(s.labelKey)}
                       <span className="font-bold">{count}</span>
                     </span>
                   );
@@ -308,17 +303,17 @@ export function DashboardPage() {
         <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
-              <p className="mt-0.5 text-sm text-gray-500">Latest performance events</p>
+              <h2 className="text-base font-semibold text-gray-900">{t("dashboard.recentActivity")}</h2>
+              <p className="mt-0.5 text-sm text-gray-500">{t("dashboard.recentActivitySubtitle")}</p>
             </div>
             <Link to="/notifications" className="text-sm font-medium text-brand-600 hover:text-brand-700">
-              View all
+              {t("dashboard.viewAll")}
             </Link>
           </div>
           <div className="mt-3 space-y-1">
             {recentActivity.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-gray-400">
-                No activity in the selected range.
+                {t("dashboard.noActivity")}
               </p>
             ) : (
               recentActivity.map((a) => {
@@ -344,11 +339,11 @@ export function DashboardPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-gray-700">{a.text}</p>
-                      <p className="text-xs text-gray-400">{formatDate(a.time)}</p>
+                      <p className="text-xs text-gray-400">{formatDate(a.time, i18n.resolvedLanguage)}</p>
                     </div>
                     {s && (
                       <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.badge}`}>
-                        {s.label}
+                        {t(s.labelKey)}
                       </span>
                     )}
                   </Link>

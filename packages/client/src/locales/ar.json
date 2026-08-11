@@ -40,6 +40,13 @@
     "expandSidebar": "توسيع الشريط الجانبي",
     "collapseSidebar": "طي الشريط الجانبي"
   },
+  "dashboard": {
+    "welcomeBack": "مرحبًا بعودتك، {{name}}!", "there": "بك", "overviewSubtitle": "نظرة عامة على الأداء والمقاييس الرئيسية.",
+    "lastDays": "آخر {{count}} يومًا", "activeCycles": "الدورات النشطة", "pendingReviews": "المراجعات المعلقة", "goalCompletion": "إنجاز الأهداف", "activePips": "خطط التحسين النشطة", "totalFeedback": "إجمالي الملاحظات",
+    "quickActions": "إجراءات سريعة", "goalsProgress": "تقدم الأهداف", "goalsProgressSubtitle": "إنجاز الأهداف على مستوى المؤسسة", "viewAll": "عرض الكل", "goalsCount_one": "هدف واحد", "goalsCount_other": "{{count}} أهداف", "recentlyUpdated": "حُدّث مؤخرًا",
+    "recentActivity": "النشاط الأخير", "recentActivitySubtitle": "أحدث أحداث الأداء", "noActivity": "لا يوجد نشاط في النطاق المحدد.",
+    "status": { "completed": "مكتمل", "inProgress": "قيد التنفيذ", "atRisk": "معرض للخطر", "notStarted": "لم يبدأ", "cancelled": "ملغى" }
+  },
   "roles": {
     "org_admin": "مسؤول المؤسسة",
     "hr_admin": "مسؤول الموارد البشرية",
@@ -62,6 +69,19 @@
     "actions": "الإجراءات",
     "status": "الحالة",
     "noData": "لا توجد بيانات متاحة"
+  },
+  "myFeedback": {
+    "title": "ملاحظاتي", "subtitle": "الملاحظات التي تلقيتها وقدمتها.", "giveFeedback": "تقديم ملاحظات", "received": "المستلمة", "given": "المقدمة", "searchPlaceholder": "البحث في الملاحظات...",
+    "types": { "kudos": "إشادة", "constructive": "بنّاءة", "general": "عامة" },
+    "fromUser": "من {{name}}", "toUser": "إلى {{name}}", "anonymous": "مجهول", "userNumber": "المستخدم رقم {{id}}",
+    "deleteAction": "حذف الملاحظة", "deleteTitle": "حذف الملاحظة؟", "deleteMessage": "هل تريد حذف هذه الملاحظة؟ لا يمكن التراجع عن ذلك.", "deleteSuccess": "تم حذف الملاحظة", "deleteError": "تعذر حذف الملاحظة",
+    "empty": { "received": "لم تتلقَ ملاحظات بعد", "given": "لم تقدم ملاحظات بعد", "receivedSearch": "لا توجد ملاحظات مستلمة تطابق بحثك", "givenSearch": "لا توجد ملاحظات مقدمة تطابق بحثك", "receivedDescription": "ستظهر ملاحظات الزملاء هنا.", "givenDescription": "ستظهر الملاحظات التي تقدمها هنا." }
+  },
+  "myGoals": {
+    "title": "أهدافي", "subtitle": "تتبّع أهدافك الشخصية وأهداف الفريق.", "createGoal": "إنشاء هدف", "dueDate": "موعد الاستحقاق {{date}}",
+    "checkIn": "تسجيل التقدم", "newValue": "قيمة جديدة", "ofTarget": "من {{target}}", "notesOptional": "ملاحظات (اختياري)", "saving": "جارٍ الحفظ...",
+    "noKeyResults": "لم يتم تحديد نتائج رئيسية.", "addKeyResults": "إضافة نتائج رئيسية", "loading": "جارٍ تحميل أهدافك...", "loadError": "تعذر تحميل الأهداف.",
+    "emptyTitle": "لا توجد أهداف بعد", "emptyDescription": "أنشئ هدفك الأول لبدء تتبع التقدم.", "createAGoal": "إنشاء هدف"
   },
   "myReviews": {
     "title": "مراجعاتي",

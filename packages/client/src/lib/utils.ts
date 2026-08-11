@@ -14,8 +14,8 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("en-IN", {
+export function formatDate(date: string | Date, locale?: string): string {
+  return new Intl.DateTimeFormat(locale || document.documentElement.lang || "en", {
     day: "2-digit",
     month: "short",
     year: "numeric",

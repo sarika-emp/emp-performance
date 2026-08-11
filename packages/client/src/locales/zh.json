@@ -40,6 +40,13 @@
     "expandSidebar": "展开侧边栏",
     "collapseSidebar": "收起侧边栏"
   },
+  "dashboard": {
+    "welcomeBack": "欢迎回来，{{name}}！", "there": "您好", "overviewSubtitle": "绩效概览和关键指标。",
+    "lastDays": "最近 {{count}} 天", "activeCycles": "进行中的周期", "pendingReviews": "待处理评估", "goalCompletion": "目标完成率", "activePips": "进行中的改进计划", "totalFeedback": "反馈总数",
+    "quickActions": "快捷操作", "goalsProgress": "目标进度", "goalsProgressSubtitle": "组织整体目标完成情况", "viewAll": "查看全部", "goalsCount_one": "{{count}} 个目标", "goalsCount_other": "{{count}} 个目标", "recentlyUpdated": "最近更新",
+    "recentActivity": "最近活动", "recentActivitySubtitle": "最新绩效事件", "noActivity": "所选时间范围内没有活动。",
+    "status": { "completed": "已完成", "inProgress": "进行中", "atRisk": "有风险", "notStarted": "未开始", "cancelled": "已取消" }
+  },
   "roles": {
     "org_admin": "组织管理员",
     "hr_admin": "HR 管理员",
@@ -62,6 +69,19 @@
     "actions": "操作",
     "status": "状态",
     "noData": "暂无数据"
+  },
+  "myFeedback": {
+    "title": "我的反馈", "subtitle": "您收到和提供的反馈。", "giveFeedback": "提供反馈", "received": "收到的", "given": "提供的", "searchPlaceholder": "搜索反馈...",
+    "types": { "kudos": "表扬", "constructive": "建设性", "general": "一般" },
+    "fromUser": "来自 {{name}}", "toUser": "发给 {{name}}", "anonymous": "匿名", "userNumber": "用户 #{{id}}",
+    "deleteAction": "删除反馈", "deleteTitle": "删除反馈？", "deleteMessage": "确定删除此反馈吗？此操作无法撤销。", "deleteSuccess": "反馈已删除", "deleteError": "无法删除反馈",
+    "empty": { "received": "尚未收到反馈", "given": "尚未提供反馈", "receivedSearch": "没有收到的反馈与搜索匹配", "givenSearch": "没有提供的反馈与搜索匹配", "receivedDescription": "同事的反馈将显示在这里。", "givenDescription": "您提供的反馈将显示在这里。" }
+  },
+  "myGoals": {
+    "title": "我的目标", "subtitle": "跟踪个人和团队目标。", "createGoal": "创建目标", "dueDate": "截止日期：{{date}}",
+    "checkIn": "更新进度", "newValue": "新值", "ofTarget": "目标值 {{target}}", "notesOptional": "备注（可选）", "saving": "正在保存...",
+    "noKeyResults": "未定义关键结果。", "addKeyResults": "添加关键结果", "loading": "正在加载目标...", "loadError": "无法加载目标。",
+    "emptyTitle": "暂无目标", "emptyDescription": "创建第一个目标以开始跟踪进度。", "createAGoal": "创建目标"
   },
   "myReviews": {
     "title": "我的评估",

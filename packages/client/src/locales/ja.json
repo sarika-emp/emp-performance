@@ -40,6 +40,13 @@
     "expandSidebar": "サイドバーを展開",
     "collapseSidebar": "サイドバーを折りたたむ"
   },
+  "dashboard": {
+    "welcomeBack": "おかえりなさい、{{name}}さん！", "there": "ゲスト", "overviewSubtitle": "パフォーマンスの概要と主要指標。",
+    "lastDays": "過去{{count}}日間", "activeCycles": "進行中のサイクル", "pendingReviews": "保留中の評価", "goalCompletion": "目標達成率", "activePips": "進行中の改善計画", "totalFeedback": "フィードバック合計",
+    "quickActions": "クイックアクション", "goalsProgress": "目標の進捗", "goalsProgressSubtitle": "組織全体の目標達成状況", "viewAll": "すべて表示", "goalsCount_one": "{{count}}件の目標", "goalsCount_other": "{{count}}件の目標", "recentlyUpdated": "最近更新",
+    "recentActivity": "最近のアクティビティ", "recentActivitySubtitle": "最新のパフォーマンスイベント", "noActivity": "選択した期間にアクティビティはありません。",
+    "status": { "completed": "完了", "inProgress": "進行中", "atRisk": "要注意", "notStarted": "未開始", "cancelled": "キャンセル" }
+  },
   "roles": {
     "org_admin": "組織管理者",
     "hr_admin": "HR管理者",
@@ -62,6 +69,19 @@
     "actions": "アクション",
     "status": "ステータス",
     "noData": "データがありません"
+  },
+  "myFeedback": {
+    "title": "自分のフィードバック", "subtitle": "受け取ったフィードバックと送ったフィードバック。", "giveFeedback": "フィードバックを送る", "received": "受信", "given": "送信", "searchPlaceholder": "フィードバックを検索...",
+    "types": { "kudos": "称賛", "constructive": "建設的", "general": "一般" },
+    "fromUser": "{{name}}から", "toUser": "{{name}}へ", "anonymous": "匿名", "userNumber": "ユーザー #{{id}}",
+    "deleteAction": "フィードバックを削除", "deleteTitle": "フィードバックを削除しますか？", "deleteMessage": "このフィードバックを削除しますか？この操作は元に戻せません。", "deleteSuccess": "フィードバックを削除しました", "deleteError": "フィードバックを削除できませんでした",
+    "empty": { "received": "受信したフィードバックはまだありません", "given": "送信したフィードバックはまだありません", "receivedSearch": "検索に一致する受信フィードバックはありません", "givenSearch": "検索に一致する送信フィードバックはありません", "receivedDescription": "同僚からのフィードバックがここに表示されます。", "givenDescription": "送ったフィードバックがここに表示されます。" }
+  },
+  "myGoals": {
+    "title": "自分の目標", "subtitle": "個人およびチームの目標を追跡します。", "createGoal": "目標を作成", "dueDate": "期限：{{date}}",
+    "checkIn": "進捗を更新", "newValue": "新しい値", "ofTarget": "目標 {{target}}", "notesOptional": "メモ（任意）", "saving": "保存中...",
+    "noKeyResults": "主要な成果が定義されていません。", "addKeyResults": "主要な成果を追加", "loading": "目標を読み込んでいます...", "loadError": "目標を読み込めませんでした。",
+    "emptyTitle": "目標はまだありません", "emptyDescription": "最初の目標を作成して進捗の追跡を始めましょう。", "createAGoal": "目標を作成"
   },
   "myReviews": {
     "title": "マイレビュー",

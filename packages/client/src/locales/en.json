@@ -40,6 +40,13 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar"
   },
+  "dashboard": {
+    "welcomeBack": "Welcome back, {{name}}!", "there": "there", "overviewSubtitle": "Performance overview and key metrics.",
+    "lastDays": "Last {{count}} days", "activeCycles": "Active Cycles", "pendingReviews": "Pending Reviews", "goalCompletion": "Goal Completion", "activePips": "Active PIPs", "totalFeedback": "Total Feedback",
+    "quickActions": "Quick Actions", "goalsProgress": "Goals Progress", "goalsProgressSubtitle": "Organization-wide goal completion", "viewAll": "View all", "goalsCount_one": "{{count}} goal", "goalsCount_other": "{{count}} goals", "recentlyUpdated": "Recently updated",
+    "recentActivity": "Recent Activity", "recentActivitySubtitle": "Latest performance events", "noActivity": "No activity in the selected range.",
+    "status": { "completed": "Completed", "inProgress": "In Progress", "atRisk": "At Risk", "notStarted": "Not Started", "cancelled": "Cancelled" }
+  },
   "roles": {
     "org_admin": "Org Admin",
     "hr_admin": "HR Admin",
@@ -62,6 +69,19 @@
     "actions": "Actions",
     "status": "Status",
     "noData": "No data available"
+  },
+  "myFeedback": {
+    "title": "My Feedback", "subtitle": "Feedback you have received and given.", "giveFeedback": "Give Feedback", "received": "Received", "given": "Given", "searchPlaceholder": "Search feedback...",
+    "types": { "kudos": "Kudos", "constructive": "Constructive", "general": "General" },
+    "fromUser": "from {{name}}", "toUser": "to {{name}}", "anonymous": "Anonymous", "userNumber": "User #{{id}}",
+    "deleteAction": "Delete feedback", "deleteTitle": "Delete feedback?", "deleteMessage": "Delete this feedback? This cannot be undone.", "deleteSuccess": "Feedback deleted", "deleteError": "Failed to delete feedback",
+    "empty": { "received": "No feedback received yet", "given": "No feedback given yet", "receivedSearch": "No received feedback matches your search", "givenSearch": "No given feedback matches your search", "receivedDescription": "Feedback from colleagues will appear here.", "givenDescription": "Feedback you give will appear here." }
+  },
+  "myGoals": {
+    "title": "My Goals", "subtitle": "Track your personal and team goals.", "createGoal": "Create Goal", "dueDate": "Due {{date}}",
+    "checkIn": "Check In", "newValue": "New value", "ofTarget": "of {{target}}", "notesOptional": "Notes (optional)", "saving": "Saving...",
+    "noKeyResults": "No key results defined.", "addKeyResults": "Add key results", "loading": "Loading your goals...", "loadError": "Failed to load goals.",
+    "emptyTitle": "No goals yet", "emptyDescription": "Create your first goal to start tracking progress.", "createAGoal": "Create a goal"
   },
   "myReviews": {
     "title": "My Reviews",
