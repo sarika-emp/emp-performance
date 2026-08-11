@@ -70,6 +70,10 @@
     "status": "Status",
     "noData": "No data available"
   },
+  "myLetters": {
+    "title": "My Letters", "subtitle": "View performance letters issued to you.", "searchPlaceholder": "Search letter content...", "allTypes": "All Types", "loadError": "Failed to load your letters.", "emptyFiltered": "No letters match your filters.", "empty": "No performance letters have been issued to you yet.", "issuedOn": "Issued on {{date}}", "sent": "Sent", "download": "Download",
+    "types": { "appraisal": "Appraisal Letter", "increment": "Increment Letter", "promotion": "Promotion Letter", "confirmation": "Confirmation Letter", "warning": "Warning Letter" }
+  },
   "mySkillsGap": {
     "title": "My Skills Gap", "subtitle": "See how your skills compare to your career path requirements.", "loadError": "Failed to load your skills gap data.", "emptyTitle": "No competency data available yet. Complete a performance review and ensure you are assigned to a career path.",
     "yourReadiness": "Your Readiness", "developmentSummary_one": "{{count}} area needs development out of {{total}} total competencies.", "developmentSummary_other": "{{count}} areas need development out of {{total}} total competencies.",

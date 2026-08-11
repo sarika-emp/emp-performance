@@ -70,6 +70,10 @@
     "status": "Status",
     "noData": "Keine Daten verfügbar"
   },
+  "myLetters": {
+    "title": "Meine Schreiben", "subtitle": "Zeigen Sie die an Sie ausgestellten Leistungsschreiben an.", "searchPlaceholder": "Schreiben durchsuchen...", "allTypes": "Alle Typen", "loadError": "Ihre Schreiben konnten nicht geladen werden.", "emptyFiltered": "Keine Schreiben entsprechen Ihren Filtern.", "empty": "Es wurden Ihnen noch keine Leistungsschreiben ausgestellt.", "issuedOn": "Ausgestellt am {{date}}", "sent": "Gesendet", "download": "Herunterladen",
+    "types": { "appraisal": "Beurteilungsschreiben", "increment": "Gehaltserhöhungsschreiben", "promotion": "Beförderungsschreiben", "confirmation": "Bestätigungsschreiben", "warning": "Abmahnung" }
+  },
   "mySkillsGap": {
     "title": "Meine Kompetenzlücken", "subtitle": "Vergleichen Sie Ihre Kompetenzen mit den Anforderungen Ihres Karrierewegs.", "loadError": "Die Daten zu Ihren Kompetenzlücken konnten nicht geladen werden.", "emptyTitle": "Noch keine Kompetenzdaten verfügbar. Schließen Sie eine Leistungsbeurteilung ab und stellen Sie sicher, dass Ihnen ein Karriereweg zugewiesen ist.",
     "yourReadiness": "Ihre Bereitschaft", "developmentSummary_one": "{{count}} Bereich muss von insgesamt {{total}} Kompetenzen entwickelt werden.", "developmentSummary_other": "{{count}} Bereiche müssen von insgesamt {{total}} Kompetenzen entwickelt werden.",

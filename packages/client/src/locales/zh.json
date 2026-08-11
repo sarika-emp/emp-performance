@@ -70,6 +70,10 @@
     "status": "状态",
     "noData": "暂无数据"
   },
+  "myLetters": {
+    "title": "我的信函", "subtitle": "查看发给您的绩效信函。", "searchPlaceholder": "搜索信函内容...", "allTypes": "所有类型", "loadError": "无法加载您的信函。", "emptyFiltered": "没有信函与筛选条件匹配。", "empty": "尚未向您发放任何绩效信函。", "issuedOn": "发布于 {{date}}", "sent": "已发送", "download": "下载",
+    "types": { "appraisal": "评估信", "increment": "加薪信", "promotion": "晋升信", "confirmation": "确认信", "warning": "警告信" }
+  },
   "mySkillsGap": {
     "title": "我的技能差距", "subtitle": "查看您的技能与职业路径要求之间的差距。", "loadError": "无法加载您的技能差距数据。", "emptyTitle": "尚无能力数据。请完成绩效评估，并确保已为您分配职业路径。",
     "yourReadiness": "您的准备度", "developmentSummary_one": "共 {{total}} 项能力中有 {{count}} 个领域需要发展。", "developmentSummary_other": "共 {{total}} 项能力中有 {{count}} 个领域需要发展。",

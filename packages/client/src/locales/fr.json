@@ -70,6 +70,10 @@
     "status": "Statut",
     "noData": "Aucune donnée disponible"
   },
+  "myLetters": {
+    "title": "Mes lettres", "subtitle": "Consultez les lettres de performance qui vous ont été adressées.", "searchPlaceholder": "Rechercher dans les lettres...", "allTypes": "Tous les types", "loadError": "Impossible de charger vos lettres.", "emptyFiltered": "Aucune lettre ne correspond à vos filtres.", "empty": "Aucune lettre de performance ne vous a encore été adressée.", "issuedOn": "Émise le {{date}}", "sent": "Envoyée", "download": "Télécharger",
+    "types": { "appraisal": "Lettre d’évaluation", "increment": "Lettre d’augmentation", "promotion": "Lettre de promotion", "confirmation": "Lettre de confirmation", "warning": "Lettre d’avertissement" }
+  },
   "mySkillsGap": {
     "title": "Écart de mes compétences", "subtitle": "Comparez vos compétences aux exigences de votre parcours professionnel.", "loadError": "Impossible de charger les données d’écart de compétences.", "emptyTitle": "Aucune donnée de compétence disponible. Effectuez une évaluation et vérifiez qu’un parcours professionnel vous est attribué.",
     "yourReadiness": "Votre niveau de préparation", "developmentSummary_one": "{{count}} domaine à développer sur {{total}} compétences au total.", "developmentSummary_other": "{{count}} domaines à développer sur {{total}} compétences au total.",

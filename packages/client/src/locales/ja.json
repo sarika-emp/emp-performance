@@ -70,6 +70,10 @@
     "status": "ステータス",
     "noData": "データがありません"
   },
+  "myLetters": {
+    "title": "自分のレター", "subtitle": "自分に発行されたパフォーマンスレターを確認します。", "searchPlaceholder": "レターの内容を検索...", "allTypes": "すべての種類", "loadError": "レターを読み込めませんでした。", "emptyFiltered": "フィルターに一致するレターはありません。", "empty": "パフォーマンスレターはまだ発行されていません。", "issuedOn": "{{date}}発行", "sent": "送信済み", "download": "ダウンロード",
+    "types": { "appraisal": "評価レター", "increment": "昇給レター", "promotion": "昇進レター", "confirmation": "確認レター", "warning": "警告レター" }
+  },
   "mySkillsGap": {
     "title": "自分のスキルギャップ", "subtitle": "自分のスキルとキャリアパスの要件を比較します。", "loadError": "スキルギャップのデータを読み込めませんでした。", "emptyTitle": "コンピテンシーデータはまだありません。評価を完了し、キャリアパスが割り当てられていることを確認してください。",
     "yourReadiness": "準備度", "developmentSummary_one": "全{{total}}コンピテンシーのうち{{count}}領域で育成が必要です。", "developmentSummary_other": "全{{total}}コンピテンシーのうち{{count}}領域で育成が必要です。",

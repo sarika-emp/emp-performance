@@ -70,6 +70,10 @@
     "status": "الحالة",
     "noData": "لا توجد بيانات متاحة"
   },
+  "myLetters": {
+    "title": "خطاباتي", "subtitle": "اعرض خطابات الأداء الصادرة لك.", "searchPlaceholder": "البحث في محتوى الخطابات...", "allTypes": "جميع الأنواع", "loadError": "تعذر تحميل خطاباتك.", "emptyFiltered": "لا توجد خطابات تطابق عوامل التصفية.", "empty": "لم تصدر لك أي خطابات أداء بعد.", "issuedOn": "صدر في {{date}}", "sent": "تم الإرسال", "download": "تنزيل",
+    "types": { "appraisal": "خطاب تقييم", "increment": "خطاب زيادة", "promotion": "خطاب ترقية", "confirmation": "خطاب تثبيت", "warning": "خطاب تحذير" }
+  },
   "mySkillsGap": {
     "title": "فجوة مهاراتي", "subtitle": "تعرف على مدى توافق مهاراتك مع متطلبات مسارك المهني.", "loadError": "تعذر تحميل بيانات فجوة مهاراتك.", "emptyTitle": "لا تتوفر بيانات للكفاءات بعد. أكمل مراجعة أداء وتأكد من تعيينك إلى مسار مهني.",
     "yourReadiness": "جاهزيتك", "developmentSummary_one": "مجال واحد يحتاج إلى تطوير من إجمالي {{total}} كفاءة.", "developmentSummary_other": "{{count}} مجالات تحتاج إلى تطوير من إجمالي {{total}} كفاءة.",

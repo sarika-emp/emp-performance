@@ -70,6 +70,10 @@
     "status": "Status",
     "noData": "Nenhum dado disponível"
   },
+  "myLetters": {
+    "title": "Minhas cartas", "subtitle": "Veja as cartas de desempenho emitidas para você.", "searchPlaceholder": "Pesquisar conteúdo das cartas...", "allTypes": "Todos os tipos", "loadError": "Não foi possível carregar suas cartas.", "emptyFiltered": "Nenhuma carta corresponde aos seus filtros.", "empty": "Nenhuma carta de desempenho foi emitida para você ainda.", "issuedOn": "Emitida em {{date}}", "sent": "Enviada", "download": "Baixar",
+    "types": { "appraisal": "Carta de avaliação", "increment": "Carta de aumento", "promotion": "Carta de promoção", "confirmation": "Carta de confirmação", "warning": "Carta de advertência" }
+  },
   "mySkillsGap": {
     "title": "Minha lacuna de habilidades", "subtitle": "Veja como suas habilidades se comparam aos requisitos da sua trajetória profissional.", "loadError": "Não foi possível carregar os dados da sua lacuna de habilidades.", "emptyTitle": "Ainda não há dados de competências. Conclua uma avaliação de desempenho e confirme que uma trajetória profissional foi atribuída a você.",
     "yourReadiness": "Sua preparação", "developmentSummary_one": "{{count}} área precisa de desenvolvimento entre {{total}} competências no total.", "developmentSummary_other": "{{count}} áreas precisam de desenvolvimento entre {{total}} competências no total.",

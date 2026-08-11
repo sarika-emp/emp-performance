@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { FileText, Download, Loader2, Mail, Search } from "lucide-react";
 import { apiGet, api } from "@/api/client";
 import { getUser } from "@/lib/auth-store";
@@ -25,12 +26,12 @@ interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  appraisal: "Appraisal Letter",
-  increment: "Increment Letter",
-  promotion: "Promotion Letter",
-  confirmation: "Confirmation Letter",
-  warning: "Warning Letter",
+const TYPE_LABEL_KEYS: Record<string, string> = {
+  appraisal: "myLetters.types.appraisal",
+  increment: "myLetters.types.increment",
+  promotion: "myLetters.types.promotion",
+  confirmation: "myLetters.types.confirmation",
+  warning: "myLetters.types.warning",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -41,7 +42,7 @@ const TYPE_COLORS: Record<string, string> = {
   warning: "bg-red-100 text-red-800",
 };
 
-const TYPE_OPTIONS = Object.entries(TYPE_LABELS);
+const TYPE_OPTIONS = Object.keys(TYPE_LABEL_KEYS);
 
 async function downloadLetter(letterId: string, type: string) {
   const res = await api.get(`/letters/${letterId}/download`, { responseType: "blob" });
@@ -54,6 +55,7 @@ async function downloadLetter(letterId: string, type: string) {
 }
 
 export function MyLettersPage() {
+  const { t, i18n } = useTranslation();
   const user = getUser();
   const employeeId = user?.empcloudUserId;
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -80,9 +82,9 @@ export function MyLettersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Letters</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t("myLetters.title")}</h1>
       <p className="mt-1 text-sm text-gray-500">
-        View performance letters issued to you.
+        {t("myLetters.subtitle")}
       </p>
 
       {/* Controls */}
@@ -100,7 +102,7 @@ export function MyLettersPage() {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search letter content…"
+            placeholder={t("myLetters.searchPlaceholder")}
             className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </form>
@@ -112,10 +114,10 @@ export function MyLettersPage() {
           }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">All Types</option>
-          {TYPE_OPTIONS.map(([key, label]) => (
+          <option value="">{t("myLetters.allTypes")}</option>
+          {TYPE_OPTIONS.map((key) => (
             <option key={key} value={key}>
-              {label}
+              {t(TYPE_LABEL_KEYS[key])}
             </option>
           ))}
         </select>
@@ -129,7 +131,7 @@ export function MyLettersPage() {
 
       {error && (
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-600">Failed to load your letters.</p>
+          <p className="text-sm text-red-600">{t("myLetters.loadError")}</p>
         </div>
       )}
 
@@ -138,8 +140,8 @@ export function MyLettersPage() {
           icon={FileText}
           title={
             search || filterType
-              ? "No letters match your filters."
-              : "No performance letters have been issued to you yet."
+              ? t("myLetters.emptyFiltered")
+              : t("myLetters.empty")
           }
         />
       )}
@@ -163,24 +165,26 @@ export function MyLettersPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      {TYPE_LABELS[letter.type] ?? letter.type}
+                      {TYPE_LABEL_KEYS[letter.type] ? t(TYPE_LABEL_KEYS[letter.type]) : letter.type}
                     </span>
                     <StatusBadge
                       colorClass={TYPE_COLORS[letter.type] ?? "bg-gray-100 text-gray-800"}
                       className="px-2"
                     >
-                      {letter.type}
+                      {TYPE_LABEL_KEYS[letter.type] ? t(TYPE_LABEL_KEYS[letter.type]) : letter.type}
                     </StatusBadge>
                   </div>
                   <p className="mt-0.5 text-xs text-gray-500">
-                    Issued on {formatDate(letter.created_at)}
+                    {t("myLetters.issuedOn", {
+                      date: formatDate(letter.created_at, i18n.resolvedLanguage),
+                    })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   {letter.sent_at && (
                     <span className="inline-flex items-center gap-1 text-xs text-green-600">
                       <Mail className="h-3 w-3" />
-                      Sent
+                      {t("myLetters.sent")}
                     </span>
                   )}
                 </div>
@@ -199,7 +203,7 @@ export function MyLettersPage() {
                       className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
                     >
                       <Download className="h-4 w-4" />
-                      Download
+                      {t("myLetters.download")}
                     </button>
                   </div>
                 </div>
