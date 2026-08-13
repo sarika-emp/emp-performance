@@ -374,5 +374,6 @@
       "emptyDescription":  "Crie o primeiro plano para identificar futuros líderes.",
       "candidateCount":  "{{count}} candidato",
       "candidateCount_other":  "{{count}} candidatos"
-  }
+  },
+  "managerEffectiveness": {"title":"Manager Effectiveness","subtitle":"Composite scores from team performance, review quality, and engagement.","calculateAll":"Calculate All","calculated":"Calculated {{count}} managers ({{errors}} errors)","calculationFailed":"Calculation failed","orgAverage":"Org Average","latest":"Latest: {{period}}","notAvailable":"n/a","managersScored":"Managers Scored","scoreDistribution":"Score Distribution","noData":"No data","topPerformers":"Top Performers","needsSupport":"Needs Support","managerName":"Manager {{id}}","managerScores":"Manager Scores — {{period}}","sortOverall":"Sort: Overall","sortTeamPerformance":"Sort: Team Performance","sortReviewQuality":"Sort: Review Quality","sortEngagement":"Sort: Engagement","sortTeamSize":"Sort: Team Size","emptyScores":"No scores for {{period}}. Run Calculate All to generate them.","manager":"Manager","team":"Team","overall":"Overall","teamPerformance":"Team Perf.","reviewQuality":"Review Q.","engagement":"Engagement","detail":"Detail"}
 }

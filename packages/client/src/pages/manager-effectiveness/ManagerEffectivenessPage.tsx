@@ -25,6 +25,7 @@ import { apiGet, apiPost } from "@/api/client";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
 import type { PaginatedResponse } from "@emp-performance/shared";
+import { useTranslation } from "react-i18next";
 
 interface ManagerScore {
   id: string;
@@ -74,6 +75,7 @@ function scoreColor(score: number | null): string {
 }
 
 export function ManagerEffectivenessPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const PERIODS = buildPeriods();
   const [period, setPeriod] = useState<string>(PERIODS[0]);
@@ -106,12 +108,12 @@ export function ManagerEffectivenessPage() {
     mutationFn: () => apiPost("/manager-effectiveness/calculate-all", { period }),
     onSuccess: (res: any) => {
       const r = res?.data ?? {};
-      toast.success(`Calculated ${r.calculated ?? 0} managers (${r.errors ?? 0} errors)`);
+      toast.success(t("managerEffectiveness.calculated", { count: r.calculated ?? 0, errors: r.errors ?? 0 }));
       queryClient.invalidateQueries({ queryKey: ["me-list"] });
       queryClient.invalidateQueries({ queryKey: ["me-dashboard"] });
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Calculation failed"),
+      toast.error(err.response?.data?.error?.message || t("managerEffectiveness.calculationFailed")),
   });
 
   const distData = dashboard
@@ -127,10 +129,10 @@ export function ManagerEffectivenessPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
             <Gauge className="h-7 w-7 text-brand-600" />
-            Manager Effectiveness
+            {t("managerEffectiveness.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Composite scores from team performance, review quality, and engagement.
+            {t("managerEffectiveness.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -161,7 +163,7 @@ export function ManagerEffectivenessPage() {
             ) : (
               <Play className="h-4 w-4" />
             )}
-            Calculate All
+            {t("managerEffectiveness.calculateAll")}
           </button>
         </div>
       </div>
@@ -174,18 +176,18 @@ export function ManagerEffectivenessPage() {
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Org Average</p>
+            <p className="text-sm font-medium text-gray-500">{t("managerEffectiveness.orgAverage")}</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">
               {dashboard?.org_average != null ? dashboard.org_average.toFixed(1) : "—"}
             </p>
-            <p className="mt-1 text-xs text-gray-400">Latest: {dashboard?.period || "n/a"}</p>
+            <p className="mt-1 text-xs text-gray-400">{t("managerEffectiveness.latest", { period: dashboard?.period || t("managerEffectiveness.notAvailable") })}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">Managers Scored</p>
+            <p className="text-sm font-medium text-gray-500">{t("managerEffectiveness.managersScored")}</p>
             <p className="mt-1 text-3xl font-bold text-gray-900">{dashboard?.total_managers ?? 0}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <p className="mb-2 text-sm font-medium text-gray-500">Score Distribution</p>
+            <p className="mb-2 text-sm font-medium text-gray-500">{t("managerEffectiveness.scoreDistribution")}</p>
             <div className="h-20">
               {distData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -196,7 +198,7 @@ export function ManagerEffectivenessPage() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-xs text-gray-400">No data</p>
+                <p className="text-xs text-gray-400">{t("managerEffectiveness.noData")}</p>
               )}
             </div>
           </div>
@@ -209,12 +211,12 @@ export function ManagerEffectivenessPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
               <TrendingUp className="h-4 w-4 text-green-600" />
-              Top Performers
+              {t("managerEffectiveness.topPerformers")}
             </h3>
             <ul className="mt-3 space-y-2">
               {dashboard.top_performers.map((s) => (
                 <li key={s.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{s.manager_name || `Manager ${s.manager_user_id}`}</span>
+                  <span className="text-gray-700">{s.manager_name || t("managerEffectiveness.managerName", { id: s.manager_user_id })}</span>
                   <StatusBadge colorClass={scoreColor(s.overall_score)} className="px-2">
                     {s.overall_score?.toFixed(1) ?? "—"}
                   </StatusBadge>
@@ -225,12 +227,12 @@ export function ManagerEffectivenessPage() {
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
               <TrendingDown className="h-4 w-4 text-red-600" />
-              Needs Support
+              {t("managerEffectiveness.needsSupport")}
             </h3>
             <ul className="mt-3 space-y-2">
               {dashboard.bottom_performers.map((s) => (
                 <li key={s.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{s.manager_name || `Manager ${s.manager_user_id}`}</span>
+                  <span className="text-gray-700">{s.manager_name || t("managerEffectiveness.managerName", { id: s.manager_user_id })}</span>
                   <StatusBadge colorClass={scoreColor(s.overall_score)} className="px-2">
                     {s.overall_score?.toFixed(1) ?? "—"}
                   </StatusBadge>
@@ -254,11 +256,11 @@ export function ManagerEffectivenessPage() {
               }}
               className="appearance-none rounded-lg border border-gray-300 bg-white px-3 py-1.5 pr-8 text-xs font-medium text-gray-700 focus:border-brand-500 focus:outline-none"
             >
-              <option value="overall_score">Sort: Overall</option>
-              <option value="team_performance_score">Sort: Team Performance</option>
-              <option value="review_quality_score">Sort: Review Quality</option>
-              <option value="engagement_score">Sort: Engagement</option>
-              <option value="team_size">Sort: Team Size</option>
+              <option value="overall_score">{t("managerEffectiveness.sortOverall")}</option>
+              <option value="team_performance_score">{t("managerEffectiveness.sortTeamPerformance")}</option>
+              <option value="review_quality_score">{t("managerEffectiveness.sortReviewQuality")}</option>
+              <option value="engagement_score">{t("managerEffectiveness.sortEngagement")}</option>
+              <option value="team_size">{t("managerEffectiveness.sortTeamSize")}</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
           </div>
@@ -271,19 +273,19 @@ export function ManagerEffectivenessPage() {
         ) : scores.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center text-gray-400">
             <Users className="h-10 w-10" />
-            <p className="mt-2 text-sm">No scores for {period}. Run "Calculate All" to generate them.</p>
+            <p className="mt-2 text-sm">{t("managerEffectiveness.emptyScores", { period })}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase text-gray-500">
-                  <th className="px-6 py-3">Manager</th>
-                  <th className="px-6 py-3">Team</th>
-                  <th className="px-6 py-3">Overall</th>
-                  <th className="px-6 py-3">Team Perf.</th>
-                  <th className="px-6 py-3">Review Q.</th>
-                  <th className="px-6 py-3">Engagement</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.manager")}</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.team")}</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.overall")}</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.teamPerformance")}</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.reviewQuality")}</th>
+                  <th className="px-6 py-3">{t("managerEffectiveness.engagement")}</th>
                   <th className="px-6 py-3"></th>
                 </tr>
               </thead>
@@ -292,7 +294,7 @@ export function ManagerEffectivenessPage() {
                   <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-6 py-3">
                       <p className="text-sm font-medium text-gray-900">
-                        {s.manager_name || `Manager ${s.manager_user_id}`}
+                        {s.manager_name || t("managerEffectiveness.managerName", { id: s.manager_user_id })}
                       </p>
                       {s.department && <p className="text-xs text-gray-400">{s.department}</p>}
                     </td>
@@ -316,7 +318,7 @@ export function ManagerEffectivenessPage() {
                         to={`/manager-effectiveness/${s.manager_user_id}?period=${s.period}`}
                         className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
                       >
-                        Detail <ArrowUpRight className="h-3.5 w-3.5" />
+                        {t("managerEffectiveness.detail")} <ArrowUpRight className="h-3.5 w-3.5" />
                       </Link>
                     </td>
                   </tr>

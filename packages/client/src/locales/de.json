@@ -403,5 +403,6 @@
       "emptyDescription":  "Erstellen Sie Ihren ersten Nachfolgeplan, um zukünftige Führungskräfte zu identifizieren.",
       "candidateCount":  "{{count}} Kandidat",
       "candidateCount_other":  "{{count}} Kandidaten"
-  }
+  },
+  "managerEffectiveness": {"title":"Manager-Effektivität","subtitle":"Gesamtwerte aus Teamleistung, Beurteilungsqualität und Engagement.","calculateAll":"Alle berechnen","calculated":"{{count}} Manager berechnet ({{errors}} Fehler)","calculationFailed":"Berechnung fehlgeschlagen","orgAverage":"Organisationsdurchschnitt","latest":"Aktuell: {{period}}","notAvailable":"k. A.","managersScored":"Bewertete Manager","scoreDistribution":"Punkteverteilung","noData":"Keine Daten","topPerformers":"Top-Performer","needsSupport":"Unterstützungsbedarf","managerName":"Manager {{id}}","managerScores":"Managerbewertungen — {{period}}","sortOverall":"Sortieren: Gesamt","sortTeamPerformance":"Sortieren: Teamleistung","sortReviewQuality":"Sortieren: Beurteilungsqualität","sortEngagement":"Sortieren: Engagement","sortTeamSize":"Sortieren: Teamgröße","emptyScores":"Keine Bewertungen für {{period}}. Führen Sie Alle berechnen aus.","manager":"Manager","team":"Team","overall":"Gesamt","teamPerformance":"Teamleistung","reviewQuality":"Beurteilungsqualität","engagement":"Engagement","detail":"Details"}
 }
