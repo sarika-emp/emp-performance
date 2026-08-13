@@ -328,5 +328,17 @@
     "commentsPlaceholder": "对该同事的其他反馈……",
     "submitting": "正在提交……",
     "submitButton": "提交同事评估"
-  }
-}
+  },
+  "settings": {
+    "title": "设置", "subtitle": "配置绩效模块设置。", "generalTab": "常规", "notificationsTab": "通知",
+    "ratingScale": "评分量表", "maximumRating": "最高评分值", "scale": "1-{{max}} 量表", "ratingHelp": "适用于能力和整体绩效评分。",
+    "defaultFramework": "默认框架", "defaultCompetencyFramework": "默认能力框架", "frameworkPlaceholder": "输入框架 ID 或留空", "frameworkHelp": "创建新评审周期时将预先选择此框架。",
+    "saveSettings": "保存设置", "saveSuccess": "设置已成功保存", "saveError": "无法保存设置",
+    "emailReminders": "电子邮件提醒", "emailRemindersHelp": "配置发送给员工和经理的自动邮件提醒。提醒每天上午 9:00 运行。",
+    "reviewReminders": "评审截止日期提醒", "reviewRemindersHelp": "在周期截止前提醒评审人完成待处理的评审", "pipReminders": "PIP 跟进提醒", "pipRemindersHelp": "每周提醒有活跃 PIP 的员工和经理",
+    "meetingReminders": "一对一会议提醒", "meetingRemindersHelp": "在预定的一对一会议前一天提醒双方", "goalReminders": "目标截止日期提醒", "goalRemindersHelp": "目标截止日期临近时提醒员工",
+    "reminderTiming": "提醒时间", "daysBeforeDeadline": "截止日期前发送提醒的天数", "reminderTimingHelp": "适用于评审和目标截止日期。范围：1-14 天。",
+    "deliveryLog": "发送日志", "deliveryLogHelp": "查看组织中已发送或发送失败的提醒和邮件。", "viewNotificationLog": "查看通知日志",
+    "testEmailConfiguration": "测试邮件配置", "testEmailHelp": "向您的地址发送测试邮件，以验证 SMTP 设置。", "sendTestEmail": "发送测试邮件", "saveNotificationSettings": "保存通知设置",
+    "notificationSaveSuccess": "通知设置已保存", "notificationSaveError": "无法保存通知设置", "testEmailSuccess": "测试邮件已发送，请检查收件箱。", "checkSmtp": "请检查 SMTP 配置。", "testEmailError": "无法发送测试邮件 — {{detail}}"
+  }}

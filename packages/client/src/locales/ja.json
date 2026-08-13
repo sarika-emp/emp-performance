@@ -328,5 +328,17 @@
     "commentsPlaceholder": "この同僚へのその他のフィードバック...",
     "submitting": "提出中...",
     "submitButton": "ピアレビューを提出"
-  }
-}
+  },
+  "settings": {
+    "title": "設定", "subtitle": "パフォーマンスモジュールの設定を構成します。", "generalTab": "一般", "notificationsTab": "通知",
+    "ratingScale": "評価尺度", "maximumRating": "評価の最大値", "scale": "1～{{max}}の尺度", "ratingHelp": "コンピテンシーと総合パフォーマンスの評価に適用されます。",
+    "defaultFramework": "既定のフレームワーク", "defaultCompetencyFramework": "既定のコンピテンシーフレームワーク", "frameworkPlaceholder": "フレームワークIDを入力するか空欄にします", "frameworkHelp": "新しい評価サイクルの作成時に、このフレームワークが事前選択されます。",
+    "saveSettings": "設定を保存", "saveSuccess": "設定を保存しました", "saveError": "設定を保存できませんでした",
+    "emailReminders": "メールリマインダー", "emailRemindersHelp": "従業員とマネージャーに送信する自動メールリマインダーを設定します。毎日午前9時に実行されます。",
+    "reviewReminders": "評価期限リマインダー", "reviewRemindersHelp": "サイクル期限前に未完了の評価を評価者に通知します", "pipReminders": "PIPチェックインリマインダー", "pipRemindersHelp": "有効なPIPを持つ従業員とマネージャーへの週次通知",
+    "meetingReminders": "1対1ミーティングリマインダー", "meetingRemindersHelp": "予定された1対1ミーティングの1日前に両者へ通知します", "goalReminders": "目標期限リマインダー", "goalRemindersHelp": "目標期限が近づいたときに従業員へ通知します",
+    "reminderTiming": "リマインダーのタイミング", "daysBeforeDeadline": "期限の何日前に通知するか", "reminderTimingHelp": "評価期限と目標期限に適用されます。範囲：1～14日。",
+    "deliveryLog": "配信ログ", "deliveryLogHelp": "組織内で送信または失敗したリマインダーとメールを確認します。", "viewNotificationLog": "通知ログを表示",
+    "testEmailConfiguration": "メール設定をテスト", "testEmailHelp": "SMTP設定を確認するため、自分のアドレスにテストメールを送信します。", "sendTestEmail": "テストメールを送信", "saveNotificationSettings": "通知設定を保存",
+    "notificationSaveSuccess": "通知設定を保存しました", "notificationSaveError": "通知設定を保存できませんでした", "testEmailSuccess": "テストメールを送信しました。受信トレイを確認してください。", "checkSmtp": "SMTP設定を確認してください。", "testEmailError": "テストメールを送信できませんでした — {{detail}}"
+  }}

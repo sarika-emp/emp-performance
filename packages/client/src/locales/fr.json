@@ -328,5 +328,17 @@
     "commentsPlaceholder": "Tout autre retour pour ce collègue...",
     "submitting": "Soumission...",
     "submitButton": "Soumettre l'évaluation par les pairs"
-  }
-}
+  },
+  "settings": {
+    "title": "Paramètres", "subtitle": "Configurez les paramètres du module de performance.", "generalTab": "Général", "notificationsTab": "Notifications",
+    "ratingScale": "Échelle d’évaluation", "maximumRating": "Valeur maximale", "scale": "Échelle de 1 à {{max}}", "ratingHelp": "S’applique aux évaluations des compétences et de la performance globale.",
+    "defaultFramework": "Référentiel par défaut", "defaultCompetencyFramework": "Référentiel de compétences par défaut", "frameworkPlaceholder": "Saisissez l’ID du référentiel ou laissez vide", "frameworkHelp": "Ce référentiel sera présélectionné lors de la création de cycles d’évaluation.",
+    "saveSettings": "Enregistrer les paramètres", "saveSuccess": "Paramètres enregistrés", "saveError": "Échec de l’enregistrement des paramètres",
+    "emailReminders": "Rappels par e-mail", "emailRemindersHelp": "Configurez les rappels automatiques envoyés aux employés et responsables. Ils sont exécutés chaque jour à 9 h.",
+    "reviewReminders": "Rappels d’échéance des évaluations", "reviewRemindersHelp": "Rappeler aux évaluateurs les évaluations en attente avant l’échéance", "pipReminders": "Rappels de suivi du PIP", "pipRemindersHelp": "Rappels hebdomadaires pour les employés et responsables ayant un PIP actif",
+    "meetingReminders": "Rappels de réunion individuelle", "meetingRemindersHelp": "Rappeler les deux participants un jour avant une réunion individuelle", "goalReminders": "Rappels d’échéance des objectifs", "goalRemindersHelp": "Avertir les employés lorsque l’échéance de leurs objectifs approche",
+    "reminderTiming": "Planification des rappels", "daysBeforeDeadline": "Jours avant l’échéance pour envoyer le rappel", "reminderTimingHelp": "S’applique aux évaluations et objectifs. Plage : 1 à 14 jours.",
+    "deliveryLog": "Journal d’envoi", "deliveryLogHelp": "Consultez les rappels et e-mails envoyés ou échoués dans votre organisation.", "viewNotificationLog": "Voir le journal des notifications",
+    "testEmailConfiguration": "Tester la configuration e-mail", "testEmailHelp": "Envoyez un e-mail de test à votre adresse pour vérifier la configuration SMTP.", "sendTestEmail": "Envoyer un e-mail de test", "saveNotificationSettings": "Enregistrer les paramètres de notification",
+    "notificationSaveSuccess": "Paramètres de notification enregistrés", "notificationSaveError": "Échec de l’enregistrement des paramètres de notification", "testEmailSuccess": "E-mail de test envoyé. Consultez votre boîte de réception.", "checkSmtp": "Vérifiez la configuration SMTP.", "testEmailError": "Échec de l’envoi de l’e-mail de test — {{detail}}"
+  }}

@@ -328,5 +328,17 @@
     "commentsPlaceholder": "Qualquer outro feedback para este colega...",
     "submitting": "Enviando...",
     "submitButton": "Enviar Avaliação de Pares"
-  }
-}
+  },
+  "settings": {
+    "title": "Configurações", "subtitle": "Configure as definições do módulo de desempenho.", "generalTab": "Geral", "notificationsTab": "Notificações",
+    "ratingScale": "Escala de avaliação", "maximumRating": "Valor máximo da avaliação", "scale": "Escala de 1 a {{max}}", "ratingHelp": "Aplicada às avaliações de competências e desempenho geral.",
+    "defaultFramework": "Estrutura padrão", "defaultCompetencyFramework": "Estrutura de competências padrão", "frameworkPlaceholder": "Introduza o ID da estrutura ou deixe em branco", "frameworkHelp": "Esta estrutura será pré-selecionada ao criar novos ciclos de avaliação.",
+    "saveSettings": "Guardar configurações", "saveSuccess": "Configurações guardadas com sucesso", "saveError": "Não foi possível guardar as configurações",
+    "emailReminders": "Lembretes por e-mail", "emailRemindersHelp": "Configure os lembretes automáticos enviados a colaboradores e gestores. São executados diariamente às 9:00.",
+    "reviewReminders": "Lembretes de prazo de avaliação", "reviewRemindersHelp": "Lembrar os avaliadores das avaliações pendentes antes do prazo", "pipReminders": "Lembretes de acompanhamento do PIP", "pipRemindersHelp": "Lembretes semanais para colaboradores e gestores com PIPs ativos",
+    "meetingReminders": "Lembretes de reuniões individuais", "meetingRemindersHelp": "Lembrar ambas as partes um dia antes de uma reunião individual", "goalReminders": "Lembretes de prazo de objetivos", "goalRemindersHelp": "Alertar os colaboradores quando os prazos dos objetivos se aproximarem",
+    "reminderTiming": "Agendamento dos lembretes", "daysBeforeDeadline": "Dias antes do prazo para enviar o lembrete", "reminderTimingHelp": "Aplica-se a avaliações e objetivos. Intervalo: 1-14 dias.",
+    "deliveryLog": "Registo de envios", "deliveryLogHelp": "Consulte os lembretes e e-mails enviados ou que falharam na sua organização.", "viewNotificationLog": "Ver registo de notificações",
+    "testEmailConfiguration": "Testar configuração de e-mail", "testEmailHelp": "Envie um e-mail de teste para verificar as configurações SMTP.", "sendTestEmail": "Enviar e-mail de teste", "saveNotificationSettings": "Guardar configurações de notificações",
+    "notificationSaveSuccess": "Configurações de notificações guardadas", "notificationSaveError": "Não foi possível guardar as configurações de notificações", "testEmailSuccess": "E-mail de teste enviado. Verifique a caixa de entrada.", "checkSmtp": "Verifique a configuração SMTP.", "testEmailError": "Não foi possível enviar o e-mail de teste — {{detail}}"
+  }}

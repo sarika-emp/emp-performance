@@ -328,5 +328,17 @@
     "commentsPlaceholder": "इस सहकर्मी के लिए कोई अन्य प्रतिक्रिया...",
     "submitting": "प्रस्तुत किया जा रहा है...",
     "submitButton": "सहकर्मी समीक्षा प्रस्तुत करें"
-  }
-}
+  },
+  "settings": {
+    "title": "सेटिंग्स", "subtitle": "प्रदर्शन मॉड्यूल की सेटिंग्स कॉन्फ़िगर करें।", "generalTab": "सामान्य", "notificationsTab": "सूचनाएँ",
+    "ratingScale": "रेटिंग स्केल", "maximumRating": "अधिकतम रेटिंग मान", "scale": "1-{{max}} स्केल", "ratingHelp": "योग्यता और समग्र प्रदर्शन रेटिंग पर लागू होता है।",
+    "defaultFramework": "डिफ़ॉल्ट फ्रेमवर्क", "defaultCompetencyFramework": "डिफ़ॉल्ट योग्यता फ्रेमवर्क", "frameworkPlaceholder": "फ्रेमवर्क ID दर्ज करें या खाली छोड़ें", "frameworkHelp": "नए समीक्षा चक्र बनाते समय यह फ्रेमवर्क पहले से चुना जाएगा।",
+    "saveSettings": "सेटिंग्स सहेजें", "saveSuccess": "सेटिंग्स सफलतापूर्वक सहेजी गईं", "saveError": "सेटिंग्स सहेजी नहीं जा सकीं",
+    "emailReminders": "ईमेल रिमाइंडर", "emailRemindersHelp": "कर्मचारियों और प्रबंधकों को भेजे जाने वाले स्वचालित ईमेल रिमाइंडर कॉन्फ़िगर करें। ये रोज़ सुबह 9:00 बजे चलते हैं।",
+    "reviewReminders": "समीक्षा समय-सीमा रिमाइंडर", "reviewRemindersHelp": "चक्र की समय-सीमा से पहले लंबित समीक्षाओं की याद दिलाएँ", "pipReminders": "PIP चेक-इन रिमाइंडर", "pipRemindersHelp": "सक्रिय PIP वाले कर्मचारियों और प्रबंधकों के लिए साप्ताहिक रिमाइंडर",
+    "meetingReminders": "1-ऑन-1 मीटिंग रिमाइंडर", "meetingRemindersHelp": "निर्धारित 1-ऑन-1 मीटिंग से एक दिन पहले दोनों पक्षों को याद दिलाएँ", "goalReminders": "लक्ष्य समय-सीमा रिमाइंडर", "goalRemindersHelp": "लक्ष्य की समय-सीमा निकट आने पर कर्मचारियों को सचेत करें",
+    "reminderTiming": "रिमाइंडर समय", "daysBeforeDeadline": "रिमाइंडर भेजने के लिए समय-सीमा से पहले के दिन", "reminderTimingHelp": "समीक्षा और लक्ष्य समय-सीमा पर लागू। सीमा: 1-14 दिन।",
+    "deliveryLog": "डिलीवरी लॉग", "deliveryLogHelp": "संगठन में भेजे गए या विफल रिमाइंडर और ईमेल देखें।", "viewNotificationLog": "सूचना लॉग देखें",
+    "testEmailConfiguration": "ईमेल कॉन्फ़िगरेशन जाँचें", "testEmailHelp": "SMTP सेटिंग्स जाँचने के लिए अपने पते पर परीक्षण ईमेल भेजें।", "sendTestEmail": "परीक्षण ईमेल भेजें", "saveNotificationSettings": "सूचना सेटिंग्स सहेजें",
+    "notificationSaveSuccess": "सूचना सेटिंग्स सहेजी गईं", "notificationSaveError": "सूचना सेटिंग्स सहेजी नहीं जा सकीं", "testEmailSuccess": "परीक्षण ईमेल भेजा गया। अपना इनबॉक्स देखें।", "checkSmtp": "SMTP कॉन्फ़िगरेशन जाँचें।", "testEmailError": "परीक्षण ईमेल नहीं भेजा जा सका — {{detail}}"
+  }}

@@ -328,5 +328,17 @@
     "commentsPlaceholder": "أي ملاحظات أخرى لهذا الزميل...",
     "submitting": "جارٍ التقديم...",
     "submitButton": "تقديم مراجعة الأقران"
-  }
-}
+  },
+  "settings": {
+    "title": "الإعدادات", "subtitle": "تهيئة إعدادات وحدة الأداء.", "generalTab": "عام", "notificationsTab": "الإشعارات",
+    "ratingScale": "مقياس التقييم", "maximumRating": "الحد الأقصى للتقييم", "scale": "مقياس 1-{{max}}", "ratingHelp": "يُطبّق على تقييمات الكفاءات والأداء العام.",
+    "defaultFramework": "الإطار الافتراضي", "defaultCompetencyFramework": "إطار الكفاءات الافتراضي", "frameworkPlaceholder": "أدخل معرّف الإطار أو اتركه فارغًا", "frameworkHelp": "سيتم تحديد هذا الإطار مسبقًا عند إنشاء دورات تقييم جديدة.",
+    "saveSettings": "حفظ الإعدادات", "saveSuccess": "تم حفظ الإعدادات بنجاح", "saveError": "تعذر حفظ الإعدادات",
+    "emailReminders": "تذكيرات البريد الإلكتروني", "emailRemindersHelp": "حدد التذكيرات التلقائية المرسلة إلى الموظفين والمديرين. تعمل يوميًا الساعة 9:00 صباحًا.",
+    "reviewReminders": "تذكيرات موعد التقييم", "reviewRemindersHelp": "تذكير المقيّمين بالتقييمات المعلقة قبل الموعد النهائي", "pipReminders": "تذكيرات متابعة خطة تحسين الأداء", "pipRemindersHelp": "تذكيرات أسبوعية للموظفين والمديرين ذوي الخطط النشطة",
+    "meetingReminders": "تذكيرات الاجتماعات الفردية", "meetingRemindersHelp": "تذكير الطرفين قبل الاجتماع الفردي المجدول بيوم", "goalReminders": "تذكيرات مواعيد الأهداف", "goalRemindersHelp": "تنبيه الموظفين عند اقتراب مواعيد أهدافهم",
+    "reminderTiming": "توقيت التذكير", "daysBeforeDeadline": "عدد الأيام قبل الموعد لإرسال التذكير", "reminderTimingHelp": "ينطبق على مواعيد التقييم والأهداف. النطاق: 1-14 يومًا.",
+    "deliveryLog": "سجل الإرسال", "deliveryLogHelp": "راجع التذكيرات ورسائل البريد التي أُرسلت أو فشلت في مؤسستك.", "viewNotificationLog": "عرض سجل الإشعارات",
+    "testEmailConfiguration": "اختبار إعداد البريد", "testEmailHelp": "أرسل رسالة اختبار إلى عنوانك للتحقق من إعدادات SMTP.", "sendTestEmail": "إرسال رسالة اختبار", "saveNotificationSettings": "حفظ إعدادات الإشعارات",
+    "notificationSaveSuccess": "تم حفظ إعدادات الإشعارات", "notificationSaveError": "تعذر حفظ إعدادات الإشعارات", "testEmailSuccess": "تم إرسال رسالة الاختبار. تحقق من صندوق الوارد.", "checkSmtp": "تحقق من إعداد SMTP.", "testEmailError": "تعذر إرسال رسالة الاختبار — {{detail}}"
+  }}

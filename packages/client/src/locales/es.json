@@ -328,5 +328,17 @@
     "commentsPlaceholder": "Cualquier otro comentario para este colega...",
     "submitting": "Enviando...",
     "submitButton": "Enviar evaluación de pares"
-  }
-}
+  },
+  "settings": {
+    "title": "Configuración", "subtitle": "Configura los ajustes del módulo de rendimiento.", "generalTab": "General", "notificationsTab": "Notificaciones",
+    "ratingScale": "Escala de valoración", "maximumRating": "Valor máximo de valoración", "scale": "Escala 1-{{max}}", "ratingHelp": "Se aplica a las valoraciones de competencias y rendimiento general.",
+    "defaultFramework": "Marco predeterminado", "defaultCompetencyFramework": "Marco de competencias predeterminado", "frameworkPlaceholder": "Introduce el ID del marco o déjalo en blanco", "frameworkHelp": "Este marco se preseleccionará al crear nuevos ciclos de evaluación.",
+    "saveSettings": "Guardar configuración", "saveSuccess": "Configuración guardada correctamente", "saveError": "No se pudo guardar la configuración",
+    "emailReminders": "Recordatorios por correo", "emailRemindersHelp": "Configura qué recordatorios automáticos se envían a empleados y responsables. Se ejecutan diariamente a las 9:00.",
+    "reviewReminders": "Recordatorios de plazos de evaluación", "reviewRemindersHelp": "Recordar a los evaluadores las evaluaciones pendientes antes del plazo", "pipReminders": "Recordatorios de seguimiento del PIP", "pipRemindersHelp": "Recordatorios semanales para empleados y responsables con PIP activos",
+    "meetingReminders": "Recordatorios de reuniones 1 a 1", "meetingRemindersHelp": "Recordar a ambas partes un día antes de una reunión 1 a 1", "goalReminders": "Recordatorios de plazos de objetivos", "goalRemindersHelp": "Avisar a los empleados cuando se acerquen los plazos de sus objetivos",
+    "reminderTiming": "Programación de recordatorios", "daysBeforeDeadline": "Días antes del plazo para enviar el recordatorio", "reminderTimingHelp": "Se aplica a evaluaciones y objetivos. Intervalo: 1-14 días.",
+    "deliveryLog": "Registro de envíos", "deliveryLogHelp": "Revisa qué recordatorios y correos se enviaron o fallaron en tu organización.", "viewNotificationLog": "Ver registro de notificaciones",
+    "testEmailConfiguration": "Probar configuración de correo", "testEmailHelp": "Envía un correo de prueba a tu dirección para verificar la configuración SMTP.", "sendTestEmail": "Enviar correo de prueba", "saveNotificationSettings": "Guardar configuración de notificaciones",
+    "notificationSaveSuccess": "Configuración de notificaciones guardada", "notificationSaveError": "No se pudo guardar la configuración de notificaciones", "testEmailSuccess": "Correo de prueba enviado. Revisa tu bandeja de entrada.", "checkSmtp": "Comprueba la configuración SMTP.", "testEmailError": "No se pudo enviar el correo de prueba — {{detail}}"
+  }}
