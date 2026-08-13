@@ -341,4 +341,38 @@
     "deliveryLog": "سجل الإرسال", "deliveryLogHelp": "راجع التذكيرات ورسائل البريد التي أُرسلت أو فشلت في مؤسستك.", "viewNotificationLog": "عرض سجل الإشعارات",
     "testEmailConfiguration": "اختبار إعداد البريد", "testEmailHelp": "أرسل رسالة اختبار إلى عنوانك للتحقق من إعدادات SMTP.", "sendTestEmail": "إرسال رسالة اختبار", "saveNotificationSettings": "حفظ إعدادات الإشعارات",
     "notificationSaveSuccess": "تم حفظ إعدادات الإشعارات", "notificationSaveError": "تعذر حفظ إعدادات الإشعارات", "testEmailSuccess": "تم إرسال رسالة الاختبار. تحقق من صندوق الوارد.", "checkSmtp": "تحقق من إعداد SMTP.", "testEmailError": "تعذر إرسال رسالة الاختبار — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "تخطيط التعاقب الوظيفي",
+      "subtitle":  "حدد وطوّر قادة المستقبل للمناصب الحرجة.",
+      "newPlan":  "خطة جديدة",
+      "searchPlaceholder":  "البحث حسب المنصب...",
+      "allCriticality":  "كل درجات الأهمية",
+      "allStatuses":  "كل الحالات",
+      "criticality":  {
+                          "low":  "منخفضة",
+                          "medium":  "متوسطة",
+                          "high":  "عالية",
+                          "critical":  "حرجة"
+                      },
+      "status":  {
+                     "identified":  "تم تحديده",
+                     "developing":  "قيد التطوير",
+                     "ready":  "جاهز"
+                 },
+      "createTitle":  "إنشاء خطة تعاقب",
+      "positionTitle":  "المسمى الوظيفي",
+      "positionPlaceholder":  "مثال: نائب رئيس الهندسة",
+      "department":  "القسم",
+      "departmentPlaceholder":  "مثال: الهندسة",
+      "currentHolderId":  "معرّف شاغل المنصب الحالي",
+      "holderPlaceholder":  "معرّف الموظف (اختياري)",
+      "criticalityLabel":  "درجة الأهمية",
+      "cancel":  "إلغاء",
+      "createPlan":  "إنشاء الخطة",
+      "emptyTitle":  "لا توجد خطط تعاقب بعد",
+      "emptyDescription":  "أنشئ خطتك الأولى لبدء تحديد قادة المستقبل.",
+      "candidateCount":  "مرشح واحد",
+      "candidateCount_other":  "{{count}} مرشحين"
+  }
+}

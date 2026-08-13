@@ -14,6 +14,7 @@ import { apiGet, apiPost } from "@/api/client";
 import type { PaginatedResponse } from "@emp-performance/shared";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
+import { useTranslation } from "react-i18next";
 
 interface SuccessionPlan {
   id: string;
@@ -41,6 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function SuccessionPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [page, setPage] = useState(1);
@@ -95,10 +97,10 @@ export function SuccessionPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Shield className="h-7 w-7 text-brand-600" />
-            Succession Planning
+            {t("succession.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Identify and develop future leaders for critical positions.
+            {t("succession.subtitle")}
           </p>
         </div>
 
@@ -107,7 +109,7 @@ export function SuccessionPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
         >
           <Plus className="h-4 w-4" />
-          New Plan
+          {t("succession.newPlan")}
         </button>
       </div>
 
@@ -117,7 +119,7 @@ export function SuccessionPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by position..."
+            placeholder={t("succession.searchPlaceholder")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -134,11 +136,11 @@ export function SuccessionPage() {
           }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">All Criticality</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-          <option value="critical">Critical</option>
+          <option value="">{t("succession.allCriticality")}</option>
+          <option value="low">{t("succession.criticality.low")}</option>
+          <option value="medium">{t("succession.criticality.medium")}</option>
+          <option value="high">{t("succession.criticality.high")}</option>
+          <option value="critical">{t("succession.criticality.critical")}</option>
         </select>
         <select
           value={status}
@@ -148,10 +150,10 @@ export function SuccessionPage() {
           }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">All Statuses</option>
-          <option value="identified">Identified</option>
-          <option value="developing">Developing</option>
-          <option value="ready">Ready</option>
+          <option value="">{t("succession.allStatuses")}</option>
+          <option value="identified">{t("succession.status.identified")}</option>
+          <option value="developing">{t("succession.status.developing")}</option>
+          <option value="ready">{t("succession.status.ready")}</option>
         </select>
       </div>
 
@@ -160,7 +162,7 @@ export function SuccessionPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Create Succession Plan</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t("succession.createTitle")}</h2>
               <button
                 onClick={() => setShowCreate(false)}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
@@ -172,7 +174,7 @@ export function SuccessionPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Position Title *
+                  {t("succession.positionTitle")} *
                 </label>
                 <input
                   type="text"
@@ -180,26 +182,26 @@ export function SuccessionPage() {
                   onChange={(e) => setForm({ ...form, position_title: e.target.value })}
                   required
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  placeholder="e.g., VP Engineering"
+                  placeholder={t("succession.positionPlaceholder")}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
+                  {t("succession.department")}
                 </label>
                 <input
                   type="text"
                   value={form.department}
                   onChange={(e) => setForm({ ...form, department: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  placeholder="e.g., Engineering"
+                  placeholder={t("succession.departmentPlaceholder")}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Holder ID
+                  {t("succession.currentHolderId")}
                 </label>
                 <input
                   type="number"
@@ -218,23 +220,23 @@ export function SuccessionPage() {
                     }
                   }}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  placeholder="Employee ID (optional)"
+                  placeholder={t("succession.holderPlaceholder")}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Criticality
+                  {t("succession.criticalityLabel")}
                 </label>
                 <select
                   value={form.criticality}
                   onChange={(e) => setForm({ ...form, criticality: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
+                  <option value="low">{t("succession.criticality.low")}</option>
+                  <option value="medium">{t("succession.criticality.medium")}</option>
+                  <option value="high">{t("succession.criticality.high")}</option>
+                  <option value="critical">{t("succession.criticality.critical")}</option>
                 </select>
               </div>
 
@@ -244,7 +246,7 @@ export function SuccessionPage() {
                   onClick={() => setShowCreate(false)}
                   className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 >
-                  Cancel
+                  {t("succession.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -252,7 +254,7 @@ export function SuccessionPage() {
                   className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                 >
                   {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Create Plan
+                  {t("succession.createPlan")}
                 </button>
               </div>
             </form>
@@ -268,8 +270,8 @@ export function SuccessionPage() {
       ) : plans.length === 0 ? (
         <div className="mt-12 flex flex-col items-center justify-center text-gray-400">
           <Shield className="h-16 w-16 mb-4" />
-          <p className="text-lg font-medium">No succession plans yet</p>
-          <p className="text-sm">Create your first succession plan to start identifying future leaders.</p>
+          <p className="text-lg font-medium">{t("succession.emptyTitle")}</p>
+          <p className="text-sm">{t("succession.emptyDescription")}</p>
         </div>
       ) : (
         <div className="mt-6 space-y-3">
@@ -285,17 +287,17 @@ export function SuccessionPage() {
                     {plan.position_title}
                   </h3>
                   <StatusBadge colorClass={CRITICALITY_COLORS[plan.criticality] || CRITICALITY_COLORS.medium}>
-                    {plan.criticality}
+                    {t(`succession.criticality.${plan.criticality}`)}
                   </StatusBadge>
                   <StatusBadge colorClass={STATUS_COLORS[plan.status] || STATUS_COLORS.identified}>
-                    {plan.status}
+                    {t(`succession.status.${plan.status}`)}
                   </StatusBadge>
                 </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
                   {plan.department && <span>{plan.department}</span>}
                   <span className="flex items-center gap-1">
                     <Users className="h-3.5 w-3.5" />
-                    {plan.candidate_count} candidate{plan.candidate_count !== 1 ? "s" : ""}
+                    {t("succession.candidateCount", { count: plan.candidate_count })}
                   </span>
                 </div>
               </div>

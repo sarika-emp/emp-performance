@@ -370,4 +370,38 @@
     "testEmailSuccess": "Test-E-Mail gesendet. Prüfen Sie Ihren Posteingang.",
     "checkSmtp": "Überprüfen Sie die SMTP-Konfiguration.",
     "testEmailError": "Test-E-Mail konnte nicht gesendet werden — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "Nachfolgeplanung",
+      "subtitle":  "Identifizieren und entwickeln Sie zukünftige Führungskräfte für Schlüsselpositionen.",
+      "newPlan":  "Neuer Plan",
+      "searchPlaceholder":  "Nach Position suchen...",
+      "allCriticality":  "Alle Kritikalitäten",
+      "allStatuses":  "Alle Status",
+      "criticality":  {
+                          "low":  "Niedrig",
+                          "medium":  "Mittel",
+                          "high":  "Hoch",
+                          "critical":  "Kritisch"
+                      },
+      "status":  {
+                     "identified":  "Identifiziert",
+                     "developing":  "In Entwicklung",
+                     "ready":  "Bereit"
+                 },
+      "createTitle":  "Nachfolgeplan erstellen",
+      "positionTitle":  "Positionsbezeichnung",
+      "positionPlaceholder":  "z. B. VP Engineering",
+      "department":  "Abteilung",
+      "departmentPlaceholder":  "z. B. Engineering",
+      "currentHolderId":  "ID des aktuellen Stelleninhabers",
+      "holderPlaceholder":  "Mitarbeiter-ID (optional)",
+      "criticalityLabel":  "Kritikalität",
+      "cancel":  "Abbrechen",
+      "createPlan":  "Plan erstellen",
+      "emptyTitle":  "Noch keine Nachfolgepläne",
+      "emptyDescription":  "Erstellen Sie Ihren ersten Nachfolgeplan, um zukünftige Führungskräfte zu identifizieren.",
+      "candidateCount":  "{{count}} Kandidat",
+      "candidateCount_other":  "{{count}} Kandidaten"
+  }
+}

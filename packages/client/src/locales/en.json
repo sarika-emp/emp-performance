@@ -370,4 +370,38 @@
     "testEmailSuccess": "Test email sent. Check your inbox.",
     "checkSmtp": "Check SMTP configuration.",
     "testEmailError": "Failed to send test email — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "Succession Planning",
+      "subtitle":  "Identify and develop future leaders for critical positions.",
+      "newPlan":  "New Plan",
+      "searchPlaceholder":  "Search by position...",
+      "allCriticality":  "All Criticality",
+      "allStatuses":  "All Statuses",
+      "criticality":  {
+                          "low":  "Low",
+                          "medium":  "Medium",
+                          "high":  "High",
+                          "critical":  "Critical"
+                      },
+      "status":  {
+                     "identified":  "Identified",
+                     "developing":  "Developing",
+                     "ready":  "Ready"
+                 },
+      "createTitle":  "Create Succession Plan",
+      "positionTitle":  "Position Title",
+      "positionPlaceholder":  "e.g., VP Engineering",
+      "department":  "Department",
+      "departmentPlaceholder":  "e.g., Engineering",
+      "currentHolderId":  "Current Holder ID",
+      "holderPlaceholder":  "Employee ID (optional)",
+      "criticalityLabel":  "Criticality",
+      "cancel":  "Cancel",
+      "createPlan":  "Create Plan",
+      "emptyTitle":  "No succession plans yet",
+      "emptyDescription":  "Create your first succession plan to start identifying future leaders.",
+      "candidateCount":  "{{count}} candidate",
+      "candidateCount_other":  "{{count}} candidates"
+  }
+}

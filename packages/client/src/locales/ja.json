@@ -341,4 +341,38 @@
     "deliveryLog": "配信ログ", "deliveryLogHelp": "組織内で送信または失敗したリマインダーとメールを確認します。", "viewNotificationLog": "通知ログを表示",
     "testEmailConfiguration": "メール設定をテスト", "testEmailHelp": "SMTP設定を確認するため、自分のアドレスにテストメールを送信します。", "sendTestEmail": "テストメールを送信", "saveNotificationSettings": "通知設定を保存",
     "notificationSaveSuccess": "通知設定を保存しました", "notificationSaveError": "通知設定を保存できませんでした", "testEmailSuccess": "テストメールを送信しました。受信トレイを確認してください。", "checkSmtp": "SMTP設定を確認してください。", "testEmailError": "テストメールを送信できませんでした — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "後継者計画",
+      "subtitle":  "重要なポジションの将来のリーダーを特定し育成します。",
+      "newPlan":  "新しい計画",
+      "searchPlaceholder":  "ポジションで検索...",
+      "allCriticality":  "すべての重要度",
+      "allStatuses":  "すべてのステータス",
+      "criticality":  {
+                          "low":  "低",
+                          "medium":  "中",
+                          "high":  "高",
+                          "critical":  "最重要"
+                      },
+      "status":  {
+                     "identified":  "特定済み",
+                     "developing":  "育成中",
+                     "ready":  "準備完了"
+                 },
+      "createTitle":  "後継者計画を作成",
+      "positionTitle":  "ポジション名",
+      "positionPlaceholder":  "例：エンジニアリングVP",
+      "department":  "部門",
+      "departmentPlaceholder":  "例：エンジニアリング",
+      "currentHolderId":  "現任者ID",
+      "holderPlaceholder":  "従業員ID（任意）",
+      "criticalityLabel":  "重要度",
+      "cancel":  "キャンセル",
+      "createPlan":  "計画を作成",
+      "emptyTitle":  "後継者計画はまだありません",
+      "emptyDescription":  "最初の計画を作成して将来のリーダーを特定しましょう。",
+      "candidateCount":  "{{count}}人の候補者",
+      "candidateCount_other":  "{{count}}人の候補者"
+  }
+}

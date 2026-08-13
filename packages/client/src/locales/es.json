@@ -341,4 +341,38 @@
     "deliveryLog": "Registro de envíos", "deliveryLogHelp": "Revisa qué recordatorios y correos se enviaron o fallaron en tu organización.", "viewNotificationLog": "Ver registro de notificaciones",
     "testEmailConfiguration": "Probar configuración de correo", "testEmailHelp": "Envía un correo de prueba a tu dirección para verificar la configuración SMTP.", "sendTestEmail": "Enviar correo de prueba", "saveNotificationSettings": "Guardar configuración de notificaciones",
     "notificationSaveSuccess": "Configuración de notificaciones guardada", "notificationSaveError": "No se pudo guardar la configuración de notificaciones", "testEmailSuccess": "Correo de prueba enviado. Revisa tu bandeja de entrada.", "checkSmtp": "Comprueba la configuración SMTP.", "testEmailError": "No se pudo enviar el correo de prueba — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "Planificación de sucesión",
+      "subtitle":  "Identifica y desarrolla futuros líderes para puestos críticos.",
+      "newPlan":  "Nuevo plan",
+      "searchPlaceholder":  "Buscar por puesto...",
+      "allCriticality":  "Todas las criticidades",
+      "allStatuses":  "Todos los estados",
+      "criticality":  {
+                          "low":  "Baja",
+                          "medium":  "Media",
+                          "high":  "Alta",
+                          "critical":  "Crítica"
+                      },
+      "status":  {
+                     "identified":  "Identificado",
+                     "developing":  "En desarrollo",
+                     "ready":  "Preparado"
+                 },
+      "createTitle":  "Crear plan de sucesión",
+      "positionTitle":  "Nombre del puesto",
+      "positionPlaceholder":  "p. ej., VP de Ingeniería",
+      "department":  "Departamento",
+      "departmentPlaceholder":  "p. ej., Ingeniería",
+      "currentHolderId":  "ID del titular actual",
+      "holderPlaceholder":  "ID de empleado (opcional)",
+      "criticalityLabel":  "Criticidad",
+      "cancel":  "Cancelar",
+      "createPlan":  "Crear plan",
+      "emptyTitle":  "Aún no hay planes de sucesión",
+      "emptyDescription":  "Crea tu primer plan para identificar futuros líderes.",
+      "candidateCount":  "{{count}} candidato",
+      "candidateCount_other":  "{{count}} candidatos"
+  }
+}

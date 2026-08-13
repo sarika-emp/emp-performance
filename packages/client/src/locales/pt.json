@@ -341,4 +341,38 @@
     "deliveryLog": "Registo de envios", "deliveryLogHelp": "Consulte os lembretes e e-mails enviados ou que falharam na sua organização.", "viewNotificationLog": "Ver registo de notificações",
     "testEmailConfiguration": "Testar configuração de e-mail", "testEmailHelp": "Envie um e-mail de teste para verificar as configurações SMTP.", "sendTestEmail": "Enviar e-mail de teste", "saveNotificationSettings": "Guardar configurações de notificações",
     "notificationSaveSuccess": "Configurações de notificações guardadas", "notificationSaveError": "Não foi possível guardar as configurações de notificações", "testEmailSuccess": "E-mail de teste enviado. Verifique a caixa de entrada.", "checkSmtp": "Verifique a configuração SMTP.", "testEmailError": "Não foi possível enviar o e-mail de teste — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "Planeamento de sucessão",
+      "subtitle":  "Identifique e desenvolva futuros líderes para posições críticas.",
+      "newPlan":  "Novo plano",
+      "searchPlaceholder":  "Pesquisar por posição...",
+      "allCriticality":  "Todas as criticidades",
+      "allStatuses":  "Todos os estados",
+      "criticality":  {
+                          "low":  "Baixa",
+                          "medium":  "Média",
+                          "high":  "Alta",
+                          "critical":  "Crítica"
+                      },
+      "status":  {
+                     "identified":  "Identificado",
+                     "developing":  "Em desenvolvimento",
+                     "ready":  "Pronto"
+                 },
+      "createTitle":  "Criar plano de sucessão",
+      "positionTitle":  "Título da posição",
+      "positionPlaceholder":  "ex.: VP de Engenharia",
+      "department":  "Departamento",
+      "departmentPlaceholder":  "ex.: Engenharia",
+      "currentHolderId":  "ID do titular atual",
+      "holderPlaceholder":  "ID do colaborador (opcional)",
+      "criticalityLabel":  "Criticidade",
+      "cancel":  "Cancelar",
+      "createPlan":  "Criar plano",
+      "emptyTitle":  "Ainda não há planos de sucessão",
+      "emptyDescription":  "Crie o primeiro plano para identificar futuros líderes.",
+      "candidateCount":  "{{count}} candidato",
+      "candidateCount_other":  "{{count}} candidatos"
+  }
+}

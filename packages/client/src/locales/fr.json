@@ -341,4 +341,38 @@
     "deliveryLog": "Journal d’envoi", "deliveryLogHelp": "Consultez les rappels et e-mails envoyés ou échoués dans votre organisation.", "viewNotificationLog": "Voir le journal des notifications",
     "testEmailConfiguration": "Tester la configuration e-mail", "testEmailHelp": "Envoyez un e-mail de test à votre adresse pour vérifier la configuration SMTP.", "sendTestEmail": "Envoyer un e-mail de test", "saveNotificationSettings": "Enregistrer les paramètres de notification",
     "notificationSaveSuccess": "Paramètres de notification enregistrés", "notificationSaveError": "Échec de l’enregistrement des paramètres de notification", "testEmailSuccess": "E-mail de test envoyé. Consultez votre boîte de réception.", "checkSmtp": "Vérifiez la configuration SMTP.", "testEmailError": "Échec de l’envoi de l’e-mail de test — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "Planification de la succession",
+      "subtitle":  "Identifiez et développez les futurs dirigeants des postes critiques.",
+      "newPlan":  "Nouveau plan",
+      "searchPlaceholder":  "Rechercher par poste...",
+      "allCriticality":  "Toutes les criticités",
+      "allStatuses":  "Tous les statuts",
+      "criticality":  {
+                          "low":  "Faible",
+                          "medium":  "Moyenne",
+                          "high":  "Élevée",
+                          "critical":  "Critique"
+                      },
+      "status":  {
+                     "identified":  "Identifié",
+                     "developing":  "En développement",
+                     "ready":  "Prêt"
+                 },
+      "createTitle":  "Créer un plan de succession",
+      "positionTitle":  "Intitulé du poste",
+      "positionPlaceholder":  "p. ex. VP Ingénierie",
+      "department":  "Département",
+      "departmentPlaceholder":  "p. ex. Ingénierie",
+      "currentHolderId":  "ID du titulaire actuel",
+      "holderPlaceholder":  "ID employé (facultatif)",
+      "criticalityLabel":  "Criticité",
+      "cancel":  "Annuler",
+      "createPlan":  "Créer le plan",
+      "emptyTitle":  "Aucun plan de succession",
+      "emptyDescription":  "Créez votre premier plan pour identifier les futurs dirigeants.",
+      "candidateCount":  "{{count}} candidat",
+      "candidateCount_other":  "{{count}} candidats"
+  }
+}

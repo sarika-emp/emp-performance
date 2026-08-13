@@ -341,4 +341,38 @@
     "deliveryLog": "发送日志", "deliveryLogHelp": "查看组织中已发送或发送失败的提醒和邮件。", "viewNotificationLog": "查看通知日志",
     "testEmailConfiguration": "测试邮件配置", "testEmailHelp": "向您的地址发送测试邮件，以验证 SMTP 设置。", "sendTestEmail": "发送测试邮件", "saveNotificationSettings": "保存通知设置",
     "notificationSaveSuccess": "通知设置已保存", "notificationSaveError": "无法保存通知设置", "testEmailSuccess": "测试邮件已发送，请检查收件箱。", "checkSmtp": "请检查 SMTP 配置。", "testEmailError": "无法发送测试邮件 — {{detail}}"
-  }}
+  },
+  "succession": {
+      "title":  "继任规划",
+      "subtitle":  "为关键职位识别和培养未来领导者。",
+      "newPlan":  "新建计划",
+      "searchPlaceholder":  "按职位搜索...",
+      "allCriticality":  "所有关键程度",
+      "allStatuses":  "所有状态",
+      "criticality":  {
+                          "low":  "低",
+                          "medium":  "中",
+                          "high":  "高",
+                          "critical":  "关键"
+                      },
+      "status":  {
+                     "identified":  "已识别",
+                     "developing":  "培养中",
+                     "ready":  "已就绪"
+                 },
+      "createTitle":  "创建继任计划",
+      "positionTitle":  "职位名称",
+      "positionPlaceholder":  "例如：工程副总裁",
+      "department":  "部门",
+      "departmentPlaceholder":  "例如：工程部",
+      "currentHolderId":  "当前任职者 ID",
+      "holderPlaceholder":  "员工 ID（可选）",
+      "criticalityLabel":  "关键程度",
+      "cancel":  "取消",
+      "createPlan":  "创建计划",
+      "emptyTitle":  "暂无继任计划",
+      "emptyDescription":  "创建第一个继任计划，开始识别未来领导者。",
+      "candidateCount":  "{{count}} 名候选人",
+      "candidateCount_other":  "{{count}} 名候选人"
+  }
+}
