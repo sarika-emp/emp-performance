@@ -23,6 +23,7 @@ import { apiGet } from "@/api/client";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
+import { useTranslation } from "react-i18next";
 import type {
   SkillsGapResult,
   CompetencyGap,
@@ -35,13 +36,8 @@ const STATUS_COLORS: Record<string, string> = {
   gap: "text-red-600 bg-red-50",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  exceeds: "Exceeds",
-  meets: "Meets",
-  gap: "Gap",
-};
-
 function GapBar({ current, required }: { current: number; required: number }) {
+  const { t } = useTranslation();
   const max = 5;
   const currentPct = (current / max) * 100;
   const requiredPct = (required / max) * 100;
@@ -59,13 +55,14 @@ function GapBar({ current, required }: { current: number; required: number }) {
       <div
         className="absolute top-0 h-full border-r-2 border-dashed border-gray-500"
         style={{ left: `${requiredPct}%` }}
-        title={`Required: ${required}`}
+        title={t("mySkillsGap.requiredValue", { value: required })}
       />
     </div>
   );
 }
 
 function IndividualView({ employeeId }: { employeeId: string }) {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery({
     queryKey: ["skills-gap", employeeId],
     queryFn: () =>
@@ -88,7 +85,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
   if (error) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm text-red-600">Failed to load skills gap data.</p>
+        <p className="text-sm text-red-600">{t("skillsGapAnalytics.loadError")}</p>
       </div>
     );
   }
@@ -97,7 +94,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
     return (
       <EmptyState
         icon={TrendingDown}
-        title="No competency data found for this employee. Ensure they have completed reviews and are assigned to a career path."
+        title={t("skillsGapAnalytics.employeeEmpty")}
         className=""
       />
     );
@@ -116,7 +113,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-500">Overall Readiness</p>
+            <p className="text-sm font-medium text-gray-500">{t("skillsGapAnalytics.overallReadiness")}</p>
             <p className="text-3xl font-bold text-gray-900">{result.overallReadiness}%</p>
           </div>
           <div
@@ -147,8 +144,8 @@ function IndividualView({ employeeId }: { employeeId: string }) {
       {/* Radar Chart */}
       {radarData.length > 2 && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">Skills Radar</h2>
-          <p className="mt-1 text-sm text-gray-500">Current vs required competency ratings</p>
+          <h2 className="text-lg font-semibold text-gray-900">{t("mySkillsGap.skillsRadar")}</h2>
+          <p className="mt-1 text-sm text-gray-500">{t("mySkillsGap.skillsRadarSubtitle")}</p>
           <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
@@ -156,14 +153,14 @@ function IndividualView({ employeeId }: { employeeId: string }) {
                 <PolarAngleAxis dataKey="competency" tick={{ fontSize: 11 }} />
                 <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
                 <Radar
-                  name="Current"
+                  name={t("mySkillsGap.current")}
                   dataKey="current"
                   stroke="#6366f1"
                   fill="#6366f1"
                   fillOpacity={0.3}
                 />
                 <Radar
-                  name="Required"
+                  name={t("mySkillsGap.required")}
                   dataKey="required"
                   stroke="#ef4444"
                   fill="#ef4444"
@@ -180,19 +177,19 @@ function IndividualView({ employeeId }: { employeeId: string }) {
       {/* Gap Table */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="p-5 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Competency Gap Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("skillsGapAnalytics.gapDetails")}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Competency</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Category</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Current</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500 w-40">Progress</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Required</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Gap</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">{t("mySkillsGap.competency")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500">{t("skillsGapAnalytics.category")}</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.current")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-500 w-40">{t("mySkillsGap.progress")}</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.required")}</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.gap")}</th>
+                <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.statusLabel")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -212,7 +209,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <StatusBadge colorClass={STATUS_COLORS[comp.status]} className="px-2">
-                        {STATUS_LABELS[comp.status]}
+                        {t(`mySkillsGap.status.${comp.status}`)}
                       </StatusBadge>
                     </td>
                   </tr>
@@ -227,7 +224,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="h-5 w-5 text-amber-500" />
-            <h2 className="text-lg font-semibold text-gray-900">Learning Recommendations</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("mySkillsGap.recommendedLearning")}</h2>
           </div>
           <div className="space-y-3">
             {result.recommendations.map((rec, idx) => (
@@ -235,7 +232,7 @@ function IndividualView({ employeeId }: { employeeId: string }) {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold text-gray-900">{rec.competency}</span>
                   <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                    Gap: {rec.gap}
+                    {t("mySkillsGap.gapValue", { value: rec.gap })}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">{rec.recommendation}</p>
@@ -260,6 +257,7 @@ interface OrgDepartment {
 }
 
 export function SkillsGapPage() {
+  const { t } = useTranslation();
   const [employeeId, setEmployeeId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [viewMode, setViewMode] = useState<"individual" | "department">("individual");
@@ -289,9 +287,9 @@ export function SkillsGapPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Skills Gap Analysis</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("skillsGapAnalytics.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Compare competency ratings against career path requirements.
+            {t("skillsGapAnalytics.subtitle")}
           </p>
         </div>
       </div>
@@ -309,7 +307,7 @@ export function SkillsGapPage() {
             )}
           >
             <User className="h-4 w-4" />
-            Individual
+            {t("skillsGapAnalytics.individual")}
           </button>
           <button
             onClick={() => setViewMode("department")}
@@ -321,7 +319,7 @@ export function SkillsGapPage() {
             )}
           >
             <Users className="h-4 w-4" />
-            Department
+            {t("skillsGapAnalytics.department")}
           </button>
         </div>
 
@@ -366,7 +364,7 @@ export function SkillsGapPage() {
           ) : (
             <EmptyState
               icon={User}
-              title="Pick an employee to view their skills gap analysis."
+              title={t("skillsGapAnalytics.pickEmployee")}
               className=""
             />
           )
@@ -380,17 +378,17 @@ export function SkillsGapPage() {
               {/* Department Summary */}
               <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Department: {deptResult.department}
+                  {t("skillsGapAnalytics.department")}: {deptResult.department}
                 </h2>
                 <div className="mt-3 grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Average Readiness</p>
+                    <p className="text-sm text-gray-500">{t("skillsGapAnalytics.averageReadiness")}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {deptResult.averageReadiness}%
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Team Members</p>
+                    <p className="text-sm text-gray-500">{t("skillsGapAnalytics.teamMembers")}</p>
                     <p className="text-2xl font-bold text-gray-900">
                       {deptResult.employees.length}
                     </p>
@@ -403,10 +401,10 @@ export function SkillsGapPage() {
                 <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                   <div className="p-5 border-b border-gray-100">
                     <h2 className="text-lg font-semibold text-gray-900">
-                      Department Skills Heatmap
+                      {t("skillsGapAnalytics.department")} Skills Heatmap
                     </h2>
                     <p className="mt-1 text-sm text-gray-500">
-                      Aggregated competency gaps across team members
+                      {t("skillsGapAnalytics.heatmapSubtitle")}
                     </p>
                   </div>
                   <div className="overflow-x-auto">
@@ -417,13 +415,13 @@ export function SkillsGapPage() {
                             Competency
                           </th>
                           <th className="px-4 py-3 text-center font-medium text-gray-500">
-                            Avg Current
+                            {t("skillsGapAnalytics.avgCurrent")}
                           </th>
                           <th className="px-4 py-3 text-center font-medium text-gray-500">
-                            Avg Required
+                            {t("skillsGapAnalytics.avgRequired")}
                           </th>
                           <th className="px-4 py-3 text-center font-medium text-gray-500">
-                            Avg Gap
+                            {t("skillsGapAnalytics.avgGap")}
                           </th>
                           <th className="px-4 py-3 text-center font-medium text-gray-500">
                             Status
@@ -458,7 +456,7 @@ export function SkillsGapPage() {
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <StatusBadge colorClass={STATUS_COLORS[gap.status]} className="px-2">
-                                  {STATUS_LABELS[gap.status]}
+                                  {t(`mySkillsGap.status.${gap.status}`)}
                                 </StatusBadge>
                               </td>
                             </tr>
@@ -473,7 +471,7 @@ export function SkillsGapPage() {
               {deptResult.employees.length > 0 && (
                 <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                   <h2 className="text-lg font-semibold text-gray-900">
-                    Employee Readiness Overview
+                    {t("skillsGapAnalytics.employeeReadiness")}
                   </h2>
                   <div className="mt-4 space-y-2">
                     {deptResult.employees.map((emp: SkillsGapResult) => (
@@ -482,7 +480,7 @@ export function SkillsGapPage() {
                         className="flex items-center gap-3 rounded-lg border border-gray-100 p-3"
                       >
                         <span className="text-sm font-medium text-gray-900 w-32">
-                          Employee #{emp.employee_id}
+                          {t("skillsGapAnalytics.employeeNumber", { id: emp.employee_id })}
                         </span>
                         <div className="flex-1">
                           <div className="h-3 w-full rounded-full bg-gray-200">
@@ -511,14 +509,14 @@ export function SkillsGapPage() {
           ) : (
             <EmptyState
               icon={Users}
-              title="No data found for this department."
+              title={t("skillsGapAnalytics.departmentEmpty")}
               className=""
             />
           )
         ) : (
           <EmptyState
             icon={Users}
-            title="Pick a department to view its aggregated skills gap analysis."
+            title={t("skillsGapAnalytics.pickDepartment")}
             className=""
           />
         )}
