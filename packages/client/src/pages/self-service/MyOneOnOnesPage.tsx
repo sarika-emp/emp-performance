@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   Calendar,
@@ -36,6 +37,7 @@ interface OrgUser {
 }
 
 export function MyOneOnOnesPage() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [showRequest, setShowRequest] = useState(false);
@@ -58,9 +60,9 @@ export function MyOneOnOnesPage() {
     <div>
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My 1-on-1s</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("myOneOnOnes.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Your upcoming and past one-on-one meetings.
+            {t("myOneOnOnes.subtitle")}
           </p>
         </div>
         <button
@@ -68,7 +70,7 @@ export function MyOneOnOnesPage() {
           className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           {showRequest ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showRequest ? "Close" : "Request 1-on-1"}
+          {showRequest ? t("common.close") : t("myOneOnOnes.requestOneOnOne")}
         </button>
       </div>
 
@@ -88,15 +90,15 @@ export function MyOneOnOnesPage() {
       ) : meetings.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No meetings yet"
-          description="Request a 1-on-1 with your manager to get started."
+          title={t("myOneOnOnes.emptyTitle")}
+          description={t("myOneOnOnes.emptyDescription")}
         />
       ) : (
         <div className="mt-6 space-y-8">
           {upcoming.length > 0 && (
             <section>
               <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Upcoming ({upcoming.length})
+                {t("myOneOnOnes.upcoming", { count: upcoming.length })}
               </h2>
               <div className="space-y-3">
                 {upcoming.map((m) => (
@@ -109,7 +111,7 @@ export function MyOneOnOnesPage() {
           {past.length > 0 && (
             <section>
               <h2 className="text-lg font-semibold text-gray-500 mb-3">
-                Past ({past.length})
+                {t("myOneOnOnes.past", { count: past.length })}
               </h2>
               <div className="space-y-3">
                 {past.map((m) => (
@@ -125,8 +127,9 @@ export function MyOneOnOnesPage() {
 }
 
 function RequestMeetingForm({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation();
   const [managerId, setManagerId] = useState("");
-  const [title, setTitle] = useState("1-on-1 request");
+  const [title, setTitle] = useState(() => t("myOneOnOnes.defaultRequestTitle"));
   const [date, setDate] = useState("");
   const [time, setTime] = useState("10:00");
   const [duration, setDuration] = useState(30);
@@ -140,23 +143,23 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
   const mutation = useMutation({
     mutationFn: (body: any) => apiPost("/meetings/request", body),
     onSuccess: () => {
-      toast.success("1-on-1 requested");
+      toast.success(t("myOneOnOnes.requestSuccess"));
       onDone();
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to request meeting"),
+      toast.error(err.response?.data?.error?.message || t("myOneOnOnes.requestError")),
   });
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!managerId) return toast.error("Select a manager");
-        if (!date) return toast.error("Pick a date");
+        if (!managerId) return toast.error(t("myOneOnOnes.selectManagerError"));
+        if (!date) return toast.error(t("myOneOnOnes.pickDateError"));
         const scheduled_at = new Date(`${date}T${time || "10:00"}:00`).toISOString();
         mutation.mutate({
           manager_id: Number(managerId),
-          title: title.trim() || "1-on-1 request",
+          title: title.trim() || t("myOneOnOnes.defaultRequestTitle"),
           scheduled_at,
           duration_minutes: Number(duration) || 30,
         });
@@ -165,7 +168,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
     >
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Manager <span className="text-red-500">*</span>
+          {t("myOneOnOnes.manager")} <span className="text-red-500">*</span>
         </label>
         <select
           value={managerId}
@@ -173,7 +176,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
           required
           className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">— Select a manager —</option>
+          <option value="">{t("myOneOnOnes.selectManager")}</option>
           {orgUsers.map((u) => (
             <option key={u.id} value={u.id}>
               {u.full_name} ({u.email})
@@ -182,7 +185,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Topic / Title</label>
+        <label className="block text-sm font-medium text-gray-700">{t("myOneOnOnes.topicTitle")}</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -194,7 +197,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Date <span className="text-red-500">*</span>
+            {t("myOneOnOnes.date")} <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -206,7 +209,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Time</label>
+          <label className="block text-sm font-medium text-gray-700">{t("myOneOnOnes.time")}</label>
           <input
             type="time"
             value={time}
@@ -215,7 +218,7 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Duration (min)</label>
+          <label className="block text-sm font-medium text-gray-700">{t("myOneOnOnes.durationMinutes")}</label>
           <select
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
@@ -234,13 +237,14 @@ function RequestMeetingForm({ onDone }: { onDone: () => void }) {
         disabled={mutation.isPending}
         className="rounded-lg bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
       >
-        {mutation.isPending ? "Requesting..." : "Send Request"}
+        {mutation.isPending ? t("myOneOnOnes.requesting") : t("myOneOnOnes.sendRequest")}
       </button>
     </form>
   );
 }
 
 function MeetingRow({ meeting }: { meeting: Meeting }) {
+  const { t, i18n } = useTranslation();
   const isCompleted = meeting.status === "completed";
 
   return (
@@ -264,15 +268,15 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
         <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            with {meeting.manager_name ?? `#${meeting.manager_id}`}
+            {t("myOneOnOnes.withManager", { name: meeting.manager_name ?? `#${meeting.manager_id}` })}
           </span>
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {formatDate(meeting.scheduled_at)}
+            {formatDate(meeting.scheduled_at, i18n.resolvedLanguage)}
           </span>
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {meeting.duration_minutes} min
+            {t("myOneOnOnes.minutes", { count: meeting.duration_minutes })}
           </span>
         </div>
       </div>
@@ -281,7 +285,7 @@ function MeetingRow({ meeting }: { meeting: Meeting }) {
           isCompleted ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
         }
       >
-        {meeting.status}
+        {t(`myOneOnOnes.status.${meeting.status}`, { defaultValue: meeting.status })}
       </StatusBadge>
     </Link>
   );

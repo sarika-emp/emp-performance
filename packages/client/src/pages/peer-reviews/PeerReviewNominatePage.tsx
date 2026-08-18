@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface ReviewCycle {
   id: string;
@@ -43,6 +44,7 @@ const STATUS_BADGE: Record<string, { className: string; icon: typeof Check }> = 
 };
 
 export function PeerReviewNominatePage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -88,21 +90,21 @@ export function PeerReviewNominatePage() {
       apiPost("/peer-reviews/nominate", body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["peer-nominations"] });
-      toast.success("Peer nominated for review");
+      toast.success(t("peerReviewNominate.nominateSuccess"));
       setNomineeId("");
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to nominate peer"),
+      toast.error(err.response?.data?.error?.message || t("peerReviewNominate.nominateError")),
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!cycleId) {
-      toast.error("Select a review cycle");
+      toast.error(t("peerReviewNominate.selectCycleError"));
       return;
     }
     if (!nomineeId) {
-      toast.error("Select a peer to nominate");
+      toast.error(t("peerReviewNominate.selectPeerError"));
       return;
     }
     nominateMutation.mutate({
@@ -115,9 +117,9 @@ export function PeerReviewNominatePage() {
   return (
     <div>
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Nominate Peer Reviewers</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("peerReviewNominate.title")}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Suggest colleagues to provide peer feedback for your review cycle. HR approves nominations.
+          {t("peerReviewNominate.subtitle")}
         </p>
       </div>
 
@@ -127,7 +129,7 @@ export function PeerReviewNominatePage() {
       >
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Review Cycle <span className="text-red-500">*</span>
+            {t("peerReviewNominate.reviewCycleLabel")} <span className="text-red-500">*</span>
           </label>
           <select
             value={cycleId}
@@ -135,7 +137,7 @@ export function PeerReviewNominatePage() {
             required
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
-            <option value="">— Select a cycle —</option>
+            <option value="">{t("peerReviewNominate.selectCyclePlaceholder")}</option>
             {cycles.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} ({c.status})
@@ -145,14 +147,14 @@ export function PeerReviewNominatePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Find a colleague</label>
+          <label className="block text-sm font-medium text-gray-700">{t("peerReviewNominate.findColleagueLabel")}</label>
           <div className="relative mt-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={userSearch}
               onChange={(e) => setUserSearch(e.target.value)}
-              placeholder="Search by name or email..."
+              placeholder={t("peerReviewNominate.searchPlaceholder")}
               className="block w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -160,7 +162,7 @@ export function PeerReviewNominatePage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Peer reviewer <span className="text-red-500">*</span>
+            {t("peerReviewNominate.peerReviewerLabel")} <span className="text-red-500">*</span>
           </label>
           <select
             value={nomineeId}
@@ -168,7 +170,7 @@ export function PeerReviewNominatePage() {
             required
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
-            <option value="">— Select a peer —</option>
+            <option value="">{t("peerReviewNominate.selectPeerPlaceholder")}</option>
             {orgUsers.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.full_name} ({u.email})
@@ -183,21 +185,23 @@ export function PeerReviewNominatePage() {
           className="flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           <UserPlus className="h-4 w-4" />
-          {nominateMutation.isPending ? "Nominating..." : "Nominate Peer"}
+          {nominateMutation.isPending
+            ? t("peerReviewNominate.nominating")
+            : t("peerReviewNominate.nominatePeer")}
         </button>
       </form>
 
       {/* My nominations for the selected cycle */}
       {cycleId && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900">My Nominations</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("peerReviewNominate.myNominations")}</h2>
           {nomLoading ? (
             <div className="mt-4 flex justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-brand-600" />
             </div>
           ) : nominations.length === 0 ? (
             <p className="mt-3 text-sm text-gray-500">
-              You have not nominated anyone for this cycle yet.
+              {t("peerReviewNominate.noNominations")}
             </p>
           ) : (
             <div className="mt-3 space-y-2">
@@ -210,7 +214,10 @@ export function PeerReviewNominatePage() {
                     className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
                   >
                     <div className="text-sm text-gray-700">
-                      Peer reviewer: <span className="font-medium">User #{n.nominee_id}</span>
+                      {t("peerReviewNominate.peerReviewerPrefix")}{" "}
+                      <span className="font-medium">
+                        {t("peerReviewNominate.userNumber", { id: n.nominee_id })}
+                      </span>
                       <span className="ml-3 text-xs text-gray-400">{formatDate(n.created_at)}</span>
                     </div>
                     <StatusBadge

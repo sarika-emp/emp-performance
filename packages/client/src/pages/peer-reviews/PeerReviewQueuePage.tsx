@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/Pagination";
 import { EmptyState } from "@/components/EmptyState";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 
 interface ReviewCycle {
@@ -33,10 +34,10 @@ interface Paginated<T> {
 }
 
 const STATUS_TABS = [
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "declined", label: "Declined" },
-  { value: "", label: "All" },
+  { value: "pending" },
+  { value: "approved" },
+  { value: "declined" },
+  { value: "" },
 ];
 
 const STATUS_BADGE: Record<string, { className: string; icon: typeof Check }> = {
@@ -46,10 +47,26 @@ const STATUS_BADGE: Record<string, { className: string; icon: typeof Check }> = 
 };
 
 export function PeerReviewQueuePage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [cycleId, setCycleId] = useState("");
   const [statusFilter, setStatusFilter] = useState("pending");
   const [page, setPage] = useState(1);
+
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case "pending":
+        return t("peerReviewQueue.statusPending");
+      case "approved":
+        return t("peerReviewQueue.statusApproved");
+      case "declined":
+        return t("peerReviewQueue.statusDeclined");
+      case "":
+        return t("peerReviewQueue.statusAll");
+      default:
+        return s;
+    }
+  };
 
   const { data: cyclesData } = useQuery({
     queryKey: ["review-cycles", "for-queue"],
@@ -75,20 +92,20 @@ export function PeerReviewQueuePage() {
     mutationFn: (id: string) => apiPut(`/peer-reviews/${id}/approve`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["peer-nominations"] });
-      toast.success("Nomination approved");
+      toast.success(t("peerReviewQueue.toastApproved"));
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to approve"),
+      toast.error(err.response?.data?.error?.message || t("peerReviewQueue.toastApproveError")),
   });
 
   const declineMutation = useMutation({
     mutationFn: (id: string) => apiPut(`/peer-reviews/${id}/decline`, {}),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["peer-nominations"] });
-      toast.success("Nomination declined");
+      toast.success(t("peerReviewQueue.toastDeclined"));
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to decline"),
+      toast.error(err.response?.data?.error?.message || t("peerReviewQueue.toastDeclineError")),
   });
 
   return (
@@ -96,9 +113,9 @@ export function PeerReviewQueuePage() {
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-6 w-6 text-brand-600" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Peer Review Approvals</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("peerReviewQueue.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Review and approve peer reviewer nominations for a cycle.
+            {t("peerReviewQueue.subtitle")}
           </p>
         </div>
       </div>
@@ -112,7 +129,7 @@ export function PeerReviewQueuePage() {
           }}
           className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
-          <option value="">— Select a cycle —</option>
+          <option value="">{t("peerReviewQueue.selectCyclePlaceholder")}</option>
           {cycles.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name} ({c.status})
@@ -134,7 +151,7 @@ export function PeerReviewQueuePage() {
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {tab.label}
+              {statusLabel(tab.value)}
             </button>
           ))}
         </div>
@@ -143,8 +160,8 @@ export function PeerReviewQueuePage() {
       {!cycleId ? (
         <EmptyState
           icon={ShieldCheck}
-          title="Select a review cycle"
-          description="Choose a cycle above to see its peer nominations."
+          title={t("peerReviewQueue.selectCycleTitle")}
+          description={t("peerReviewQueue.selectCycleDesc")}
           className="mt-8"
         />
       ) : isLoading ? (
@@ -154,8 +171,8 @@ export function PeerReviewQueuePage() {
       ) : nominations.length === 0 ? (
         <EmptyState
           icon={Clock}
-          title="No nominations"
-          description={<>There are no {statusFilter || ""} nominations for this cycle.</>}
+          title={t("peerReviewQueue.noNominationsTitle")}
+          description={t("peerReviewQueue.noNominationsDesc", { status: statusFilter || "" })}
           className="mt-8"
         />
       ) : (
@@ -163,11 +180,11 @@ export function PeerReviewQueuePage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Employee</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Peer Reviewer</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Nominated</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t("peerReviewQueue.colEmployee")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t("peerReviewQueue.colPeerReviewer")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t("peerReviewQueue.colNominated")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">{t("common.status")}</th>
+                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -177,8 +194,8 @@ export function PeerReviewQueuePage() {
                 const pending = n.status === "pending";
                 return (
                   <tr key={n.id}>
-                    <td className="px-4 py-3 text-sm text-gray-700">User #{n.employee_id}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">User #{n.nominee_id}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{t("peerReviewQueue.userLabel", { id: n.employee_id })}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{t("peerReviewQueue.userLabel", { id: n.nominee_id })}</td>
                     <td className="px-4 py-3 text-xs text-gray-400">{formatDate(n.created_at)}</td>
                     <td className="px-4 py-3">
                       <StatusBadge
@@ -186,7 +203,7 @@ export function PeerReviewQueuePage() {
                         icon={<BadgeIcon className="h-3 w-3" />}
                         className="capitalize"
                       >
-                        {n.status}
+                        {statusLabel(n.status)}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -198,7 +215,7 @@ export function PeerReviewQueuePage() {
                             className="inline-flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
                           >
                             <Check className="h-3.5 w-3.5" />
-                            Approve
+                            {t("peerReviewQueue.approve")}
                           </button>
                           <button
                             onClick={() => declineMutation.mutate(n.id)}
@@ -206,7 +223,7 @@ export function PeerReviewQueuePage() {
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                           >
                             <X className="h-3.5 w-3.5" />
-                            Decline
+                            {t("peerReviewQueue.decline")}
                           </button>
                         </div>
                       ) : (

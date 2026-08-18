@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Star, User, Users, FileText } from "lucide-react";
 import { apiGet } from "@/api/client";
@@ -40,6 +41,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function ReviewPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -76,7 +78,7 @@ export function ReviewPage() {
   if (!review) {
     return (
       <div className="py-12 text-center">
-        <p className="text-gray-500">Review not found.</p>
+        <p className="text-gray-500">{t("review.reviewNotFound")}</p>
       </div>
     );
   }
@@ -92,9 +94,9 @@ export function ReviewPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employee Review</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("review.employeeReview")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Employee #{review.employee_id} - All reviews for this participant
+            {t("review.employeeSubtitle", { id: review.employee_id })}
           </p>
         </div>
       </div>
@@ -123,22 +125,34 @@ export function ReviewPage() {
                     colorClass={TYPE_COLORS[rev.type] ?? "bg-gray-100 text-gray-700"}
                     className="capitalize"
                   >
-                    {rev.type} Review
+                    {rev.type === "self"
+                      ? t("review.selfReview")
+                      : rev.type === "manager"
+                      ? t("review.managerReview")
+                      : rev.type === "peer"
+                      ? t("review.peerReview")
+                      : rev.type}
                   </StatusBadge>
                 </div>
                 <StatusBadge
                   colorClass={STATUS_COLORS[rev.status] ?? "bg-gray-100 text-gray-700"}
                   className="px-2 capitalize"
                 >
-                  {rev.status}
+                  {rev.status === "pending"
+                    ? t("review.statusPending")
+                    : rev.status === "draft"
+                    ? t("review.statusDraft")
+                    : rev.status === "submitted"
+                    ? t("review.statusSubmitted")
+                    : rev.status}
                 </StatusBadge>
               </div>
 
               {/* Reviewer info */}
               <div className="text-sm text-gray-500">
-                <p>Reviewer: #{rev.reviewer_id}</p>
+                <p>{t("review.reviewerLabel", { id: rev.reviewer_id })}</p>
                 {rev.submitted_at && (
-                  <p>Submitted: {formatDate(rev.submitted_at)}</p>
+                  <p>{t("review.submittedLabel", { date: formatDate(rev.submitted_at) })}</p>
                 )}
               </div>
 
@@ -146,12 +160,12 @@ export function ReviewPage() {
               {rev.overall_rating !== null && (
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase mb-1">
-                    Overall Rating
+                    {t("review.overallRating")}
                   </p>
                   <div className="flex items-center gap-2">
                     <StarRating rating={rev.overall_rating} />
                     <span className="text-sm font-medium text-gray-700">
-                      {rev.overall_rating}/5
+                      {t("review.ratingOutOfFive", { rating: rev.overall_rating })}
                     </span>
                   </div>
                 </div>
@@ -161,7 +175,7 @@ export function ReviewPage() {
               {isCurrent && review.competency_ratings.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase mb-2">
-                    Competency Ratings
+                    {t("review.competencyRatings")}
                   </p>
                   <div className="space-y-2">
                     {review.competency_ratings.map((cr) => (
@@ -179,7 +193,7 @@ export function ReviewPage() {
               {/* Summary */}
               {rev.summary && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase mb-1">Summary</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-1">{t("review.summary")}</p>
                   <p className="text-sm text-gray-700">{rev.summary}</p>
                 </div>
               )}
@@ -187,7 +201,7 @@ export function ReviewPage() {
               {/* Strengths */}
               {rev.strengths && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase mb-1">Strengths</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-1">{t("review.strengths")}</p>
                   <p className="text-sm text-gray-700">{rev.strengths}</p>
                 </div>
               )}
@@ -196,7 +210,7 @@ export function ReviewPage() {
               {rev.improvements && (
                 <div>
                   <p className="text-xs font-medium text-gray-500 uppercase mb-1">
-                    Areas for Improvement
+                    {t("review.areasForImprovement")}
                   </p>
                   <p className="text-sm text-gray-700">{rev.improvements}</p>
                 </div>

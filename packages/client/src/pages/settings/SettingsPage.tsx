@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Settings, Save, Bell, Star, Award, Send, Loader2, ScrollText } from "lucide-react";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { apiGet, apiPut, apiPost } from "@/api/client";
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,7 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
 type SettingsTab = "general" | "notifications";
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   return (
@@ -38,8 +40,8 @@ export function SettingsPage() {
       <div className="flex items-center gap-3">
         <Settings className="h-6 w-6 text-gray-400" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">Configure performance module settings.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("settings.title")}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t("settings.subtitle")}</p>
         </div>
       </div>
 
@@ -47,12 +49,12 @@ export function SettingsPage() {
       <div className="mt-6 border-b border-gray-200">
         <nav className="-mb-px flex gap-6">
           <TabButton
-            label="General"
+            label={t("settings.generalTab")}
             active={activeTab === "general"}
             onClick={() => setActiveTab("general")}
           />
           <TabButton
-            label="Notifications"
+            label={t("settings.notificationsTab")}
             icon={<Bell className="h-4 w-4" />}
             active={activeTab === "notifications"}
             onClick={() => setActiveTab("notifications")}
@@ -104,6 +106,7 @@ function TabButton({
 // ---------------------------------------------------------------------------
 
 function GeneralSettings() {
+  const { t } = useTranslation();
   const [ratingScale, setRatingScale] = useState("5");
   const [defaultFramework, setDefaultFramework] = useState("");
   const [loading, setLoading] = useState(true);
@@ -136,9 +139,9 @@ function GeneralSettings() {
         rating_scale: Number(ratingScale),
         default_framework: defaultFramework,
       });
-      toast.success("Settings saved successfully");
+      toast.success(t("settings.saveSuccess"));
     } catch {
-      toast.error("Failed to save settings");
+      toast.error(t("settings.saveError"));
     } finally {
       setSaving(false);
     }
@@ -158,24 +161,24 @@ function GeneralSettings() {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Star className="h-5 w-5 text-amber-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Rating Scale</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("settings.ratingScale")}</h2>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Maximum Rating Value
+            {t("settings.maximumRating")}
           </label>
           <select
             value={ratingScale}
             onChange={(e) => setRatingScale(e.target.value)}
             className="mt-1 block w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
-            <option value="3">1-3 Scale</option>
-            <option value="4">1-4 Scale</option>
-            <option value="5">1-5 Scale</option>
-            <option value="10">1-10 Scale</option>
+            <option value="3">{t("settings.scale", { max: 3 })}</option>
+            <option value="4">{t("settings.scale", { max: 4 })}</option>
+            <option value="5">{t("settings.scale", { max: 5 })}</option>
+            <option value="10">{t("settings.scale", { max: 10 })}</option>
           </select>
           <p className="mt-1 text-xs text-gray-500">
-            Applied to competency and overall performance ratings.
+            {t("settings.ratingHelp")}
           </p>
         </div>
       </div>
@@ -184,20 +187,20 @@ function GeneralSettings() {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Award className="h-5 w-5 text-brand-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Default Framework</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("settings.defaultFramework")}</h2>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Default Competency Framework
+            {t("settings.defaultCompetencyFramework")}
           </label>
           <input
             value={defaultFramework}
             onChange={(e) => setDefaultFramework(e.target.value)}
             className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-            placeholder="Enter framework ID or leave blank for none"
+            placeholder={t("settings.frameworkPlaceholder")}
           />
           <p className="mt-1 text-xs text-gray-500">
-            This framework will be pre-selected when creating new review cycles.
+            {t("settings.frameworkHelp")}
           </p>
         </div>
       </div>
@@ -210,7 +213,7 @@ function GeneralSettings() {
           className="flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          Save Settings
+          {t("settings.saveSettings")}
         </button>
       </div>
     </form>
@@ -222,6 +225,7 @@ function GeneralSettings() {
 // ---------------------------------------------------------------------------
 
 function NotificationSettingsPanel() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_NOTIFICATION_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -260,9 +264,9 @@ function NotificationSettingsPanel() {
         goal_reminders_enabled: settings.goal_reminders_enabled,
         reminder_days_before_deadline: settings.reminder_days_before_deadline,
       });
-      toast.success("Notification settings saved");
+      toast.success(t("settings.notificationSaveSuccess"));
     } catch {
-      toast.error("Failed to save notification settings");
+      toast.error(t("settings.notificationSaveError"));
     } finally {
       setSaving(false);
     }
@@ -272,12 +276,12 @@ function NotificationSettingsPanel() {
     setSendingTest(true);
     try {
       await apiPost("/notifications/send-test-email");
-      toast.success("Test email sent. Check your inbox.");
+      toast.success(t("settings.testEmailSuccess"));
     } catch (err: any) {
       const detail =
         err?.response?.data?.error?.message ||
         err?.message ||
-        "Check SMTP configuration.";
+        t("settings.checkSmtp");
       toast.error(`Failed to send test email — ${detail}`);
     } finally {
       setSendingTest(false);
@@ -298,7 +302,7 @@ function NotificationSettingsPanel() {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Bell className="h-5 w-5 text-purple-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Email Reminders</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("settings.emailReminders")}</h2>
         </div>
         <p className="text-sm text-gray-500 mb-4">
           Configure which automated email reminders are sent to employees and managers.
@@ -306,26 +310,26 @@ function NotificationSettingsPanel() {
         </p>
         <div className="space-y-4">
           <ToggleRow
-            label="Review Deadline Reminders"
-            description="Remind reviewers about pending reviews before the cycle deadline"
+            label={t("settings.reviewReminders")}
+            description={t("settings.reviewRemindersHelp")}
             checked={settings.review_reminders_enabled}
             onChange={(val) => setSettings({ ...settings, review_reminders_enabled: val })}
           />
           <ToggleRow
-            label="PIP Check-In Reminders"
-            description="Weekly reminders for employees and managers with active PIPs"
+            label={t("settings.pipReminders")}
+            description={t("settings.pipRemindersHelp")}
             checked={settings.pip_reminders_enabled}
             onChange={(val) => setSettings({ ...settings, pip_reminders_enabled: val })}
           />
           <ToggleRow
-            label="1-on-1 Meeting Reminders"
-            description="Remind both parties 1 day before a scheduled 1-on-1 meeting"
+            label={t("settings.meetingReminders")}
+            description={t("settings.meetingRemindersHelp")}
             checked={settings.meeting_reminders_enabled}
             onChange={(val) => setSettings({ ...settings, meeting_reminders_enabled: val })}
           />
           <ToggleRow
-            label="Goal Deadline Reminders"
-            description="Alert employees when their goal deadlines are approaching"
+            label={t("settings.goalReminders")}
+            description={t("settings.goalRemindersHelp")}
             checked={settings.goal_reminders_enabled}
             onChange={(val) => setSettings({ ...settings, goal_reminders_enabled: val })}
           />
@@ -334,10 +338,10 @@ function NotificationSettingsPanel() {
 
       {/* Reminder Timing */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Reminder Timing</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("settings.reminderTiming")}</h2>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Days before deadline to send reminder
+            {t("settings.daysBeforeDeadline")}
           </label>
           <input
             type="number"
@@ -353,7 +357,7 @@ function NotificationSettingsPanel() {
             className="mt-1 block w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <p className="mt-1 text-xs text-gray-500">
-            Applies to review deadlines and goal due dates. Range: 1-14 days.
+            {t("settings.reminderTimingHelp")}
           </p>
         </div>
       </div>
@@ -362,25 +366,25 @@ function NotificationSettingsPanel() {
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-2">
           <ScrollText className="h-5 w-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">Delivery Log</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t("settings.deliveryLog")}</h2>
         </div>
         <p className="text-sm text-gray-500 mb-4">
-          Review which reminders and emails were sent (and which failed) across your organization.
+          {t("settings.deliveryLogHelp")}
         </p>
         <Link
           to="/settings/notification-log"
           className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           <ScrollText className="h-4 w-4" />
-          View Notification Log
+          {t("settings.viewNotificationLog")}
         </Link>
       </div>
 
       {/* Test Email */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Test Email Configuration</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t("settings.testEmailConfiguration")}</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Send a test email to your address to verify SMTP settings are configured correctly.
+          {t("settings.testEmailHelp")}
         </p>
         <button
           type="button"
@@ -393,7 +397,7 @@ function NotificationSettingsPanel() {
           ) : (
             <Send className="h-4 w-4" />
           )}
-          Send Test Email
+          {t("settings.sendTestEmail")}
         </button>
       </div>
 
@@ -409,7 +413,7 @@ function NotificationSettingsPanel() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save Notification Settings
+          {t("settings.saveNotificationSettings")}
         </button>
       </div>
     </form>

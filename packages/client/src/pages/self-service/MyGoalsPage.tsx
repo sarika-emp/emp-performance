@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Target,
   Plus,
@@ -28,12 +29,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  not_started: "Not Started",
-  in_progress: "In Progress",
-  at_risk: "At Risk",
-  completed: "Completed",
-  cancelled: "Cancelled",
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  not_started: "dashboard.status.notStarted",
+  in_progress: "dashboard.status.inProgress",
+  at_risk: "dashboard.status.atRisk",
+  completed: "dashboard.status.completed",
+  cancelled: "dashboard.status.cancelled",
 };
 
 function ProgressBar({ value, className }: { value: number; className?: string }) {
@@ -61,6 +62,7 @@ interface GoalWithKRs extends Goal {
 }
 
 function GoalRow({ goal }: { goal: GoalWithKRs }) {
+  const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState<string | null>(null);
   const [checkInValue, setCheckInValue] = useState("");
@@ -100,7 +102,7 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
               {goal.title}
             </Link>
             <StatusBadge colorClass={STATUS_COLORS[goal.status]}>
-              {STATUS_LABELS[goal.status]}
+              {t(STATUS_LABEL_KEYS[goal.status] || "dashboard.status.notStarted")}
             </StatusBadge>
           </div>
 
@@ -110,7 +112,9 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
             </div>
             <span className="text-xs font-medium text-gray-600">{goal.progress}%</span>
             {goal.due_date && (
-              <span className="text-xs text-gray-400">Due {formatDate(goal.due_date)}</span>
+              <span className="text-xs text-gray-400">
+                {t("myGoals.dueDate", { date: formatDate(goal.due_date, i18n.resolvedLanguage) })}
+              </span>
             )}
           </div>
 
@@ -142,7 +146,7 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
                           }
                           className="shrink-0 rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
                         >
-                          Check In
+                          {t("myGoals.checkIn")}
                         </button>
                       </div>
 
@@ -151,18 +155,18 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
                           <div className="flex gap-2">
                             <input
                               type="number"
-                              placeholder="New value"
+                              placeholder={t("myGoals.newValue")}
                               value={checkInValue}
                               onChange={(e) => setCheckInValue(e.target.value)}
                               className="w-28 rounded border border-gray-300 px-2 py-1 text-xs focus:border-brand-500 focus:outline-none"
                             />
                             <span className="text-xs text-gray-400 self-center">
-                              of {kr.target_value}
+                              {t("myGoals.ofTarget", { target: kr.target_value })}
                               {kr.unit ? ` ${kr.unit}` : ""}
                             </span>
                           </div>
                           <textarea
-                            placeholder="Notes (optional)"
+                            placeholder={t("myGoals.notesOptional")}
                             value={checkInNotes}
                             onChange={(e) => setCheckInNotes(e.target.value)}
                             rows={2}
@@ -189,13 +193,13 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
                               disabled={!checkInValue || checkInMutation.isPending}
                               className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                             >
-                              {checkInMutation.isPending ? "Saving..." : "Save"}
+                              {checkInMutation.isPending ? t("myGoals.saving") : t("common.save")}
                             </button>
                             <button
                               onClick={() => setShowCheckIn(null)}
                               className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-600 hover:bg-gray-50"
                             >
-                              Cancel
+                              {t("common.cancel")}
                             </button>
                           </div>
                         </div>
@@ -205,9 +209,9 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
                 })
               ) : (
                 <p className="text-xs text-gray-400">
-                  No key results defined.{" "}
+                  {t("myGoals.noKeyResults")}{" "}
                   <Link to={`/goals/${goal.id}`} className="text-brand-600 hover:underline">
-                    Add key results
+                    {t("myGoals.addKeyResults")}
                   </Link>
                 </p>
               )}
@@ -220,6 +224,7 @@ function GoalRow({ goal }: { goal: GoalWithKRs }) {
 }
 
 export function MyGoalsPage() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [page, setPage] = useState(1);
 
@@ -241,9 +246,9 @@ export function MyGoalsPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Goals</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("myGoals.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Track your personal and team goals.
+            {t("myGoals.subtitle")}
           </p>
         </div>
         <Link
@@ -251,35 +256,35 @@ export function MyGoalsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Create Goal
+          {t("myGoals.createGoal")}
         </Link>
       </div>
 
       <div className="mt-6 space-y-3">
         {isLoading && (
           <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-            <p className="text-sm text-gray-500">Loading your goals...</p>
+            <p className="text-sm text-gray-500">{t("myGoals.loading")}</p>
           </div>
         )}
 
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-            <p className="text-sm text-red-600">Failed to load goals.</p>
+            <p className="text-sm text-red-600">{t("myGoals.loadError")}</p>
           </div>
         )}
 
         {!isLoading && goals.length === 0 && (
           <EmptyState
             icon={Target}
-            title="No goals yet"
-            description="Create your first goal to start tracking progress."
+            title={t("myGoals.emptyTitle")}
+            description={t("myGoals.emptyDescription")}
             className=""
             action={
               <Link
                 to="/goals/new"
                 className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700"
               >
-                Create a goal <ArrowRight className="h-3.5 w-3.5" />
+                {t("myGoals.createAGoal")} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             }
           />

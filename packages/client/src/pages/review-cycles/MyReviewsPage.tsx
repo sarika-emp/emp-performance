@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { Star, Clock, CheckCircle, FileText, PenLine } from "lucide-react";
 import { apiGet } from "@/api/client";
@@ -13,15 +14,34 @@ const STATUS_BADGE: Record<string, { class: string; icon: typeof Clock }> = {
   submitted: { class: "bg-green-100 text-green-700", icon: CheckCircle },
 };
 
-const TYPE_LABEL: Record<string, string> = {
-  self: "Self Assessment",
-  manager: "Manager Review",
-  peer: "Peer Review",
-};
-
 export function MyReviewsPage() {
+  const { t } = useTranslation();
   const user = getUser();
   const userId = user?.empcloudUserId;
+
+  const typeLabel = (type: string) => {
+    switch (type) {
+      case "self":
+        return t("myReviews.typeSelf");
+      case "manager":
+        return t("myReviews.typeManager");
+      case "peer":
+        return t("myReviews.typePeer");
+      default:
+        return type;
+    }
+  };
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "submitted":
+        return t("myReviews.statusSubmitted");
+      case "draft":
+        return t("myReviews.statusDraft");
+      default:
+        return t("myReviews.statusPending");
+    }
+  };
 
   // Reviews I need to complete (where I am the reviewer)
   const { data: toCompleteData, isLoading: loadingToComplete, error: toCompleteError } = useQuery({
@@ -56,20 +76,25 @@ export function MyReviewsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Reviews</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("myReviews.title")}</h1>
         <p className="mt-1 text-sm text-gray-500">
           {pendingCount > 0
-            ? `You have ${pendingCount} review${pendingCount > 1 ? "s" : ""} to complete.`
-            : "You are all caught up!"}
+            ? t(
+                pendingCount > 1
+                  ? "myReviews.pendingCountPlural"
+                  : "myReviews.pendingCountSingular",
+                { count: pendingCount }
+              )
+            : t("myReviews.allCaughtUp")}
         </p>
       </div>
 
       {/* Reviews I need to complete */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Reviews to Complete</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t("myReviews.reviewsToComplete")}</h2>
         {toCompleteError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-sm text-red-600">Failed to load reviews. Please try again later.</p>
+            <p className="text-sm text-red-600">{t("myReviews.loadError")}</p>
           </div>
         ) : loadingToComplete ? (
           <div className="flex justify-center py-8">
@@ -78,7 +103,7 @@ export function MyReviewsPage() {
         ) : toComplete.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center">
             <FileText className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-500">No reviews assigned to you.</p>
+            <p className="mt-2 text-sm text-gray-500">{t("myReviews.noReviewsAssigned")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -98,14 +123,14 @@ export function MyReviewsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">
-                        {TYPE_LABEL[review.type] ?? review.type}
+                        {typeLabel(review.type)}
                       </span>
                       <span className="text-xs text-gray-400">
-                        for Employee #{review.employee_id}
+                        {t("myReviews.forEmployee", { id: review.employee_id })}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-500">
-                      Created {formatDate(review.created_at)}
+                      {t("myReviews.createdDate", { date: formatDate(review.created_at) })}
                     </p>
                   </div>
                   {review.overall_rating !== null && (
@@ -119,7 +144,7 @@ export function MyReviewsPage() {
                     icon={<Icon className="h-3 w-3" />}
                     className="capitalize"
                   >
-                    {review.status}
+                    {statusLabel(review.status)}
                   </StatusBadge>
                 </Link>
               );
@@ -130,10 +155,10 @@ export function MyReviewsPage() {
 
       {/* Reviews completed for me */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Reviews About Me</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t("myReviews.reviewsAboutMe")}</h2>
         {aboutMeError ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-sm text-red-600">Failed to load reviews. Please try again later.</p>
+            <p className="text-sm text-red-600">{t("myReviews.loadError")}</p>
           </div>
         ) : loadingAboutMe ? (
           <div className="flex justify-center py-8">
@@ -142,7 +167,7 @@ export function MyReviewsPage() {
         ) : aboutMe.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center">
             <FileText className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-500">No reviews about you yet.</p>
+            <p className="mt-2 text-sm text-gray-500">{t("myReviews.noReviewsAboutYou")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -157,16 +182,16 @@ export function MyReviewsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">
-                        {TYPE_LABEL[review.type] ?? review.type}
+                        {typeLabel(review.type)}
                       </span>
                       <span className="text-xs text-gray-400">
-                        by Reviewer #{review.reviewer_id}
+                        {t("myReviews.byReviewer", { id: review.reviewer_id })}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-500">
                       {review.submitted_at
-                        ? `Submitted ${formatDate(review.submitted_at)}`
-                        : `Created ${formatDate(review.created_at)}`}
+                        ? t("myReviews.submittedDate", { date: formatDate(review.submitted_at) })
+                        : t("myReviews.createdDate", { date: formatDate(review.created_at) })}
                     </p>
                   </div>
                   {review.overall_rating !== null && review.status === "submitted" && (
@@ -180,7 +205,7 @@ export function MyReviewsPage() {
                     icon={<Icon className="h-3 w-3" />}
                     className="capitalize"
                   >
-                    {review.status}
+                    {statusLabel(review.status)}
                   </StatusBadge>
                 </div>
               );

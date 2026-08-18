@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -34,26 +35,35 @@ const STATUS_BADGE: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
-const TYPE_LABEL: Record<string, string> = {
-  quarterly: "Quarterly",
-  annual: "Annual",
-  mid_year: "Mid-Year",
-  "360_degree": "360-Degree",
-  probation: "Probation",
-};
-
-const STATUS_TABS = [
-  { value: "", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "active", label: "Active" },
-  { value: "in_review", label: "In Review" },
-  { value: "completed", label: "Completed" },
-];
+const STATUS_TABS = ["", "draft", "active", "in_review", "completed"];
 
 type CycleWithCount = ReviewCycle & { participant_count: number };
 
 export function ReviewCycleListPage() {
+  const { t } = useTranslation();
   const confirm = useConfirm();
+  const typeLabels: Record<string, string> = {
+    quarterly: t("reviewCycleList.typeQuarterly"),
+    annual: t("reviewCycleList.typeAnnual"),
+    mid_year: t("reviewCycleList.typeMidYear"),
+    "360_degree": t("reviewCycleList.type360Degree"),
+    probation: t("reviewCycleList.typeProbation"),
+  };
+  const statusLabels: Record<string, string> = {
+    draft: t("reviewCycleList.statusDraft"),
+    active: t("reviewCycleList.statusActive"),
+    in_review: t("reviewCycleList.statusInReview"),
+    calibration: t("reviewCycleList.statusCalibration"),
+    completed: t("reviewCycleList.statusCompleted"),
+    cancelled: t("reviewCycleList.statusCancelled"),
+  };
+  const statusTabLabels: Record<string, string> = {
+    "": t("reviewCycleList.tabAll"),
+    draft: t("reviewCycleList.tabDraft"),
+    active: t("reviewCycleList.tabActive"),
+    in_review: t("reviewCycleList.tabInReview"),
+    completed: t("reviewCycleList.tabCompleted"),
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -123,31 +133,31 @@ export function ReviewCycleListPage() {
   const launchMutation = useMutation({
     mutationFn: (id: string) => apiPost(`/review-cycles/${id}/launch`, {}),
     onSuccess: () => {
-      toast.success("Cycle launched");
+      toast.success(t("reviewCycleList.toastCycleLaunched"));
       refresh();
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to launch cycle"),
+      toast.error(err.response?.data?.error?.message || t("reviewCycleList.toastLaunchFailed")),
   });
 
   const closeMutation = useMutation({
     mutationFn: (id: string) => apiPost(`/review-cycles/${id}/close`, {}),
     onSuccess: () => {
-      toast.success("Cycle closed");
+      toast.success(t("reviewCycleList.toastCycleClosed"));
       refresh();
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to close cycle"),
+      toast.error(err.response?.data?.error?.message || t("reviewCycleList.toastCloseFailed")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiDelete(`/review-cycles/${id}`),
     onSuccess: () => {
-      toast.success("Cycle deleted");
+      toast.success(t("reviewCycleList.toastCycleDeleted"));
       refresh();
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to delete cycle"),
+      toast.error(err.response?.data?.error?.message || t("reviewCycleList.toastDeleteFailed")),
   });
 
   return (
@@ -155,9 +165,9 @@ export function ReviewCycleListPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review Cycles</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("reviewCycleList.title")}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {total} cycle{total !== 1 ? "s" : ""} total
+            {t("reviewCycleList.cyclesTotal", { count: total })}
           </p>
         </div>
         <Link
@@ -165,7 +175,7 @@ export function ReviewCycleListPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Create Cycle
+          {t("reviewCycleList.createCycle")}
         </Link>
       </div>
 
@@ -173,15 +183,15 @@ export function ReviewCycleListPage() {
       <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
         {STATUS_TABS.map((tab) => (
           <button
-            key={tab.value}
-            onClick={() => setFilter("status", tab.value)}
+            key={tab}
+            onClick={() => setFilter("status", tab)}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              statusFilter === tab.value
+              statusFilter === tab
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
-            {tab.label}
+            {statusTabLabels[tab]}
           </button>
         ))}
       </div>
@@ -193,7 +203,7 @@ export function ReviewCycleListPage() {
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search cycles by name or description..."
+          placeholder={t("reviewCycleList.searchPlaceholder")}
           className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
       </div>
@@ -206,9 +216,9 @@ export function ReviewCycleListPage() {
       ) : cycles.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
           <RefreshCw className="mx-auto h-10 w-10 text-gray-400" />
-          <p className="mt-2 text-sm font-medium text-gray-900">No review cycles found</p>
+          <p className="mt-2 text-sm font-medium text-gray-900">{t("reviewCycleList.emptyTitle")}</p>
           <p className="mt-1 text-sm text-gray-500">
-            Create your first review cycle to get started.
+            {t("reviewCycleList.emptyDescription")}
           </p>
           <Link
             to="/review-cycles/new"
@@ -224,19 +234,19 @@ export function ReviewCycleListPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Name
+                  {t("reviewCycleList.colName")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Type
+                  {t("reviewCycleList.colType")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Status
+                  {t("common.status")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Dates
+                  {t("reviewCycleList.colDates")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Participants
+                  {t("reviewCycleList.colParticipants")}
                 </th>
                 <th className="px-6 py-3" />
               </tr>
@@ -258,14 +268,14 @@ export function ReviewCycleListPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {TYPE_LABEL[cycle.type] ?? cycle.type}
+                    {typeLabels[cycle.type] ?? cycle.type}
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge
                       colorClass={STATUS_BADGE[cycle.status] ?? "bg-gray-100 text-gray-700"}
                       className="capitalize"
                     >
-                      {cycle.status.replace(/_/g, " ")}
+                      {statusLabels[cycle.status] ?? cycle.status.replace(/_/g, " ")}
                     </StatusBadge>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
@@ -288,7 +298,7 @@ export function ReviewCycleListPage() {
                         setOpenMenuId(openMenuId === cycle.id ? null : cycle.id);
                       }}
                       className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-                      aria-label="Cycle actions"
+                      aria-label={t("reviewCycleList.ariaCycleActions")}
                     >
                       <MoreVertical className="h-5 w-5" />
                     </button>
@@ -307,7 +317,7 @@ export function ReviewCycleListPage() {
                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           <Eye className="h-4 w-4" />
-                          View details
+                          {t("reviewCycleList.menuViewDetails")}
                         </button>
                         <button
                           type="button"
@@ -318,7 +328,7 @@ export function ReviewCycleListPage() {
                           className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           <Pencil className="h-4 w-4" />
-                          Edit
+                          {t("common.edit")}
                         </button>
                         {cycle.status === "draft" && (
                           <button
@@ -330,7 +340,7 @@ export function ReviewCycleListPage() {
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                           >
                             <PlayCircle className="h-4 w-4 text-green-600" />
-                            Launch cycle
+                            {t("reviewCycleList.menuLaunchCycle")}
                           </button>
                         )}
                         {cycle.status === "active" && (
@@ -343,7 +353,7 @@ export function ReviewCycleListPage() {
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                           >
                             <CheckCircle2 className="h-4 w-4 text-indigo-600" />
-                            Close cycle
+                            {t("reviewCycleList.menuCloseCycle")}
                           </button>
                         )}
                         {cycle.status === "draft" && (
@@ -353,9 +363,11 @@ export function ReviewCycleListPage() {
                               setOpenMenuId(null);
                               if (
                                 await confirm({
-                                  title: "Delete cycle?",
-                                  message: `Delete cycle "${cycle.name}"? This cannot be undone.`,
-                                  confirmLabel: "Delete",
+                                  title: t("reviewCycleList.confirmDeleteTitle"),
+                                  message: t("reviewCycleList.confirmDeleteMessage", {
+                                    name: cycle.name,
+                                  }),
+                                  confirmLabel: t("common.delete"),
                                   variant: "danger",
                                 })
                               ) {
@@ -365,7 +377,7 @@ export function ReviewCycleListPage() {
                             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4" />
-                            Delete
+                            {t("common.delete")}
                           </button>
                         )}
                       </div>

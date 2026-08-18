@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   MessageSquare,
   Heart,
@@ -53,6 +54,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function MyFeedbackPage() {
+  const { t, i18n } = useTranslation();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"received" | "given">("received");
@@ -75,10 +77,10 @@ export function MyFeedbackPage() {
     mutationFn: (id: string) => apiDelete(`/feedback/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
-      toast.success("Feedback deleted");
+      toast.success(t("myFeedback.deleteSuccess"));
     },
     onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Failed to delete feedback"),
+      toast.error(err.response?.data?.error?.message || t("myFeedback.deleteError")),
   });
 
   const feedbackList = data?.data?.data ?? [];
@@ -93,9 +95,9 @@ export function MyFeedbackPage() {
   async function handleDelete(id: string) {
     if (
       !(await confirm({
-        title: "Delete feedback?",
-        message: "Delete this feedback? This cannot be undone.",
-        confirmLabel: "Delete",
+        title: t("myFeedback.deleteTitle"),
+        message: t("myFeedback.deleteMessage"),
+        confirmLabel: t("common.delete"),
         variant: "danger",
       }))
     )
@@ -107,15 +109,15 @@ export function MyFeedbackPage() {
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Feedback</h1>
-          <p className="mt-1 text-sm text-gray-500">Feedback you have received and given.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("myFeedback.title")}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t("myFeedback.subtitle")}</p>
         </div>
         <Link
           to="/feedback/give"
           className="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           <Send className="h-4 w-4" />
-          Give Feedback
+          {t("myFeedback.giveFeedback")}
         </Link>
       </div>
 
@@ -130,7 +132,7 @@ export function MyFeedbackPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Received
+            {t("myFeedback.received")}
           </button>
           <button
             onClick={() => switchTab("given")}
@@ -140,14 +142,14 @@ export function MyFeedbackPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Given
+            {t("myFeedback.given")}
           </button>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search feedback..."
+            placeholder={t("myFeedback.searchPlaceholder")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -166,11 +168,11 @@ export function MyFeedbackPage() {
       ) : feedbackList.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
-          title={`No feedback ${tab} ${search ? "matches your search" : "yet"}`}
+          title={t(search ? `myFeedback.empty.${tab}Search` : `myFeedback.empty.${tab}`)}
           description={
             tab === "received"
-              ? "Feedback from colleagues will appear here."
-              : "Feedback you give will appear here."
+              ? t("myFeedback.empty.receivedDescription")
+              : t("myFeedback.empty.givenDescription")
           }
         />
       ) : (
@@ -194,22 +196,29 @@ export function MyFeedbackPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <StatusBadge colorClass={colorClass} className="px-2">
-                        {item.type}
+                        {t(`myFeedback.types.${item.type}`, { defaultValue: item.type })}
                       </StatusBadge>
                       <span className="text-xs text-gray-400">
                         {tab === "received"
-                          ? `from ${item.is_anonymous || item.from_user_id == null ? "Anonymous" : item.from_user_name || `User #${item.from_user_id}`}`
-                          : `to ${item.to_user_name || `User #${item.to_user_id}`}`}
+                          ? t("myFeedback.fromUser", {
+                              name:
+                                item.is_anonymous || item.from_user_id == null
+                                  ? t("myFeedback.anonymous")
+                                  : item.from_user_name || t("myFeedback.userNumber", { id: item.from_user_id }),
+                            })
+                          : t("myFeedback.toUser", {
+                              name: item.to_user_name || t("myFeedback.userNumber", { id: item.to_user_id }),
+                            })}
                       </span>
                       <span className="ml-auto text-xs text-gray-400">
-                        {formatDate(item.created_at)}
+                        {formatDate(item.created_at, i18n.resolvedLanguage)}
                       </span>
                       {tab === "given" && (
                         <button
                           onClick={() => handleDelete(item.id)}
                           disabled={deleteMutation.isPending}
                           className="rounded-md p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                          title="Delete feedback"
+                          title={t("myFeedback.deleteAction")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Loader2,
   TrendingDown,
@@ -32,13 +33,14 @@ const STATUS_COLORS: Record<string, string> = {
   gap: "text-red-600 bg-red-50",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  exceeds: "Exceeds",
-  meets: "Meets",
-  gap: "Gap",
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  exceeds: "mySkillsGap.status.exceeds",
+  meets: "mySkillsGap.status.meets",
+  gap: "mySkillsGap.status.gap",
 };
 
 function GapBar({ current, required }: { current: number; required: number }) {
+  const { t } = useTranslation();
   const max = 5;
   const currentPct = (current / max) * 100;
   const requiredPct = (required / max) * 100;
@@ -56,13 +58,14 @@ function GapBar({ current, required }: { current: number; required: number }) {
       <div
         className="absolute top-0 h-full border-r-2 border-dashed border-gray-500"
         style={{ left: `${requiredPct}%` }}
-        title={`Required: ${required}`}
+        title={t("mySkillsGap.requiredValue", { value: required })}
       />
     </div>
   );
 }
 
 export function MySkillsGapPage() {
+  const { t } = useTranslation();
   const user = getUser();
   const employeeId = user?.empcloudUserId;
 
@@ -88,9 +91,9 @@ export function MySkillsGapPage() {
   if (error) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Skills Gap</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("mySkillsGap.title")}</h1>
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-sm text-red-600">Failed to load your skills gap data.</p>
+          <p className="text-sm text-red-600">{t("mySkillsGap.loadError")}</p>
         </div>
       </div>
     );
@@ -99,13 +102,13 @@ export function MySkillsGapPage() {
   if (!result || result.competencies.length === 0) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Skills Gap</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("mySkillsGap.title")}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          See how your skills compare to your career path requirements.
+          {t("mySkillsGap.subtitle")}
         </p>
         <EmptyState
           icon={TrendingDown}
-          title="No competency data available yet. Complete a performance review and ensure you are assigned to a career path."
+          title={t("mySkillsGap.emptyTitle")}
         />
       </div>
     );
@@ -119,9 +122,9 @@ export function MySkillsGapPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">My Skills Gap</h1>
+      <h1 className="text-2xl font-bold text-gray-900">{t("mySkillsGap.title")}</h1>
       <p className="mt-1 text-sm text-gray-500">
-        See how your skills compare to your career path requirements.
+        {t("mySkillsGap.subtitle")}
       </p>
 
       <div className="mt-6 space-y-6 overflow-hidden">
@@ -129,7 +132,7 @@ export function MySkillsGapPage() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500">Your Readiness</p>
+              <p className="text-sm font-medium text-gray-500">{t("mySkillsGap.yourReadiness")}</p>
               <p className="text-3xl font-bold text-gray-900">{result.overallReadiness}%</p>
             </div>
             <div
@@ -152,16 +155,18 @@ export function MySkillsGapPage() {
             </div>
           </div>
           <p className="mt-2 text-sm text-gray-500">
-            {result.competencies.filter((c) => c.status === "gap").length} areas need development out of{" "}
-            {result.competencies.length} total competencies.
+            {t("mySkillsGap.developmentSummary", {
+              count: result.competencies.filter((c) => c.status === "gap").length,
+              total: result.competencies.length,
+            })}
           </p>
         </div>
 
         {/* Radar Chart */}
         {radarData.length > 2 && (
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm overflow-hidden">
-            <h2 className="text-lg font-semibold text-gray-900">Your Skills Radar</h2>
-            <p className="mt-1 text-sm text-gray-500">Current ratings vs required levels</p>
+            <h2 className="text-lg font-semibold text-gray-900">{t("mySkillsGap.skillsRadar")}</h2>
+            <p className="mt-1 text-sm text-gray-500">{t("mySkillsGap.skillsRadarSubtitle")}</p>
             <div className="mt-4 h-80 w-full max-w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
@@ -169,14 +174,14 @@ export function MySkillsGapPage() {
                   <PolarAngleAxis dataKey="competency" tick={{ fontSize: 11 }} />
                   <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
                   <Radar
-                    name="Your Rating"
+                    name={t("mySkillsGap.yourRating")}
                     dataKey="current"
                     stroke="#6366f1"
                     fill="#6366f1"
                     fillOpacity={0.3}
                   />
                   <Radar
-                    name="Required"
+                    name={t("mySkillsGap.required")}
                     dataKey="required"
                     stroke="#ef4444"
                     fill="#ef4444"
@@ -193,18 +198,18 @@ export function MySkillsGapPage() {
         {/* Gap Table */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden max-w-full">
           <div className="p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Competency Details</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("mySkillsGap.competencyDetails")}</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[600px]">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Competency</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Current</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 w-40">Progress</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Required</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Gap</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Status</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">{t("mySkillsGap.competency")}</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.current")}</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500 w-40">{t("mySkillsGap.progress")}</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.required")}</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.gap")}</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">{t("mySkillsGap.statusLabel")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -227,7 +232,7 @@ export function MySkillsGapPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <StatusBadge colorClass={STATUS_COLORS[comp.status]} className="px-2">
-                          {STATUS_LABELS[comp.status]}
+                          {t(STATUS_LABEL_KEYS[comp.status] || "mySkillsGap.status.gap")}
                         </StatusBadge>
                       </td>
                     </tr>
@@ -243,7 +248,7 @@ export function MySkillsGapPage() {
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb className="h-5 w-5 text-amber-500" />
               <h2 className="text-lg font-semibold text-gray-900">
-                Recommended Learning
+                {t("mySkillsGap.recommendedLearning")}
               </h2>
             </div>
             <div className="space-y-3">
@@ -254,7 +259,7 @@ export function MySkillsGapPage() {
                       {rec.competency}
                     </span>
                     <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                      Gap: {rec.gap}
+                      {t("mySkillsGap.gapValue", { value: rec.gap })}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">{rec.recommendation}</p>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -57,6 +58,7 @@ const TABS = ["participants", "ratings", "settings"] as const;
 type Tab = (typeof TABS)[number];
 
 export function ReviewCycleDetailPage() {
+  const { t } = useTranslation();
   const confirm = useConfirm();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -153,7 +155,7 @@ export function ReviewCycleDetailPage() {
   if (!cycle) {
     return (
       <div className="py-12 text-center">
-        <p className="text-gray-500">Review cycle not found.</p>
+        <p className="text-gray-500">{t("reviewCycleDetail.notFound")}</p>
       </div>
     );
   }
@@ -215,7 +217,9 @@ export function ReviewCycleDetailPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
             >
               <Play className="h-4 w-4" />
-              {launchMutation.isPending ? "Launching..." : "Launch"}
+              {launchMutation.isPending
+                ? t("reviewCycleDetail.launching")
+                : t("reviewCycleDetail.launch")}
             </button>
           )}
           {(cycle.status === "active" || cycle.status === "in_review" || cycle.status === "calibration") && (
@@ -225,7 +229,9 @@ export function ReviewCycleDetailPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
             >
               <CheckCircle className="h-4 w-4" />
-              {closeMutation.isPending ? "Closing..." : "Close Cycle"}
+              {closeMutation.isPending
+                ? t("reviewCycleDetail.closing")
+                : t("reviewCycleDetail.closeCycle")}
             </button>
           )}
         </div>
@@ -234,12 +240,14 @@ export function ReviewCycleDetailPage() {
       {/* Error banners */}
       {launchMutation.isError && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          {(launchMutation.error as any)?.response?.data?.error?.message ?? "Failed to launch cycle."}
+          {(launchMutation.error as any)?.response?.data?.error?.message ??
+            t("reviewCycleDetail.failedToLaunch")}
         </div>
       )}
       {closeMutation.isError && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          {(closeMutation.error as any)?.response?.data?.error?.message ?? "Failed to close cycle."}
+          {(closeMutation.error as any)?.response?.data?.error?.message ??
+            t("reviewCycleDetail.failedToClose")}
         </div>
       )}
 
@@ -249,19 +257,19 @@ export function ReviewCycleDetailPage() {
       {/* Info cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Participants</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.participants")}</p>
           <p className="mt-1 text-2xl font-bold text-gray-900">{cycle.participant_count}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Submitted</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.submitted")}</p>
           <p className="mt-1 text-2xl font-bold text-green-600">{cycle.stats.submitted}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">In Draft</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.inDraft")}</p>
           <p className="mt-1 text-2xl font-bold text-amber-600">{cycle.stats.draft}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-xs font-medium text-gray-500 uppercase">Pending</p>
+          <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.pending")}</p>
           <p className="mt-1 text-2xl font-bold text-gray-500">{cycle.stats.pending}</p>
         </div>
       </div>
@@ -283,7 +291,11 @@ export function ReviewCycleDetailPage() {
                 {tab === "participants" && <Users className="h-4 w-4" />}
                 {tab === "ratings" && <BarChart3 className="h-4 w-4" />}
                 {tab === "settings" && <Settings className="h-4 w-4" />}
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab === "participants"
+                  ? t("reviewCycleDetail.tabParticipants")
+                  : tab === "ratings"
+                    ? t("reviewCycleDetail.tabRatings")
+                    : t("reviewCycleDetail.tabSettings")}
               </span>
             </button>
           ))}
@@ -302,7 +314,7 @@ export function ReviewCycleDetailPage() {
                   type="text"
                   value={pickerQuery}
                   onChange={(e) => setPickerQuery(e.target.value)}
-                  placeholder="Search employees by name, email, or code..."
+                  placeholder={t("reviewCycleDetail.searchEmployeesPlaceholder")}
                   className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
@@ -311,9 +323,9 @@ export function ReviewCycleDetailPage() {
               {pickerQuery.trim().length >= 2 && (
                 <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
                   {searchingUsers ? (
-                    <p className="px-3 py-3 text-sm text-gray-400">Searching...</p>
+                    <p className="px-3 py-3 text-sm text-gray-400">{t("reviewCycleDetail.searching")}</p>
                   ) : userResults.length === 0 ? (
-                    <p className="px-3 py-3 text-sm text-gray-400">No matching employees.</p>
+                    <p className="px-3 py-3 text-sm text-gray-400">{t("reviewCycleDetail.noMatchingEmployees")}</p>
                   ) : (
                     userResults.map((u) => {
                       const isSelected = selected.some((s) => s.id === u.id);
@@ -360,13 +372,13 @@ export function ReviewCycleDetailPage() {
               <div className="flex items-end gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Manager ID (applied to all, optional)
+                    {t("reviewCycleDetail.managerIdLabel")}
                   </label>
                   <input
                     type="number"
                     value={managerId}
                     onChange={(e) => setManagerId(e.target.value)}
-                    placeholder="Manager ID"
+                    placeholder={t("reviewCycleDetail.managerIdPlaceholder")}
                     className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
@@ -377,14 +389,14 @@ export function ReviewCycleDetailPage() {
                 >
                   <UserPlus className="h-4 w-4" />
                   {addParticipantMutation.isPending
-                    ? "Adding..."
-                    : `Add ${selected.length > 0 ? selected.length : ""} participant${selected.length === 1 ? "" : "s"}`}
+                    ? t("reviewCycleDetail.adding")
+                    : t("reviewCycleDetail.addParticipants", { count: selected.length })}
                 </button>
               </div>
               {addParticipantMutation.isError && (
                 <p className="text-sm text-red-600">
                   {(addParticipantMutation.error as any)?.response?.data?.error?.message ??
-                    "Failed to add participants."}
+                    t("reviewCycleDetail.failedToAddParticipants")}
                 </p>
               )}
             </form>
@@ -400,7 +412,7 @@ export function ReviewCycleDetailPage() {
                 setParticipantSearch(e.target.value);
                 setParticipantPage(1);
               }}
-              placeholder="Filter participants..."
+              placeholder={t("reviewCycleDetail.filterParticipantsPlaceholder")}
               className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -409,7 +421,7 @@ export function ReviewCycleDetailPage() {
           {participants.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center">
               <Users className="mx-auto h-8 w-8 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">No participants found.</p>
+              <p className="mt-2 text-sm text-gray-500">{t("reviewCycleDetail.noParticipantsFound")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white -mx-4 lg:mx-0">
@@ -417,16 +429,16 @@ export function ReviewCycleDetailPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Employee
+                      {t("reviewCycleDetail.columnEmployee")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Manager
+                      {t("reviewCycleDetail.columnManager")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Status
+                      {t("common.status")}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Added
+                      {t("reviewCycleDetail.columnAdded")}
                     </th>
                     {cycle.status === "draft" && <th className="px-6 py-3" />}
                   </tr>
@@ -435,10 +447,14 @@ export function ReviewCycleDetailPage() {
                   {participants.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {p.employee_name ?? `Employee #${p.employee_id}`}
+                        {p.employee_name ??
+                          t("reviewCycleDetail.employeeNumber", { id: p.employee_id })}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {p.manager_name ?? (p.manager_id ? `Manager #${p.manager_id}` : "--")}
+                        {p.manager_name ??
+                          (p.manager_id
+                            ? t("reviewCycleDetail.managerNumber", { id: p.manager_id })
+                            : "--")}
                       </td>
                       <td className="px-6 py-4">
                         <StatusBadge colorClass="bg-gray-100 text-gray-700" className="capitalize">
@@ -454,9 +470,15 @@ export function ReviewCycleDetailPage() {
                             onClick={async () => {
                               if (
                                 await confirm({
-                                  title: "Remove participant?",
-                                  message: `Remove ${p.employee_name ?? `employee #${p.employee_id}`} from this cycle?`,
-                                  confirmLabel: "Remove",
+                                  title: t("reviewCycleDetail.removeParticipantTitle"),
+                                  message: t("reviewCycleDetail.removeParticipantMessage", {
+                                    name:
+                                      p.employee_name ??
+                                      t("reviewCycleDetail.employeeNumberLower", {
+                                        id: p.employee_id,
+                                      }),
+                                  }),
+                                  confirmLabel: t("reviewCycleDetail.remove"),
                                   variant: "danger",
                                 })
                               ) {
@@ -488,12 +510,12 @@ export function ReviewCycleDetailPage() {
 
       {activeTab === "ratings" && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Rating Distribution</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t("reviewCycleDetail.ratingDistribution")}</h3>
           {distribution.length === 0 || distribution.every((d) => d.count === 0) ? (
             <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center">
               <BarChart3 className="mx-auto h-8 w-8 text-gray-400" />
               <p className="mt-2 text-sm text-gray-500">
-                No submitted reviews yet. Distribution will appear after reviews are submitted.
+                {t("reviewCycleDetail.noSubmittedReviews")}
               </p>
             </div>
           ) : (
@@ -502,7 +524,10 @@ export function ReviewCycleDetailPage() {
                 {distribution.map((bucket) => (
                   <div key={bucket.rating} className="flex-1 flex flex-col items-center gap-2">
                     <span className="text-xs font-medium text-gray-500">
-                      {bucket.count} ({bucket.percentage}%)
+                      {t("reviewCycleDetail.ratingCount", {
+                        num: bucket.count,
+                        percentage: bucket.percentage,
+                      })}
                     </span>
                     <div className="w-full flex justify-center">
                       <div
@@ -518,7 +543,7 @@ export function ReviewCycleDetailPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-center text-xs text-gray-500">Rating (1-5)</p>
+              <p className="mt-4 text-center text-xs text-gray-500">{t("reviewCycleDetail.ratingAxisLabel")}</p>
             </div>
           )}
         </div>
@@ -527,7 +552,7 @@ export function ReviewCycleDetailPage() {
       {activeTab === "settings" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Cycle Settings</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t("reviewCycleDetail.cycleSettings")}</h3>
             {cycle.status !== "completed" && cycle.status !== "cancelled" && (
               <button
                 onClick={() => {
@@ -538,51 +563,51 @@ export function ReviewCycleDetailPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
                 <Settings className="h-4 w-4" />
-                Edit
+                {t("common.edit")}
               </button>
             )}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">Type</p>
+              <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.type")}</p>
               <p className="mt-1 text-sm text-gray-900 capitalize">
                 {cycle.type.replace(/_/g, " ")}
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">Status</p>
+              <p className="text-xs font-medium text-gray-500 uppercase">{t("common.status")}</p>
               <p className="mt-1 text-sm text-gray-900 capitalize">
                 {cycle.status.replace(/_/g, " ")}
               </p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">Start Date</p>
+              <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.startDate")}</p>
               <p className="mt-1 text-sm text-gray-900">{formatDate(cycle.start_date)}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">End Date</p>
+              <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.endDate")}</p>
               <p className="mt-1 text-sm text-gray-900">{formatDate(cycle.end_date)}</p>
             </div>
             {cycle.review_deadline && (
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase">Review Deadline</p>
+                <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.reviewDeadline")}</p>
                 <p className="mt-1 text-sm text-gray-900">
                   {formatDate(cycle.review_deadline)}
                 </p>
               </div>
             )}
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase">Framework</p>
+              <p className="text-xs font-medium text-gray-500 uppercase">{t("reviewCycleDetail.framework")}</p>
               <p className="mt-1 text-sm text-gray-900">
                 {cycle.framework_id ? (
                   <Link
                     to={`/competencies/${cycle.framework_id}`}
                     className="text-brand-600 hover:underline"
                   >
-                    View Framework
+                    {t("reviewCycleDetail.viewFramework")}
                   </Link>
                 ) : (
-                  "None"
+                  t("reviewCycleDetail.none")
                 )}
               </p>
             </div>
@@ -597,6 +622,7 @@ export function ReviewCycleDetailPage() {
 // Edit cycle form (rendered when ?edit=1). PUTs the editable fields (#R5).
 // ---------------------------------------------------------------------------
 function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => void }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [name, setName] = useState(cycle.name);
   const [description, setDescription] = useState(cycle.description ?? "");
@@ -647,7 +673,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
       className="rounded-lg border border-brand-200 bg-brand-50/40 p-6 space-y-4"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Edit Cycle</h3>
+        <h3 className="text-lg font-semibold text-gray-900">{t("reviewCycleDetail.editCycle")}</h3>
         <button
           type="button"
           onClick={onClose}
@@ -658,7 +684,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t("reviewCycleDetail.name")}</label>
         <input
           type="text"
           value={name}
@@ -670,7 +696,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{t("reviewCycleDetail.description")}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -681,7 +707,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("reviewCycleDetail.startDate")}</label>
           <input
             type="date"
             value={startDate}
@@ -691,7 +717,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("reviewCycleDetail.endDate")}</label>
           <input
             type="date"
             value={endDate}
@@ -701,7 +727,7 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Review Deadline</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("reviewCycleDetail.reviewDeadline")}</label>
           <input
             type="date"
             value={reviewDeadline}
@@ -712,12 +738,12 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
       </div>
 
       {dateError && (
-        <p className="text-sm text-red-600">End date cannot be before start date.</p>
+        <p className="text-sm text-red-600">{t("reviewCycleDetail.endDateBeforeStart")}</p>
       )}
       {updateMutation.isError && (
         <p className="text-sm text-red-600">
           {(updateMutation.error as any)?.response?.data?.error?.message ??
-            "Failed to update cycle."}
+            t("reviewCycleDetail.failedToUpdate")}
         </p>
       )}
 
@@ -728,14 +754,16 @@ function EditCycleForm({ cycle, onClose }: { cycle: CycleDetail; onClose: () => 
           className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
-          {updateMutation.isPending ? "Saving..." : "Save Changes"}
+          {updateMutation.isPending
+            ? t("reviewCycleDetail.saving")
+            : t("reviewCycleDetail.saveChanges")}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
       </div>
     </form>
